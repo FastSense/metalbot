@@ -1,0 +1,9 @@
+[submodule "rosbot_description"]
+	path = rosbot_description
+	branch = foxy
+	url = https://github.com/husarion/rosbot_description.git
+
+[submodule "rplidar_ros"]
+	path = rplidar_ros
+	branch = ros2
+	url = https://github.com/lukaszmitka/rplidar_ros.git
