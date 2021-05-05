@@ -77,6 +77,7 @@ RUN apt-get update && \
     apt-get install -y apt-utils debconf-utils gnupg2 lsb-release && \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116 && \
     echo "deb http://packages.ros.org/ros2/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros2-latest.list && \
+    rosdep update && \
     apt-get update 
 RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 # <<<<<<<<<<<< ROS2 dependencies
@@ -155,8 +156,8 @@ WORKDIR /home/$ROSUSER/scripts
 COPY scripts/utils-setup.sh .
 RUN ./utils-setup.sh
 
-#COPY scripts/ros-setup.sh .
-#RUN ./ros-setup.sh
+COPY scripts/ros-setup.sh .
+RUN ./ros-setup.sh
 
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts

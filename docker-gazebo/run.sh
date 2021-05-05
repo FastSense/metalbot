@@ -6,7 +6,7 @@ container_name=rosbot2
 docker run -it -d --privileged --net=host \
       --name $container_name \
       -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
-      -v $(pwd)/..:/home/user/catkin_ws/src:rw \
+      -v $(pwd)/..:/home/user/ros2_ws/src:rw \
       -v /home/${USER}/data:/home/user/data:ro \
       -e DISPLAY=$DISPLAY \
       -e NVIDIA_VISIBLE_DEVICES="all" \
