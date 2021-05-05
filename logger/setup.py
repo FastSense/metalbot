@@ -13,13 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='user',
-    maintainer_email='user@todo.todo',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    maintainer='KostyaYamshanov',
+    maintainer_email='k.yamshanov@fastsense.tech',
+    description='A package for logging the state and control of the robot',
+    license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+        'listener = logger.logger:main'
         ],
     },
 )
