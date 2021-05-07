@@ -1,5 +1,6 @@
 import math
  
+TIME_CONVERSION_CONST_ = 10 ** 9
 
 # from https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
 def euler_from_quaternion(x, y, z, w):
@@ -22,4 +23,14 @@ def euler_from_quaternion(x, y, z, w):
         t4 = +1.0 - 2.0 * (y * y + z * z)
         yaw_z = math.atan2(t3, t4)
      
-        return roll_x, pitch_y, yaw_z # in radians
+        return [roll_x, pitch_y, yaw_z] # in radians
+
+def caclulate_rosbot_velocities(x, y, roll, pitch, yaw):
+    """
+
+    """
+    v, w = 0, 0
+    return v, w
+
+def convert_ros2_time_to_float(time_tuple):
+        return float(time_tuple[0] + time_tuple[1]/TIME_CONVERSION_CONST_)
