@@ -8,6 +8,7 @@ from geometry_msgs.msg import Twist
 from tf2_msgs.msg import TFMessage
 
 from logger.utils import euler_from_quaternion, convert_ros2_time_to_float
+from logger.utils import caclulate_rosbot_velocities
 
 class Logger(Node):
     """
@@ -29,6 +30,7 @@ class Logger(Node):
         self.prev_tf_callback_time = None
         self.curr_control = list()
 
+        rclpy.get_default_context().on_shutdown(self.on_shutdown)
        
 
     def init_parameters(self):
@@ -138,9 +140,9 @@ class Logger(Node):
                     v, w = caclulate_rosbot_velocities(x, y, rpy, x_prev, y_prev, rpy_prev, dt)
                 else:
                     # first tf_callback
-                    v, w = 0
-                    pass
+                    v, w = 0, 0
 
+                # update robot_state container
                 self.robot_state.loc[len(self.robot_state)] = [x,y] + rpy + [v, w]
 
 
@@ -153,11 +155,36 @@ class Logger(Node):
             self.init_time = convert_ros2_time_to_float(
                 self.get_clock().now().seconds_nanoseconds()
             )
-            # TODO test
             self.prev_tf_callback_time = self.init_time
 
         self.curr_control = [control.linear.x, control.angular.z]
 
+    def save_collected_data_to_csv(self):
+        """
+
+        """
+        self.robot_state.to_csv(
+            path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
+            sep=' ',
+            index=False
+        )
+
+        self.robot_control.to_csv(
+            path_or_buf="/home/user/ros2_ws/src/logger/test_control.csv",
+            sep=' ',
+            index=False
+        )
+
+        pd.DataFrame(data=self.time, columns=['t']).to_csv(
+            path_or_buf="/home/user/ros2_ws/src/logger/test_time.csv",
+            sep=' ',
+            index=False
+        )
+
+    def on_shutdown(self):
+        """
+        """
+        self.save_collected_data_to_csv()
 
 def main():
     """
@@ -167,7 +194,10 @@ def main():
 
     logger = Logger()
 
-    rclpy.spin(logger)
+    try:
+        rclpy.spin(logger)
+    except:
+        pass
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
