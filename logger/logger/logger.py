@@ -6,13 +6,15 @@ import numpy as np
 
 from geometry_msgs.msg import Twist
 from tf2_msgs.msg import TFMessage
+from nav_msgs.msg import Odometry
 
 from logger.utils import euler_from_quaternion, convert_ros2_time_to_float
-from logger.utils import caclulate_rosbot_velocities
+from logger.utils import calculate_rosbot_velocities
+from logger.create_graphs import build_general_graph_for_rosbot
 
 class Logger(Node):
     """
-
+    Class for logging the state of the rosbot
     """
     def __init__(self):
         """
@@ -35,7 +37,7 @@ class Logger(Node):
 
     def init_parameters(self):
         """
-
+        Declares node parameters
         """
         self.declare_parameter('output_path', "")
         self.declare_parameter('output_folder', 'output_data')
@@ -47,7 +49,7 @@ class Logger(Node):
 
     def get_parametes(self):
         """
-
+        Gets node parameters
         """
         self.output_path = self.get_parameter('output_path').get_parameter_value().string_value
         self.output_folder = self.get_parameter('output_folder').get_parameter_value().string_value
@@ -59,7 +61,7 @@ class Logger(Node):
 
     def init_containers(self):
         """
-
+        Declares containers for logged data
         """
         self.robot_state = pd.DataFrame(
             columns=[
@@ -80,15 +82,22 @@ class Logger(Node):
 
     def init_subs(self):
         """
-
+        Declares node subscribers
         """
-        self.tf_sub = self.create_subscription(
-            TFMessage,
-            self.tf_topic,
-            self.tf_callback,
+        # TODO try use odom from gazebo
+        # self.tf_sub = self.create_subscription(
+        #     TFMessage,
+        #     self.tf_topic,
+        #     self.tf_callback,
+        #     1
+        # )
+
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
             1
         )
-
         self.control_sub = self.create_subscription(
             Twist,
             self.control_topic,
@@ -98,53 +107,35 @@ class Logger(Node):
 
         # prevent unused variable warning
         self.control_sub
-        self.tf_sub
+        self.odom_sub
+        # self.tf_sub
 
-    def tf_callback(self, msg):
+    def odom_callback(self, odom_msg):
         """
-        
+        Args:
+            :odom_msg: (Odometry): odom msg from 
         """
-        for transform in msg.transforms:
-            if (
-                transform.header.frame_id == self.parent_frame and 
-                transform.child_frame_id == self.robot_frame and 
-                len(self.curr_control) > 0
-            ):  
 
-                curr_time = convert_ros2_time_to_float(
-                    self.get_clock().now().seconds_nanoseconds()
-                )   
+        if (len(self.curr_control) == 0):
+            return  
 
-                # update time container
-                self.time.append(curr_time - self.init_time)
-                dt = curr_time - self.prev_tf_callback_time
-                self.prev_tf_callback_time = curr_time
-
-                # update control container
-                self.robot_control.loc[len(self.robot_control)] = self.curr_control
-
-                x = transform.transform.translation.x
-                y = transform.transform.translation.y
-                rpy = euler_from_quaternion(
-                    transform.transform.rotation.x,
-                    transform.transform.rotation.y,
-                    transform.transform.rotation.z,
-                    transform.transform.rotation.w
-                )
-
-                if len(self.robot_control) > 1:
-                    # default 
-                    last_row = self.robot_state.iloc[-1]
-                    x_prev, y_prev = last_row['x'], last_row['y'] 
-                    rpy_prev = [last_row['roll'], last_row['pitch'], last_row['yaw']]
-                    v, w = caclulate_rosbot_velocities(x, y, rpy, x_prev, y_prev, rpy_prev, dt)
-                else:
-                    # first tf_callback
-                    v, w = 0, 0
-
-                # update robot_state container
-                self.robot_state.loc[len(self.robot_state)] = [x,y] + rpy + [v, w]
-
+        curr_time = convert_ros2_time_to_float(
+            self.get_clock().now().seconds_nanoseconds()
+        )   
+        # update time container
+        self.time.append(curr_time - self.init_time)
+        # update control container
+        self.robot_control.loc[len(self.robot_control)] = self.curr_control
+        # update robot_state container
+        x, y = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y
+        rpy = euler_from_quaternion(
+            odom_msg.pose.pose.orientation.x,
+            odom_msg.pose.pose.orientation.y,
+            odom_msg.pose.pose.orientation.z,
+            odom_msg.pose.pose.orientation.w
+        )
+        v, w = odom_msg.twist.twist.linear.x, odom_msg.twist.twist.angular.z
+        self.robot_state.loc[len(self.robot_state)] = [x,y] + rpy + [v, w]
 
     def control_callback(self, control):
         """
@@ -183,7 +174,13 @@ class Logger(Node):
 
     def on_shutdown(self):
         """
+        
         """
+        build_general_graph_for_rosbot(
+            robot_state_df=self.robot_state,
+            control_df=self.robot_control,
+            time_list=self.time
+        )
         self.save_collected_data_to_csv()
 
 def main():

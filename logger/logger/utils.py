@@ -1,7 +1,7 @@
 import math
  
 TIME_CONVERSION_CONST_ = 10 ** 9
-
+# TODO search euler_from_quaternion scipy
 # from https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
 def euler_from_quaternion(x, y, z, w):
     """
@@ -25,11 +25,12 @@ def euler_from_quaternion(x, y, z, w):
 
     return [roll_x, pitch_y, yaw_z] # in radians
 
-def caclulate_rosbot_velocities(x_new, y_new, rpy_new, x_prev, y_prev, rpy_prev, dt):
+def calculate_rosbot_velocities(x_new, y_new, rpy_new, x_prev, y_prev, rpy_prev, dt):
     """
-
+    Calculates the linear and angular velocity of the rosbot
     """
     # get yaw from [roll, pitch, yaw]
+    
     yaw_new = rpy_new[2]   
     yaw_prev = rpy_prev[2] 
     
@@ -45,8 +46,13 @@ def caclulate_rosbot_velocities(x_new, y_new, rpy_new, x_prev, y_prev, rpy_prev,
     v = v * math.cos(alpha - yaw_new)
     return v, w
 
+def calculate_rosbot_kinetic_state_seq(control_df):
+    """
+    """
+    pass
+
 def convert_ros2_time_to_float(time_tuple):
     """
-    
+    Converts time from tuple (ROS2) format to floating point number
     """
     return float(time_tuple[0] + time_tuple[1]/TIME_CONVERSION_CONST_)
