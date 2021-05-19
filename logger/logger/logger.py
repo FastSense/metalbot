@@ -9,7 +9,6 @@ from tf2_msgs.msg import TFMessage
 from nav_msgs.msg import Odometry
 
 from logger.utils import euler_from_quaternion, convert_ros2_time_to_float
-from logger.utils import calculate_rosbot_velocities
 from logger.create_graphs import build_general_graph_for_rosbot
 
 class Logger(Node):
@@ -65,12 +64,20 @@ class Logger(Node):
         """
         self.robot_state = pd.DataFrame(
             columns=[
-                'x', 'y', 'roll', 'pitch', 'yaw', 'v', 'w'
+                'x', 'y', 'z', 'roll', 'pitch', 'yaw',
+                'v_x', 'v_y', 'v_z', 'w_x', 'w_y', 'w_z',
             ]
         )
         self.kinetic_model_state = pd.DataFrame(
             columns=[
-                'x', 'y', 'roll', 'pitch', 'yaw', 'v', 'w'
+                'x', 'y', 'z', 'roll', 'pitch', 'yaw',
+                'v_x', 'v_y', 'v_z', 'w_x', 'w_y', 'w_z',
+            ]
+        )
+        self.nn_model_state = pd.DataFrame(
+            columns=[
+                'x', 'y', 'z', 'roll', 'pitch', 'yaw',
+                'v_x', 'v_y', 'v_z', 'w_x', 'w_y', 'w_z',
             ]
         )
         self.robot_control = pd.DataFrame(
@@ -84,14 +91,6 @@ class Logger(Node):
         """
         Declares node subscribers
         """
-        # TODO try use odom from gazebo
-        # self.tf_sub = self.create_subscription(
-        #     TFMessage,
-        #     self.tf_topic,
-        #     self.tf_callback,
-        #     1
-        # )
-
         self.odom_sub = self.create_subscription(
             Odometry,
             '/odom',
@@ -108,7 +107,6 @@ class Logger(Node):
         # prevent unused variable warning
         self.control_sub
         self.odom_sub
-        # self.tf_sub
 
     def odom_callback(self, odom_msg):
         """
@@ -127,15 +125,25 @@ class Logger(Node):
         # update control container
         self.robot_control.loc[len(self.robot_control)] = self.curr_control
         # update robot_state container
-        x, y = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y
+        rosbot_pose = odom_msg.pose.pose
+        rosbot_velocities = odom_msg.twist.twist
+        x, y, z = rosbot_pose.position.x, rosbot_pose.position.y, rosbot_pose.position.z
         rpy = euler_from_quaternion(
-            odom_msg.pose.pose.orientation.x,
-            odom_msg.pose.pose.orientation.y,
-            odom_msg.pose.pose.orientation.z,
-            odom_msg.pose.pose.orientation.w
+            rosbot_pose.orientation.x,
+            rosbot_pose.orientation.y,
+            rosbot_pose.orientation.z,
+            rosbot_pose.orientation.w
         )
-        v, w = odom_msg.twist.twist.linear.x, odom_msg.twist.twist.angular.z
-        self.robot_state.loc[len(self.robot_state)] = [x,y] + rpy + [v, w]
+
+        v_x = rosbot_velocities.linear.x # Linear velocity
+        v_y = rosbot_velocities.linear.y
+        v_z = rosbot_velocities.linear.z
+
+        w_x = rosbot_velocities.angular.x
+        w_y = rosbot_velocities.angular.y
+        w_z = rosbot_velocities.angular.z # YAW velocity
+
+        self.robot_state.loc[len(self.robot_state)] = [x,y,z] + rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
 
     def control_callback(self, control):
         """
@@ -155,6 +163,18 @@ class Logger(Node):
 
         """
         self.robot_state.to_csv(
+            path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
+            sep=' ',
+            index=False
+        )
+
+        self.kinetic_model_state.to_csv(
+            path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
+            sep=' ',
+            index=False
+        )
+
+        self.nn_model_state.to_csv(
             path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
             sep=' ',
             index=False
