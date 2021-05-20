@@ -59,6 +59,7 @@ def build_data_from_T_graph(
             np.array(control_seq),
         )
 
+    ax.grid()
     ax.legend(legend)
 
 def build_XY_graph(
