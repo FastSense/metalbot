@@ -52,7 +52,6 @@ class Logger(Node):
         Gets node parameters
         """
         self.output_path = self.get_parameter('output_path').get_parameter_value().string_value
-        # self.output_folder = self.get_parameter('output_folder').get_parameter_value().string_value
         self.control_topic = self.get_parameter('control_topic').get_parameter_value().string_value
         self.tf_topic = self.get_parameter('tf_topic').get_parameter_value().string_value
         self.parent_frame = self.get_parameter('parent_frame').get_parameter_value().string_value
