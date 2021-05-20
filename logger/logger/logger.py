@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
+import os
 import pandas as pd
 import numpy as np
 
@@ -45,18 +46,22 @@ class Logger(Node):
         self.declare_parameter('parent_frame', 'odom')
         self.declare_parameter('robot_frame', 'base_link')
         self.declare_parameter('kinetic_model_frame', 'model_link')
+        self.declare_parameter('nn_model_frame', 'nn_model_link')
 
     def get_parametes(self):
         """
         Gets node parameters
         """
         self.output_path = self.get_parameter('output_path').get_parameter_value().string_value
-        self.output_folder = self.get_parameter('output_folder').get_parameter_value().string_value
+        # self.output_folder = self.get_parameter('output_folder').get_parameter_value().string_value
         self.control_topic = self.get_parameter('control_topic').get_parameter_value().string_value
         self.tf_topic = self.get_parameter('tf_topic').get_parameter_value().string_value
         self.parent_frame = self.get_parameter('parent_frame').get_parameter_value().string_value
         self.robot_frame = self.get_parameter('robot_frame').get_parameter_value().string_value
         self.kinetic_model_frame = self.get_parameter('kinetic_model_frame').get_parameter_value().string_value
+        self.nn_model_frame = self.get_parameter('nn_model_frame').get_parameter_value().string_value
+
+        print("self.output_path = {}".format(self.output_path))
 
     def init_containers(self):
         """
@@ -143,7 +148,8 @@ class Logger(Node):
         w_y = rosbot_velocities.angular.y
         w_z = rosbot_velocities.angular.z # YAW velocity
 
-        self.robot_state.loc[len(self.robot_state)] = [x,y,z] + rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
+        last_row = len(self.robot_state)
+        self.robot_state.loc[last_row] = [x,y,z] + rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
 
     def control_callback(self, control):
         """
@@ -162,32 +168,33 @@ class Logger(Node):
         """
 
         """
+        os.makedirs(self.output_path)
         self.robot_state.to_csv(
-            path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
+            path_or_buf=os.path.join(self.output_path, "rosbot_state.csv"),
             sep=' ',
             index=False
         )
 
         self.kinetic_model_state.to_csv(
-            path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
+            path_or_buf=os.path.join(self.output_path, "kinematic_model_state.csv"),
             sep=' ',
             index=False
         )
 
         self.nn_model_state.to_csv(
-            path_or_buf="/home/user/ros2_ws/src/logger/test_state.csv",
+            path_or_buf=os.path.join(self.output_path, "nn_model_state.csv"),
             sep=' ',
             index=False
         )
 
         self.robot_control.to_csv(
-            path_or_buf="/home/user/ros2_ws/src/logger/test_control.csv",
+            path_or_buf= os.path.join(self.output_path,"control.csv"),
             sep=' ',
             index=False
         )
 
         pd.DataFrame(data=self.time, columns=['t']).to_csv(
-            path_or_buf="/home/user/ros2_ws/src/logger/test_time.csv",
+            path_or_buf= os.path.join(self.output_path, "time.csv"),
             sep=' ',
             index=False
         )
@@ -196,6 +203,9 @@ class Logger(Node):
         """
         
         """
+        self.control_sub
+        self.odom_sub
+
         build_general_graph_for_rosbot(
             robot_state_df=self.robot_state,
             control_df=self.robot_control,
