@@ -1,9 +1,9 @@
-from matplotlib import pyplot as plt
 import rclpy
 from rclpy.node import Node
 
 import os
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
