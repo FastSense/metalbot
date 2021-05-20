@@ -1,0 +1,17 @@
+.idea
+cmake-build*
+*.orig
+*.pyc
+venv
+.vscode/*
+*/.vscode/*
+*/*/.vscode/*
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+**/.history
+tests/report.txt
+.ipynb_checkpoints
+logger/output_data
