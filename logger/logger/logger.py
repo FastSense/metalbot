@@ -3,10 +3,8 @@ from rclpy.node import Node
 
 import os
 import pandas as pd
-import numpy as np
 
 from geometry_msgs.msg import Twist
-from tf2_msgs.msg import TFMessage
 from nav_msgs.msg import Odometry
 
 from logger.utils import euler_from_quaternion, convert_ros2_time_to_float
@@ -60,8 +58,6 @@ class Logger(Node):
         self.robot_frame = self.get_parameter('robot_frame').get_parameter_value().string_value
         self.kinetic_model_frame = self.get_parameter('kinetic_model_frame').get_parameter_value().string_value
         self.nn_model_frame = self.get_parameter('nn_model_frame').get_parameter_value().string_value
-
-        print("self.output_path = {}".format(self.output_path))
 
     def init_containers(self):
         """
@@ -168,7 +164,8 @@ class Logger(Node):
         """
 
         """
-        os.makedirs(self.output_path)
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
         self.robot_state.to_csv(
             path_or_buf=os.path.join(self.output_path, "rosbot_state.csv"),
             sep=' ',
@@ -203,15 +200,14 @@ class Logger(Node):
         """
         
         """
-        self.control_sub
-        self.odom_sub
-
         build_general_graph_for_rosbot(
             robot_state_df=self.robot_state,
             control_df=self.robot_control,
             time_list=self.time
         )
         self.save_collected_data_to_csv()
+
+        self.get_logger().warn("Output path = {}".format(self.output_path))
 
 def main():
     """
