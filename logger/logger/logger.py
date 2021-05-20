@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import rclpy
 from rclpy.node import Node
 
@@ -83,7 +84,7 @@ class Logger(Node):
         )
         self.robot_control = pd.DataFrame(
             columns=[
-                'x', 'yaw'
+                'v_x', 'w_z'
             ]
         )
         self.time = list()
@@ -200,11 +201,12 @@ class Logger(Node):
         """
         
         """
-        build_general_graph_for_rosbot(
+        data_plots = build_general_graph_for_rosbot(
             robot_state_df=self.robot_state,
             control_df=self.robot_control,
             time_list=self.time
         )
+        plt.savefig('{}.{}'.format(self.output_path + 'general_graph', 'png'), fmt='png')
         self.save_collected_data_to_csv()
 
         self.get_logger().warn("Output path = {}".format(self.output_path))
