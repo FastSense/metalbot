@@ -215,7 +215,6 @@ def main():
 
     """
     rclpy.init()
-
     logger = Logger()
 
     try:
