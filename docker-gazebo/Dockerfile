@@ -137,6 +137,31 @@ RUN apt-get update && \
 # <<<<<<<<<<<< Utils
 
 
+# >>>>>>>>>>>> OpenVINO
+RUN wget https://storage.openvinotoolkit.org/repositories/openvino/packages/2021.3/l_openvino_toolkit_runtime_ubuntu20_p_2021.3.394.tgz
+# <<<<<<<<<<<< OpenVINO
+
+
+# >>>>>>>>>>>> OAK-D camera utils
+#RUN apt-get install libopencv-dev
+
+#RUN wget -qO- https://raw.githubusercontent.com/luxonis/depthai-ros/foxy-devel/install_dependencies.sh | bash
+
+# RUN pip3 install --extra-index-url https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/ depthai
+#RUN pip3 install depthai
+
+#RUN pip3 install -U pip
+#RUN git clone https://github.com/luxonis/depthai-python
+#RUN cd depthai-python && pip3 install -r requirements.txt
+#RUN pip3 install ./depthai-python
+#RUN cd depthai-python && pip3 install .
+
+#RUN git clone https://github.com/luxonis/depthai
+#RUN cd depthai && python3 install_requirements.py
+
+# <<<<<<<<<<<< OAK-D camera utils
+
+
 
 # >>>>>>>>>>>> Create User
 ENV ROSUSER="user"
@@ -162,4 +187,12 @@ RUN ./ros-setup.sh
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 # <<<<<<<<<<<< Scripts
+
+
+# >>>>>>>>>>>> OAK-D camera utils
+RUN git clone https://github.com/luxonis/depthai
+RUN cd depthai && pip3 install -r requirements.txt
+
+RUN git clone https://github.com/luxonis/depthai-python
+# <<<<<<<<<<<< OAK-D camera utils
 
