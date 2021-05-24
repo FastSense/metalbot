@@ -7,7 +7,7 @@ docker run -it -d --privileged --net=host \
     --name $container_name \
     --runtime=nvidia \
     -v /dev/bus/usb:/dev/bus/usb \
-    --device-cgroup-rule='c 189:* rmw' \    
+    --device-cgroup-rule='c 189:* rmw' \
     --gpus=all \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
     -v $(pwd)/..:/home/user/ros2_ws/src:rw \

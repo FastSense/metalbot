@@ -7,7 +7,7 @@ docker run -it -d --privileged --net=host \
     -v /dev/bus/usb:/dev/bus/usb \
     --device-cgroup-rule='c 189:* rmw' \
     --name $container_name \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
     -v $(pwd)/..:/home/user/ros2_ws/src:rw \
     -v /home/${USER}/data:/home/user/data:ro \
     -e DISPLAY=$DISPLAY \

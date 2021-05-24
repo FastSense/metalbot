@@ -129,6 +129,7 @@ RUN pip3 install --upgrade pip && \
 # >>>>>>>>>>>> Utils 
 RUN apt-get update && \
     apt-get install -y \
+        sudo \
         tmux \
         ranger \
         wget \
@@ -137,28 +138,27 @@ RUN apt-get update && \
 # <<<<<<<<<<<< Utils
 
 
-# >>>>>>>>>>>> OpenVINO
-RUN wget https://storage.openvinotoolkit.org/repositories/openvino/packages/2021.3/l_openvino_toolkit_runtime_ubuntu20_p_2021.3.394.tgz
-# <<<<<<<<<<<< OpenVINO
-
-
 # >>>>>>>>>>>> OAK-D camera utils
-#RUN apt-get install libopencv-dev
+RUN apt-get update && apt-get install -y wget build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
+RUN wget http://docs.luxonis.com/_static/install_dependencies.sh && chmod +x install_dependencies.sh && ./install_dependencies.sh
+RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.tar.bz2
+RUN tar xf libusb-1.0.24.tar.bz2
+RUN cd libusb-1.0.24 && \
+    ./configure --disable-udev && \
+    make -j && make install
 
-#RUN wget -qO- https://raw.githubusercontent.com/luxonis/depthai-ros/foxy-devel/install_dependencies.sh | bash
 
-# RUN pip3 install --extra-index-url https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/ depthai
-#RUN pip3 install depthai
+RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
 
-#RUN pip3 install -U pip
-#RUN git clone https://github.com/luxonis/depthai-python
-#RUN cd depthai-python && pip3 install -r requirements.txt
-#RUN pip3 install ./depthai-python
-#RUN cd depthai-python && pip3 install .
-
-#RUN git clone https://github.com/luxonis/depthai
-#RUN cd depthai && python3 install_requirements.py
-
+RUN git clone https://github.com/luxonis/depthai-python /depthai-python
+RUN mkdir -p /depthai-python/build
+RUN cd /depthai-python && \
+    git clone https://github.com/luxonis/depthai-core && \
+    git submodule update --init --recursive && \
+    cd build && \
+    cmake .. && \
+    make -j
+ENV PYTHONPATH=/depthai-python/build
 # <<<<<<<<<<<< OAK-D camera utils
 
 
@@ -191,8 +191,6 @@ RUN rm -rf scripts
 
 # >>>>>>>>>>>> OAK-D camera utils
 RUN git clone https://github.com/luxonis/depthai
-RUN cd depthai && pip3 install -r requirements.txt
-
 RUN git clone https://github.com/luxonis/depthai-python
 # <<<<<<<<<<<< OAK-D camera utils
 
