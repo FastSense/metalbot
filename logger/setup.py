@@ -23,7 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        'logger = logger.logger:main'
+        'logger = logger.logger:main', 
+        'create_graphs = logger.create_graphs:main',
         ],
     },
 )

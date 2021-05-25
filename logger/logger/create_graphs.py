@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import argparse
+from logger.utils import parse_logger_output_data
 
-# TODO
-# https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html
 """
 Plot tools for rosbot
 """
@@ -107,29 +108,23 @@ def build_XY_graph(
     ax.legend(legend)
   
 
-def build_general_graph_for_rosbot(
+def build_group_of_graphs(    
     robot_state_df,
     control_df=None,
     time_list=None,     
     k_model_state_df=None,
-    nn_model_state_df=None
+    nn_model_state_df=None,
+    keys=list()
 ):
     """
-    Args:
-        :robot_state_df: (pandas.DataFrame or dict)
-        :k_model_state_df: (pandas.DataFrame or dict)
-        :nn_model_state_df: (pandas.DataFrame or dict)
-        :control_df: (pandas.DataFrame or dict)
-        :time_seq: (list)
     """
-    columns = robot_state_df.columns
-    number_of_keys = len(columns)
-    fig, axs = plt.subplots(number_of_keys+1, figsize=(9,30))
-    for i in range(number_of_keys):
-        key = columns[i]
+    fig, axs = plt.subplots(len(keys))
+    
+    for i in range(len(keys)):
+        key = keys[i]
         k_model_state_seq_= k_model_state_df[key] if k_model_state_df is not None else None
         nn_model_state_seq_= nn_model_state_df[key] if nn_model_state_df is not None else None
-        control_seq_ = control_df[key] if key in ['v_x', 'w_z'] else None
+        control_seq_ = control_df[key] if control_df is not None and key in control_df.columns else None
         
         build_data_from_T_graph(
             axs[i],
@@ -139,27 +134,148 @@ def build_general_graph_for_rosbot(
             nn_model_state_seq_,
             control_seq_
         )
+    return fig
 
+def build_general_graph_for_rosbot(
+    robot_state_df,
+    control_df=None,
+    time_list=None,     
+    k_model_state_df=None,
+    nn_model_state_df=None,
+    save_to_png=True,
+    path=None
+):
+    """
+    Args:
+        :robot_state_df: (pandas.DataFrame or dict)
+        :k_model_state_df: (pandas.DataFrame or dict)
+        :nn_model_state_df: (pandas.DataFrame or dict)
+        :control_df: (pandas.DataFrame or dict)
+        :time_list: (list)
+    """
+
+    plt.grid(True)
+    plt.legend(loc='best') 
+
+    plt.subplots_adjust(
+        left=0.15,
+        bottom=0.15, 
+        right=0.8, 
+        top=0.8, 
+        wspace=0.5, 
+        hspace=0.5
+    )
+
+    fig_x_y_z = build_group_of_graphs(
+        robot_state_df,
+        control_df=control_df,
+        time_list=time_list,     
+        k_model_state_df=k_model_state_df,
+        nn_model_state_df=nn_model_state_df,
+        keys=['x', 'y', 'z']
+    )
     
+    if save_to_png and path is not None:
+        plt.savefig('{}.{}'.format(path + 'X_Y_Z_graph', 'png'), fmt='png')
+
+    fig_angs = build_group_of_graphs(
+        robot_state_df,
+        control_df=control_df,
+        time_list=time_list,     
+        k_model_state_df=k_model_state_df,
+        nn_model_state_df=nn_model_state_df,
+        keys=['roll', 'pitch', 'yaw']
+    )
+    
+    if save_to_png and path is not None:
+        plt.savefig('{}.{}'.format(path + 'Angles_graph', 'png'), fmt='png')
+
+    fig_lin_vels = build_group_of_graphs(
+        robot_state_df,
+        control_df=control_df,
+        time_list=time_list,     
+        k_model_state_df=k_model_state_df,
+        nn_model_state_df=nn_model_state_df,
+        keys=['v_x', 'v_y', 'v_z']
+    )
+    if save_to_png and path is not None:
+        plt.savefig('{}.{}'.format(path + 'Linear_velocities_graph', 'png'), fmt='png')
+
+    fig_ang_vels = build_group_of_graphs(
+        robot_state_df,
+        control_df=control_df,
+        time_list=time_list,     
+        k_model_state_df=k_model_state_df,
+        nn_model_state_df=nn_model_state_df,
+        keys=['w_x', 'w_y', 'w_z']
+    )
+    if save_to_png and path is not None:
+        plt.savefig('{}.{}'.format(path + 'Angular_velocities_graph', 'png'), fmt='png')
+
+
+    fig_xy, ax = plt.subplots(1)
     build_XY_graph(
-        axs[-1],
+        ax,
         robot_state_df,
         k_model_state_df,
         nn_model_state_df,
     )
 
-    plt.subplots_adjust(
-        left=0.1,
-        bottom=0.1, 
-        right=0.9, 
-        top=0.9, 
-        wspace=0.4, 
-        hspace=0.6
+    if save_to_png and path is not None:
+        plt.savefig('{}.{}'.format(path + 'XY_graph', 'png'), fmt='png')
+
+    
+def main():
+    """
+
+    """
+    parser = argparse.ArgumentParser()
+    # first arg
+    parser.add_argument(
+        '-folder_path',
+        action='store',
+        dest='folder_path',
+        required=True,
+        help='absolute path to the folder with data.csv'
+    )
+    
+    # second arg
+    parser.add_argument(
+        '-output_folder',
+        action='store', 
+        dest='output_folder', 
+        required=False,
+        default=None, 
+        help="absolute path to the output folder"
+    )       
+
+    args = parser.parse_args()
+
+    data = parse_logger_output_data(args.folder_path)
+    rosbot_state_df, k_model_state_df, nn_model_state_df = data[:3]
+    control_df, time = data[3:]
+
+    k_model_state_df = None if len(k_model_state_df) < 2 else k_model_state_df
+    nn_model_state_df = None if len(nn_model_state_df) < 2 else nn_model_state_df
+
+    fig = build_general_graph_for_rosbot(
+        rosbot_state_df,
+        control_df=control_df,
+        time_list=list(time['t']),     
+        k_model_state_df=k_model_state_df,
+        nn_model_state_df=nn_model_state_df,
+        save_to_png=True,
+        path=args.output_folder
     )
 
-    plt.grid(True)
-    plt.legend(loc='best') 
-    # plt.show()
-    return fig
-    
+    # if args.output_folder is not None:
+    #     plt.savefig(
+    #         '{}'.format(args.output_folder + '/create_graphs.png'),
+    #         fmt='png'
+    #     )
+
+    plt.show()
+
+if __name__ == '__main__':
+    main()
 
