@@ -129,7 +129,6 @@ RUN pip3 install --upgrade pip && \
 # >>>>>>>>>>>> Utils 
 RUN apt-get update && \
     apt-get install -y \
-        sudo \
         tmux \
         ranger \
         wget \
