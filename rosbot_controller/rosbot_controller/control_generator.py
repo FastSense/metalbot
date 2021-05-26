@@ -23,6 +23,7 @@ class ControlGenerator(Node):
         self.curr_index = 0
         self.start = False
         self.timer = self.create_timer(self.dt, self.pub_control)
+        rclpy.get_default_context().on_shutdown(self.on_shutdown)
    
     def wait_for_subs(self):
         """
@@ -44,7 +45,6 @@ class ControlGenerator(Node):
         """
         self.get_logger().info("Start")
         self.wait_for_subs()
-        print("START!")
         if self.mode == 'periodic':
             self.v_seq, self.w_seq = self.generate_control_sequences()
         elif self.mode == "from_file":
@@ -54,6 +54,7 @@ class ControlGenerator(Node):
         self.w_seq = self.w_seq[:self.Tmax_it]
         # print(self.v_seq, self.w_seq )
         self.start = True
+        # print("START!")
 
     def init_parameters(self):
         """
@@ -147,9 +148,17 @@ class ControlGenerator(Node):
 
         return v_seq, w_seq
         
-    def generate_control_subsueqnces(self, v, period, acceleration, max, min, dt):   
+    def generate_control_subsueqnces(
+        self, 
+        v, 
+        period, 
+        acceleration, 
+        max, 
+        min, 
+        dt
+    ):   
         seq=list() 
-        k = 1 if acceleration > 0 else -1
+        k = -1 if acceleration < 0 else 1
         acceleration = abs(acceleration)
         for _ in range(period):
             v += acceleration * dt
@@ -177,16 +186,20 @@ class ControlGenerator(Node):
         if self.start:
             cmd_msg = Twist()
             if self.curr_index > self.Tmax_it-1:
-                print("STOP")
                 self.cmd_pub.publish(cmd_msg)
                 self.timer.destroy()
+                rclpy.try_shutdown()
             else:
-                print("GO GO GO")
-                print(self.curr_index)
                 cmd_msg.linear.x = self.v_seq[self.curr_index]
                 cmd_msg.angular.z = self.w_seq[self.curr_index]
                 self.curr_index += 1
                 self.cmd_pub.publish(cmd_msg)
+
+    def on_shutdown(self):
+        """
+        A function that is executed when a node shutdown.
+        """
+        print("OK!")
 
 
 

@@ -10,7 +10,7 @@ def generate_launch_description():
     defaut_num_of_subs = "1"
     defaut_control_topic = "/cmd_vel"
     defaut_pub_rate = "30"
-    defaut_Tmax = "20"
+    defaut_Tmax = "10"
     defaut_period_lin = "5"
     defaut_period_ang = "5"
     defaut_v_min = "0.0"
@@ -18,7 +18,7 @@ def generate_launch_description():
     defaut_w_min = "0.0"
     defaut_w_max = "2.5"
     defaut_a_lin = "0.25"
-    defaut_a_ang = "-0.25"
+    defaut_a_ang = "0.25"
     defaut_file_path = ""
 
     mode = launch.substitutions.LaunchConfiguration(
@@ -168,7 +168,7 @@ def generate_launch_description():
 
         launch.actions.DeclareLaunchArgument(
             'a_ang',
-            default_value=defaut_period_ang,
+            default_value=defaut_a_ang,
             description='Angular acceleration'
         ),
 
