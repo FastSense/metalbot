@@ -199,7 +199,7 @@ class ControlGenerator(Node):
         """
         A function that is executed when a node shutdown.
         """
-        print("OK!")
+        pass
 
 
 
@@ -213,8 +213,8 @@ def main():
     control_gen.run()
     rclpy.spin(control_gen)
  
-    control_gen.destroy_node()
-    rclpy.shutdown()
+    # control_gen.destroy_node()
+    # rclpy.shutdown()
 
 
 if __name__ == '__main__':

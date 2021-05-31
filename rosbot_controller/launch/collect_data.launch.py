@@ -114,7 +114,74 @@ def generate_launch_description():
 
     return LaunchDescription([
       
-        rosbot_sim_launch,
+        launch.actions.DeclareLaunchArgument(
+            'output_path',
+            default_value=output_dir,
+            description='Logger node output dir'
+        ),
+        
+        launch.actions.DeclareLaunchArgument(
+            'pub_rate',
+            default_value=defaut_pub_rate,
+            description='Control publication frequency'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'Tmax',
+            default_value=defaut_Tmax,
+            description='control generator running time'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'period_lin',
+            default_value=defaut_period_lin,
+            description='Linear velocity change period'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'period_ang',
+            default_value=defaut_period_ang,
+            description='Angular velocity change period'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'v_min',
+            default_value=defaut_v_min,
+            description='Minimum linear speed'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'v_max',
+            default_value=defaut_v_max,
+            description='Maximum linear speed'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'w_min',
+            default_value=defaut_w_min,
+            description='Minimum angular speed'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'w_max',
+            default_value=defaut_w_max,
+            description='Maximum angular speed'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'a_lin',
+            default_value=defaut_a_lin,
+            description='Linear acceleration'
+        ),
+
+        launch.actions.DeclareLaunchArgument(
+            'a_ang',
+            default_value=defaut_a_ang,
+            description='Angular acceleration'
+        ),
+
+
+        # rosbot_sim_launch,
         control_gen_launch,
         logger_launch
 
