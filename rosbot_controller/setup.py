@@ -12,7 +12,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name), glob('launch/*.launch.py'))
+        (os.path.join('share', package_name), glob('launch/*.launch.py')),
+        (os.path.join('share', package_name), glob('scripts/*.py'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -23,7 +24,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'control_gen = rosbot_controller.control_generator:main'
+            'control_gen = rosbot_controller.control_generator:main',
+            'spawn_rosbot = rosbot_controller.spawn_rosbot:main', 
+            'spawn_rosbot_test = rosbot_controller.spawn_rosbot_test:main', 
         ],
     },
 )
