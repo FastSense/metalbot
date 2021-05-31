@@ -1,11 +1,12 @@
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
-
 import rclpy
+
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from std_srvs.srv import Empty
 
 from logger.utils import euler_from_quaternion, convert_ros2_time_to_float
 from logger.create_graphs import build_general_graph_for_rosbot
@@ -49,7 +50,7 @@ class Logger(Node):
         self.first_tick = True
         self.init_time = None
         self.curr_control = list()
-
+        self.srv = self.create_service(Empty, 'shutdown_logger', self.shutdown_logger_callback)
         rclpy.get_default_context().on_shutdown(self.on_shutdown)
        
 
@@ -183,8 +184,8 @@ class Logger(Node):
         """
         Saves logged data in csv format
         """
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
+        # if not os.path.exists(self.output_path):
+        #     os.makedirs(self.output_path)
 
         self.robot_state.to_csv(
             path_or_buf=os.path.join(self.output_path, "rosbot_state.csv"),
@@ -215,12 +216,22 @@ class Logger(Node):
             sep=' ',
             index=False
         )
+    
+
+    def shutdown_logger_callback(self):
+        """
+        """
+        rclpy.try_shutdown()
 
     def on_shutdown(self):
         """
         A function that is executed when a node shutdown.
         Plots a graph of all collected data, saves it in csv format.
         """
+
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+            
         data_plots = build_general_graph_for_rosbot(
             robot_state_df=self.robot_state,
             control_df=self.robot_control,
@@ -228,7 +239,6 @@ class Logger(Node):
             save_to_png=True,
             path=self.output_path
         )
-        # plt.savefig('{}.{}'.format(self.output_path + 'general_graph', 'png'), fmt='png')
         self.save_collected_data_to_csv()
 
         self.get_logger().warn("Output path = {}".format(self.output_path))
