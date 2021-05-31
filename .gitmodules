@@ -7,3 +7,8 @@
 	path = rplidar_ros
 	branch = ros2
 	url = https://github.com/lukaszmitka/rplidar_ros.git
+	
+[submodule "teleop"]
+	path = teleop
+	branch = master
+	url = https://github.com/FastSense/teleop
