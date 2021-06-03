@@ -89,7 +89,12 @@ RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 RUN curl -sSL http://get.gazebosim.org | sh
 
 # Install gazebo ros2 packages
+RUN apt install -y ros-foxy-ros-core ros-foxy-geometry2
 RUN apt install -y ros-foxy-gazebo-ros-pkgs
+RUN apt install -y ros-foxy-navigation2
+RUN apt install -y ros-foxy-nav2-bringup
+RUN apt install -y ros-foxy-turtlebot3
+
 # <<<<<<<<<<<< Gazebo
 
 
