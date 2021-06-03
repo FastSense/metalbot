@@ -12,3 +12,8 @@
 	path = teleop
 	branch = master
 	url = https://github.com/FastSense/teleop
+
+[submodule "aws-robomaker-bookstore-world"]
+	path = aws-robomaker-bookstore-world
+    	branch = ros2
+	url = https://github.com/aws-robotics/aws-robomaker-bookstore-world.git
