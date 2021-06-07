@@ -114,6 +114,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install \
         rospkg \
         numpy \
+        pynput \
         pandas \
         numba \
         matplotlib \
