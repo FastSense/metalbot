@@ -60,18 +60,24 @@ class StateEstimation2D(Node):
         self.odom = msg
         filter.set_odometry(msg)
         self.x_opt, self.P_opt = filter.update_odom()
-        state_to_odometry(msg)
+        self.state_to_odometry(msg)
+        covariance_to_vector(msg)
 
     def state_to_odometry(self, msg):
         self.odom_filtered.header = msg.header
         self.odom_filtered.child_frame_id = msg.child_frame_id
-        self.odom_filtered.pose.position.x = 
-        self.odom_filtered.pose.position.y =
+        self.odom_filtered.pose.position.x = self.x_opt[0]
+        self.odom_filtered.pose.position.y = self.x_opt[1]
         self.odom_filtered.pose.position.z = msg.pose.position.z
-        self.odom_filtered.pose.orientation.x = msg.pose.orientation.x
-        self.odom_filtered.pose.orientation.y = msg.pose.orientation.y 
-        self.odom_filtered.pose.orientation.z = 
-        self.odom_filtered.pose.orientation.w = 
+        roll, pitch, yaw = euler_from_quaternion(msg.pose.position.orientation)
+        q = quaternion_from_euler(roll, pitch, self.x_opt[7])
+        self.odom_filtered.pose.orientation.x = q[0]
+        self.odom_filtered.pose.orientation.y = q[1]
+        self.odom_filtered.pose.orientation.z = q[2]
+        self.odom_filtered.pose.orientation.w = q[3]
+
+    def covariance_to_vector(self, msg):
+        cov_vector = np.zeros(36)
 
     def imu_callback(self, msg):
         self.imu = msg
