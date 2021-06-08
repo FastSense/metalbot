@@ -1,7 +1,7 @@
 import numpy as np
 
 class Measurement2D:
-    def __init__(self):
+    def __init__(self, R):
         self.z_odom = np.zeros(3)
         self.z_model = np.zeros(3)
         self.z_imu = 0
@@ -33,3 +33,12 @@ class Measurement2D:
     def get_jacobian_imu(self):
         self.J_imu[0, 7] = 1
         return self.J_imu
+    
+    def get_z_odom(self):
+        return self.z_odom
+    
+    def get_z_imu(self):
+        return self.z_imu
+
+    def get_z_model(self):
+        return self.z_model
