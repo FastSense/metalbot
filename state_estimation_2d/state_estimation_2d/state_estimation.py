@@ -20,9 +20,9 @@ import json
 from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import Point, Quaternion, Pose, PoseWithCovariance, PoseWithCovarianceStamped
 
-class StateEstimator(Node):
+class StateEstimation2D(Node):
     def __init__(self):
-        super().__init__('state_estimator')
+        super().__init__('state_estimation_2d')
 
         self.odom_sub = self.create_subscription(
             Odometry,
@@ -48,7 +48,7 @@ class StateEstimator(Node):
 
 def main():
     rclpy.init()
-    state_estimator = StateEstimator()
+    state_estimator = StateEstimation2D()
     try:
         rclpy.spin(state_estimator)
     except KeyboardInterrupt:

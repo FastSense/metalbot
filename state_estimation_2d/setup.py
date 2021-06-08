@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'state_estimation'
+package_name = 'state_estimation_2d'
 
 setup(
     name=package_name,
