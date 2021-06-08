@@ -157,6 +157,7 @@ RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
 RUN git clone https://github.com/luxonis/depthai-python /depthai-python
 RUN mkdir -p /depthai-python/build
 RUN cd /depthai-python && \
+    git checkout develop && \
     git clone https://github.com/luxonis/depthai-core && \
     git submodule update --init --recursive && \
     cd build && \

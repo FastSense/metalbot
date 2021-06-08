@@ -1,3 +1,4 @@
+import numpy as np
 import cv2
 import depthai as dai
 
@@ -14,50 +15,83 @@ class OAKDNode(Node):
 
         self.bridge = CvBridge()
 
+        # Camera geometry
+        left_to_right = tf2_ros.StaticTransformBroadcaster(self)
+        lr_tf = tf2_ros.TransformStamped()
+        lr_tf.header.frame_id = 'oakd_left'
+        lr_tf.child_frame_id = 'oakd_right'
+        lr_tf.transform.translation.x = 0.075
+        left_to_right.sendTransform(lr_tf)
+
         # Create publishers
         self.left_publisher = self.create_publisher(Image, 'left', 10)
         self.right_publisher = self.create_publisher(Image, 'right', 10)
+        self.left_rect_publisher = self.create_publisher(Image, 'left_rect', 10)
+        self.right_rect_publisher = self.create_publisher(Image, 'right_rect', 10)
         # self.rgb_publisher = self.create_publisher(Image, 'rgb', 10)
-        # self.imu_publisher = self.create_publisher(Imu, 'imu', 10)
+        self.imu_publisher = self.create_publisher(Imu, 'imu', 10)
 
         # Create timer
         self.create_timer(1e-3, self.check_queues)
+        self.min_delta = None
 
         # Start defining a pipeline
         pipeline = dai.Pipeline()
 
-        # Define a source - two mono (grayscale) cameras
+        # Left camera
         camLeft = pipeline.createMonoCamera()
         camLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
         camLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-
-        camRight = pipeline.createMonoCamera()
-        camRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
-        camRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-
-        # Depth calculation
-        depth = pipeline.createStereoDepth()
-
-        camLeft.out.link(depth.left)
-        camRight.out.link(depth.right)
-
-        # Left/right outputs
+        # Outputs
         xoutLeft = pipeline.createXLinkOut()
         xoutLeft.setStreamName('left')
         camLeft.out.link(xoutLeft.input)
 
+        # Right camera
+        camRight = pipeline.createMonoCamera()
+        camRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+        camRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+        # Outputs
         xoutRight = pipeline.createXLinkOut()
         xoutRight.setStreamName('right')
         camRight.out.link(xoutRight.input)
 
-        # Rectified outputs
+        # RGB Camera
+        # camRgb = pipeline.createColorCamera()
+        # camRgb.setBoardSocket(dai.CameraBoardSocket.RGB)
+        # # camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
+        # RGB output
+        # xoutRgb = pipeline.createXLinkOut()
+        # xoutRgb.setStreamName('rgb')
+        # camRgb.video.link(xoutRgb.input)
+
+        # Depth and rectificetion
+        depth = pipeline.createStereoDepth()
+        camLeft.out.link(depth.left)
+        camRight.out.link(depth.right)
+        # Left rectified outputs
         xoutLeft = pipeline.createXLinkOut()
         xoutLeft.setStreamName('left_rect')
         depth.rectifiedLeft.link(xoutLeft.input)
-
+        # Right rectified outputs
         xoutRight = pipeline.createXLinkOut()
         xoutRight.setStreamName('right_rect')
         depth.rectifiedRight.link(xoutRight.input)
+
+        # IMU
+        imu = pipeline.createIMU()
+        # enable ACCELEROMETER_RAW and GYROSCOPE_RAW at given rate
+        imu.enableIMUSensor([dai.IMUSensor.ACCELEROMETER_RAW, dai.IMUSensor.GYROSCOPE_RAW], 200)
+        # above this threshold packets will be sent in batch of X, if the host is not blocked and USB bandwidth is available
+        imu.setBatchReportThreshold(1)
+        # maximum number of IMU packets in a batch, if it's reached device will block sending until host can receive it
+        # if lower or equal to batchReportThreshold then the sending is always blocking on device
+        # useful to reduce device's CPU load  and number of lost packets, if CPU load is high on device side due to multiple nodes
+        imu.setMaxBatchReports(10)
+        # Output
+        xoutImu = pipeline.createXLinkOut()
+        xoutImu.setStreamName("imu")
+        imu.out.link(xoutImu.input)
 
         # Pipeline is defined, now we can connect to the device
         self.device = dai.Device(pipeline)
@@ -69,35 +103,112 @@ class OAKDNode(Node):
         self.q_right = self.device.getOutputQueue(name="right", maxSize=4, blocking=False)
         self.q_left_rect = self.device.getOutputQueue(name="left_rect", maxSize=4, blocking=False)
         self.q_right_rect = self.device.getOutputQueue(name="right_rect", maxSize=4, blocking=False)
+        # self.q_rgb = self.device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
+        self.q_imu = self.device.getOutputQueue(name="imu", maxSize=4, blocking=False)
+
+
+        # Covariance matrix
+        std_accel = 0.1
+        self.covariance_accel = list((np.eye(3) * std_accel**2).flatten())
+        std_rotvel = 0.1
+        self.covariance_rotvel = list((np.eye(3) * std_rotvel**2).flatten())
 
     def check_queues(self):
+        # ROS time stamp
+        ros_stamp = self.get_clock().now()
+
         # Instead of get (blocking), we use tryGet (nonblocking) which will return the available data or None otherwise
-        in_left = self.q_left.tryGet()
-        in_right = self.q_right.tryGet()
-        in_left_rect = self.q_left_rect.tryGet()
-        in_right_rect = self.q_right_rect.tryGet()
 
         # Left image
+        in_left = self.q_left.tryGet()
         if in_left is not None:
             frame = in_left.getCvFrame()
             msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
             msg.header.frame_id = 'oakd_left'
-            # ts = in_left.getTimestamp().total_seconds()
-            # msg.header.stamp.sec = int(ts)
-            # msg.header.stamp.nanosec = int((ts % 1) * 1e9)
-            msg.header.stamp = self.get_clock().now().to_msg()
+            ts = in_left.getTimestamp()
+            msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
             self.left_publisher.publish(msg)
-        
+
         # Right image
+        in_right = self.q_right.tryGet()
         if in_right is not None:
             frame = in_right.getCvFrame()
             msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
             msg.header.frame_id = 'oakd_right'
-            # ts = in_right.getTimestamp().total_seconds()
-            # msg.header.stamp.sec = int(ts)
-            # msg.header.stamp.nanosec = int((ts % 1) * 1e9)
-            msg.header.stamp = self.get_clock().now().to_msg()
+            ts = in_right.getTimestamp()
+            msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
             self.right_publisher.publish(msg)
+
+        # Left rectified image
+        in_left_rect = self.q_left_rect.tryGet()
+        if in_left_rect is not None:
+            frame = in_left_rect.getCvFrame()[:, ::-1]
+            msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+            msg.header.frame_id = 'oakd_left'
+            ts = in_left_rect.getTimestamp()
+            msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+            self.left_rect_publisher.publish(msg)
+
+        # Right rectified image
+        in_right_rect = self.q_right_rect.tryGet()
+        if in_right_rect is not None:
+            frame = in_right_rect.getCvFrame()[:, ::-1]
+            msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+            msg.header.frame_id = 'oakd_right'
+            ts = in_right_rect.getTimestamp()
+            msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+            self.right_rect_publisher.publish(msg)
+
+        # RGB image
+        # in_rgb = self.q_rgb.tryGet()
+        # if in_rgb is not None:
+        #     frame = in_rgb.getCvFrame()[:,:,::-1]
+        #     msg = self.bridge.cv2_to_imgmsg(frame, 'rgb8')
+        #     msg.header.frame_id = 'oakd_rgb'
+        #     ts = in_rgb.getTimestamp()
+        #     msg.header.stamp = self.get_time(ts)
+        #     self.rgb_publisher.publish(msg)
+
+        # IMU
+        in_imu = self.q_imu.tryGet()
+        if in_imu is not None:
+            imuPackets = in_imu.packets
+            for imuPacket in imuPackets:
+                # Get data
+                accelero_values = imuPacket.acceleroMeter
+                gyro_values = imuPacket.gyroscope
+                # accelero_ts = acceleroValues.timestamp.get()
+                gyro_ts = gyro_values.timestamp.get()
+                # Publish an IMU message
+                msg = Imu()
+                msg.header.stamp = self.get_corrected_time(gyro_ts, ros_stamp)
+                msg.header.frame_id = 'oakd_imu'
+                msg.angular_velocity.x = gyro_values.x
+                msg.angular_velocity.y = gyro_values.y
+                msg.angular_velocity.z = gyro_values.z
+                msg.angular_velocity_covariance = self.covariance_rotvel
+                msg.linear_acceleration.x = accelero_values.x
+                msg.linear_acceleration.y = accelero_values.y
+                msg.linear_acceleration.z = accelero_values.z
+                msg.linear_acceleration_covariance = self.covariance_accel
+                self.imu_publisher.publish(msg)
+
+    def get_corrected_time(self, oakd_timestamp, ros_stamp):
+        # Compute time delta
+        stamp_seconds = ros_stamp.nanoseconds * 1e-9
+        hw_seconds = oakd_timestamp.total_seconds()
+        # Current delta
+        delta = stamp_seconds - hw_seconds
+        # Minimun delta
+        self.min_delta = self.min_delta or delta
+        self.min_delta = min(self.min_delta, delta)
+        # assert abs(delta - self.min_delta) < 10
+        seconds = hw_seconds + self.min_delta
+        # Convert to message
+        msg = ros_stamp.to_msg()
+        msg.sec = int(seconds)
+        msg.nanosec = int((seconds % 1) * 1e9)
+        return msg
 
 
 def main(args=None):
