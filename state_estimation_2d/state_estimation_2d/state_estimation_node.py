@@ -43,7 +43,7 @@ class StateEstimation2D(Node):
         self.imu = Imu()
 
         self.dt = 0.01
-        self.filter = Filter2D()
+        self.filter = Filter2D(x_init = np.zeros(8), P_init = np.eye(8) * 500, R = np.eye(3), Q = np.eye(8))
         self.odom_filtered = Odometry()
         self.got_measurements = 0
 

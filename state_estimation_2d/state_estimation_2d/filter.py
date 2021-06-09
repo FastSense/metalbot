@@ -1,15 +1,14 @@
 import numpy as np
 from numpy.linalg import inv
 
-import Model2D
-import Measurement2D
-from . import model, measurement
+import model, measurement
 
 class Filter2D:
     def __init__(self, x_init, P_init, R, Q, dt = 0.1):
         self.z_odom = np.zeros(3)
         self.z_imu = np.zeros(1)
-        self.R = R
+        self.R_odom = np.eye(3)
+        self.R_imu = np.eye(1)
         self.Q = Q
         self.x_opt = x_init
         self.P_opt = P_init
@@ -65,22 +64,22 @@ class Filter2D:
         return self.x_opt, self.P_opt
 
     def update_odom(self, x_predict, P_predict):
-        J_h = measurements.get_jacobian_odom()   
+        J_h_odom = measurement.get_jacobian_odom()   
         # In our measurement model H is equivalent to odometry Jacobian
-        H = J_h    
+        H = J_h_odom    
         y = self.z_odom - H @ x_predict
-        G = J_h_odom @ P_predict @ J_h_odom.T + self.R
+        G = J_h_odom @ P_predict @ J_h_odom.T + self.R_odom
         K = P_predict @ J_h_odom.T @ inv(G)
         I = np.zeros(8)
-        self.P_opt = (I - K @ J_h_imu) @ P_predict
+        self.P_opt = (I - K @ J_h_odom) @ P_predict
         self.x_opt = x_predict + K @ y
 
     def update_imu(self, x_predict, P_predict):
         # z = self.measurements.get_z_imu()
-        J_h = measurements.get_jacobian_imu()   # H is equivalent to odometry Jacobian
-        H = J_h
+        J_h_imu = measurement.get_jacobian_imu()   # H is equivalent to odometry Jacobian
+        H = J_h_imu
         y = self.z_imu - H @ x_predict
-        G = J_h_imu @ P_predict @ J_h_imu.T + self.R
+        G = J_h_imu @ P_predict @ J_h_imu.T + self.R_imu
         K = P_predict @ J_h_imu.T @ inv(G)
         I = np.zeros(8)
         self.P_opt = (I - K @ J_h_imu) @ P_predict
