@@ -18,22 +18,6 @@ class Measurement2D:
     def set_z_imu(self, z):
         self.z_imu = z
     
-    def get_jacobian_odom(self):
-        self.J_odom[0, 2] = 1
-        self.J_odom[1, 3] = 1
-        self.J_odom[2, 7] = 1
-        return self.J_odom
-    
-    def get_jacobian_model(self):
-        self.J_model[0, 2] = 1
-        self.J_model[1, 3] = 1
-        self.J_model[2, 7] = 1
-        return self.J_model
-    
-    def get_jacobian_imu(self):
-        self.J_imu[0, 7] = 1
-        return self.J_imu
-    
     def get_z_odom(self):
         return self.z_odom
     
@@ -42,3 +26,15 @@ class Measurement2D:
 
     def get_z_model(self):
         return self.z_model
+
+def get_jacobian_odom():
+    J_odom = np.zeros((3, 8))
+    J_odom[0, 2] = 1
+    J_odom[1, 3] = 1
+    J_odom[2, 7] = 1
+    return J_odom
+
+def get_jacobian_imu():
+    J_imu = np.zeros((1, 8))
+    J_imu[0, 7] = 1
+    return J_imu

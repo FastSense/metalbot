@@ -3,63 +3,90 @@ from numpy.linalg import inv
 
 import Model2D
 import Measurement2D
+from . import model, measurement
 
 class Filter2D:
-    def __init__(self, P_init, R, Q, dt = 1):
+    def __init__(self, P_init, R, Q, dt = 0.1):
         self.model = Model2D(dt)
         self.measurements = Measurement2D()
-        self.P = P_init
+        self.z_odom = np.zeros(3)
+        self.z_imu = np.zeros(3)
         self.R = R
+        self.Q = Q
         self.x_predict = np.zeros(8)
         self.P_predict = np.zeros((8, 8))
         self.x_opt = np.zeros(8)
         self.P_opt = np.zeros((8, 8))
-        self.Q = Q
-        self.P_opt = np.zeros((8, 8))
+        self.dt = dt
 
-    def set_odometry(self):
-        self.measurements.set_z_odom()
+    def set_odometry(self, z):
+        self.z_odom = z
     
-    def set_imu(self):
-        self.measurements.set_z_imu()
+    def set_imu(self, z):
+        self.z_imu = z
 
     def predict(self):
-        self.x_predict = self.model.get_next_state()
-        J = self.model.transform_jacobian()
-        self.P_predict = J @ self.P_opt @ J.T + self.Q
+        x_predict = self.predict_next_state()
+        P_predict = self.predict_covariance()
+        return x_predict, P_predict
+        # self.x_predict = self.model.get_next_state()
+        # J = self.model.transform_jacobian()
+        # self.P_predict = J @ self.P_opt @ J.T + self.Q
 
-    def update_odom(self):
-        x = self.model.x_predict(self.x_opt)
-        z = self.measurements.get_z_odom()
-        H = self.measurements.get_jacobian_odom()   # H is equivalent to odometry Jacobian
-        y = z - H @ x
-        G = H @ self.P @ H.T + self.R
-        K = self.P @ H.T @ inv(G)
-        I = np.zeros(8)
-        self.P_opt = (I - K @ H) @ self.P
-        self.x_opt = x + K @ y
+    def predict_next_state():
+        # Get next state from model predictions using previous optimal state
+        #Take previous optimal state
+        pos = self.x_opt[0:2]
+        vel = self.x_opt[2:4]
+        acc = self.x_opt[4:6]
+        angle = self.x_opt[6]
+        w = self.x_opt[7]
+        #Calculate next state using model equations
+        next_pos = pos + vel * self.dt + 0.5 * acc * self.dt * self.dt
+        next_vel = vel + self.dt * acc
+        next_acc = acc
+        next_angle = angle + w * self.dt
+        next_w = w
+        #Fill the state vector
+        x_predict = np.zeros(8)
+        x_predict[0:2] = next_pos
+        x_predict[2:4] = next_vel
+        x_predict[4:6] = next_acc
+        x_predict[6] = next_angle
+        x_predict[7] = next_w
+        return x_predict
+    
+    def predict_covariance(self):
+        # Calculate covariance using model Jacobian, Q matrix and P_opt_prev
+        P_predict = np.zeros((8, 8))
+        J_f = model.transform_jacobian()
+        P_predict = J_f @ self.P_opt @ J_f.T + self.Q
+        return P_predict
+
+    def update(self, x_predict, P_predict):
+        self.update_odom(x_predict, P_predict)
+        self.update_imu(x_predict, P_predict)
         return self.x_opt, self.P_opt
 
-    def update_imu(self):
-        x = self.x_predict
-        z = self.measurements.get_z_imu()
-        H = self.measurements.get_jacobian_imu()   # H is equivalent to odometry Jacobian
-        y = z - H @ x
-        G = H @ self.P @ H.T + self.R
-        K = self.P @ H.T @ inv(G)
+    def update_odom(self, x_predict, P_predict):
+        # z = self.measurements.get_z_odom()
+        J_h = self.measurements.get_jacobian_odom()   
+        # In our measurement model H is equivalent to odometry Jacobian
+        H = J_h    
+        y = self.z_odom - H @ x_predict
+        G = J_h_odom @ P_predict @ J_h_odom.T + self.R
+        K = P_predict @ J_h_odom.T @ inv(G)
         I = np.zeros(8)
-        self.P_opt = (I - K @ H) @ self.P
-        self.x_opt = x + K @ y
-        return self.x_opt, self.P_opt
+        self.P_opt = (I - K @ J_h_imu) @ P_predict
+        self.x_opt = x_predict + K @ y
 
-    def update_model(self):
-        x = self.x_predict
-        z = self.measurements.get_z_model()
-        H = self.measurements.get_jacobian_model()   # H is equivalent to odometry Jacobian
-        y = z - H @ x
-        G = H @ self.P @ H.T + self.R
-        K = self.P @ H.T @ inv(G)
+    def update_imu(self, x_predict, P_predict):
+        # z = self.measurements.get_z_imu()
+        J_h = self.measurements.get_jacobian_imu()   # H is equivalent to odometry Jacobian
+        H = 
+        y = self.z_imu - H @ x_predict
+        G = J_h_imu @ P_predict @ J_h_imu.T + self.R
+        K = P_predict @ J_h_imu.T @ inv(G)
         I = np.zeros(8)
-        self.P_opt = (I - K @ H) @ self.P
-        self.x_opt = x + K @ y
-        return self.x_opt, self.P_opt
+        self.P_opt = (I - K @ J_h_imu) @ P_predict
+        self.x_opt = x_predict + K @ y

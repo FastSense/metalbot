@@ -44,26 +44,26 @@ class StateEstimation2D(Node):
 
         self.dt = 0.01
         self.filter = Filter2D()
-        self.x_opt = np.zeros(8)
-        self.P_opt = np.zeros((8, 8))
         self.odom_filtered = Odometry()
 
-        self.create_timer(0.2, self.timer_callback)
         self.predict_timer = self.create_timer(
             self.dt,
-            self.predict_callback
+            self.update
         )
 
-        self.pose_pub = self.create_publisher(Odometry, '/pose_filtered', 10)
+        self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
         
     def odometry_callback(self, msg):
         self.odom = msg
-        filter.set_odometry(msg)
-        self.x_opt, self.P_opt = filter.update_odom()
-        self.state_to_odometry(msg)
-        covariance_to_vector(msg)
+        z_odom = self.odometry_to_vector(msg)
+        self.filter.set_odometry(z_odom)
+        # self.odom = msg
+        # filter.set_odometry(msg)
+        # self.x_opt, self.P_opt = filter.update_odom()
+        # self.state_to_odometry(msg)
+        # covariance_to_vector(msg)
 
-    def state_to_odometry(self, msg):
+    def state_to_odometry(self, x, P):
         self.odom_filtered.header = msg.header
         self.odom_filtered.child_frame_id = msg.child_frame_id
         self.odom_filtered.pose.position.x = self.x_opt[0]
@@ -81,15 +81,22 @@ class StateEstimation2D(Node):
 
     def imu_callback(self, msg):
         self.imu = msg
-        filter.set_imu(msg)
-        self.x_opt, self.P_opt = filter.update_imu()
+        z_imu = self.imu_to_vector(msg)
+        self.filter.set_imu(z_imu)
+        # self.imu = msg
+        # filter.set_imu(msg)
+        # self.x_opt, self.P_opt = filter.update_imu()
 
-    def predict_callback(self):
-        filter.predict()
+    def update_callback(self):
+        x_predict, P_predict = self.filter.predict()
+        x_opt, P_opt = self.filter.update(x_predict, P_predict)
+        self.state_to_odometry(x_opt, P_opt)
+        self.pose_pub.publish(self.odom_filtered)
 
-    def model_measurements(self, vec):
-        filter.set_z_model(vec)
-        self.x_opt, self.P_opt = filter.update_model()
+
+    # def model_measurements(self, vec):
+    #     filter.set_z_model(vec)
+    #     self.x_opt, self.P_opt = filter.update_model()
 
 
 
