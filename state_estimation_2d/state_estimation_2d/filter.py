@@ -6,15 +6,13 @@ import Measurement2D
 from . import model, measurement
 
 class Filter2D:
-    def __init__(self, P_init, R, Q, dt = 0.1):
+    def __init__(self, x_init, P_init, R, Q, dt = 0.1):
         self.z_odom = np.zeros(3)
         self.z_imu = np.zeros(1)
         self.R = R
         self.Q = Q
-        self.x_predict = np.zeros(8)
-        self.P_predict = np.zeros((8, 8))
-        self.x_opt = np.zeros(8)
-        self.P_opt = np.zeros((8, 8))
+        self.x_opt = x_init
+        self.P_opt = P_init
         self.dt = dt
 
     def set_odometry(self, z):
@@ -57,7 +55,7 @@ class Filter2D:
     def predict_covariance(self):
         # Calculate covariance using model Jacobian, Q matrix and P_opt_prev
         P_predict = np.zeros((8, 8))
-        J_f = model.transform_jacobian()
+        J_f = model.transform_jacobian(self.dt)
         P_predict = J_f @ self.P_opt @ J_f.T + self.Q
         return P_predict
 
@@ -67,8 +65,7 @@ class Filter2D:
         return self.x_opt, self.P_opt
 
     def update_odom(self, x_predict, P_predict):
-        # z = self.measurements.get_z_odom()
-        J_h = self.measurements.get_jacobian_odom()   
+        J_h = measurements.get_jacobian_odom()   
         # In our measurement model H is equivalent to odometry Jacobian
         H = J_h    
         y = self.z_odom - H @ x_predict
@@ -80,8 +77,8 @@ class Filter2D:
 
     def update_imu(self, x_predict, P_predict):
         # z = self.measurements.get_z_imu()
-        J_h = self.measurements.get_jacobian_imu()   # H is equivalent to odometry Jacobian
-        H = 
+        J_h = measurements.get_jacobian_imu()   # H is equivalent to odometry Jacobian
+        H = J_h
         y = self.z_imu - H @ x_predict
         G = J_h_imu @ P_predict @ J_h_imu.T + self.R
         K = P_predict @ J_h_imu.T @ inv(G)

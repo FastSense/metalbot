@@ -55,6 +55,7 @@ class StateEstimation2D(Node):
         self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
         
     def odometry_callback(self, msg):
+        self.odom = msg
         z_odom = self.odometry_to_vector(msg)
         self.filter.set_odometry(z_odom)
         self.got_measurements = 1
@@ -70,22 +71,6 @@ class StateEstimation2D(Node):
         z_odom[1] = odom.twist.twist.linear.y
         z_odom[2] = odom.twist.twist.angular.z
         return z_odom
-
-    def state_to_odometry(self, x, P):
-        self.odom_filtered.header = msg.header
-        self.odom_filtered.child_frame_id = msg.child_frame_id
-        self.odom_filtered.pose.position.x = self.x_opt[0]
-        self.odom_filtered.pose.position.y = self.x_opt[1]
-        self.odom_filtered.pose.position.z = msg.pose.position.z
-        roll, pitch, yaw = euler_from_quaternion(msg.pose.position.orientation)
-        q = quaternion_from_euler(roll, pitch, self.x_opt[7])
-        self.odom_filtered.pose.orientation.x = q[0]
-        self.odom_filtered.pose.orientation.y = q[1]
-        self.odom_filtered.pose.orientation.z = q[2]
-        self.odom_filtered.pose.orientation.w = q[3]
-
-    def covariance_to_vector(self, msg):
-        cov_vector = np.zeros(36)
 
     def imu_callback(self, msg):
         self.imu = msg
@@ -108,10 +93,52 @@ class StateEstimation2D(Node):
             self.state_to_odometry(x_opt, P_opt)
             self.pose_pub.publish(self.odom_filtered)
 
+    def state_to_odometry(self, x, P):
+        self.odom_filtered.header = self.odom.header
+        self.odom_filtered.child_frame_id = self.odom.child_frame_id
+        self.odom_filtered.pose.position.x = x[0]
+        self.odom_filtered.pose.position.y = x[1]
+        self.odom_filtered.pose.position.z = self.odom.pose.position.z
+        roll, pitch, yaw = euler_from_quaternion(msg.pose.position.orientation)
+        q = quaternion_from_euler(roll, pitch, x[6])
+        self.odom_filtered.pose.orientation.x = q[0]
+        self.odom_filtered.pose.orientation.y = q[1]
+        self.odom_filtered.pose.orientation.z = q[2]
+        self.odom_filtered.pose.orientation.w = q[3]
+        self.odom_filtered.twist.twist.linear.x = x[2]
+        self.odom_filtered.twist.twist.linear.y = x[3]
+        self.odom_filtered.twist.twist.linear.z = self.odom.twist.twist.linear.z
+        self.odom_filtered.twist.twist.angular.x = self.odom.twist.twist.angular.x
+        self.odom_filtered.twist.twist.angular.y = self.odom.twist.twist.angular.y
+        self.odom_filtered.twist.twist.angular.z = x[7]
+        self.odom_filtered.pose.covariance = self.pose_covariance_to_vector(P)
+        self.odom_filtered.twist.covariance = self.twist_covariance_to_vector(P)
 
-    # def model_measurements(self, vec):
-    #     filter.set_z_model(vec)
-    #     self.x_opt, self.P_opt = filter.update_model()
+    def pose_covariance_to_vector(self, P):
+        cov_vector = self.odom.pose.covariance
+        cov_vector[0] = P[0,0]
+        cov_vector[1] = P[0,1]
+        cov_vector[5] = P[0,6]
+        cov_vector[6] = P[1,0]
+        cov_vector[7] = P[1,1]
+        cov_vector[11] = P[1,6]
+        cov_vector[30] = P[6,0]
+        cov_vector[31] = P[6,1]
+        cov_vector[35] = P[6,6]
+        return cov_vector
+    
+    def twist_covariance_to_vector(self, P):
+        cov_vector = self.odom.twist.covariance
+        cov_vector[0] = P[2,2]
+        cov_vector[1] = P[2,3]
+        cov_vector[5] = P[2,7]
+        cov_vector[6] = P[3,2]
+        cov_vector[7] = P[3,3]
+        cov_vector[11] = P[3,7]
+        cov_vector[30] = P[7,2]
+        cov_vector[31] = P[7,3]
+        cov_vector[35] = P[7,7]
+        return cov_vector
 
 
 
