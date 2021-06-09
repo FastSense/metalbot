@@ -45,6 +45,7 @@ class StateEstimation2D(Node):
         self.dt = 0.01
         self.filter = Filter2D()
         self.odom_filtered = Odometry()
+        self.got_measurements = 0
 
         self.predict_timer = self.create_timer(
             self.dt,
@@ -54,14 +55,21 @@ class StateEstimation2D(Node):
         self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
         
     def odometry_callback(self, msg):
-        self.odom = msg
         z_odom = self.odometry_to_vector(msg)
         self.filter.set_odometry(z_odom)
+        self.got_measurements = 1
         # self.odom = msg
         # filter.set_odometry(msg)
         # self.x_opt, self.P_opt = filter.update_odom()
         # self.state_to_odometry(msg)
         # covariance_to_vector(msg)
+
+    def odometry_to_vector(self, odom):
+        z_odom = np.zeros(3)
+        z_odom[0] = odom.twist.twist.linear.x
+        z_odom[1] = odom.twist.twist.linear.y
+        z_odom[2] = odom.twist.twist.angular.z
+        return z_odom
 
     def state_to_odometry(self, x, P):
         self.odom_filtered.header = msg.header
@@ -83,15 +91,22 @@ class StateEstimation2D(Node):
         self.imu = msg
         z_imu = self.imu_to_vector(msg)
         self.filter.set_imu(z_imu)
+        self.got_measurements = 1
         # self.imu = msg
         # filter.set_imu(msg)
         # self.x_opt, self.P_opt = filter.update_imu()
+    
+    def imu_to_vector(self, imu):
+        z_imu = np.zeros(1)
+        z_imu[0] = imu.angular_velocity.z
+        return z_imu
 
     def update_callback(self):
-        x_predict, P_predict = self.filter.predict()
-        x_opt, P_opt = self.filter.update(x_predict, P_predict)
-        self.state_to_odometry(x_opt, P_opt)
-        self.pose_pub.publish(self.odom_filtered)
+        if self.got_measurements:
+            x_predict, P_predict = self.filter.predict()
+            x_opt, P_opt = self.filter.update(x_predict, P_predict)
+            self.state_to_odometry(x_opt, P_opt)
+            self.pose_pub.publish(self.odom_filtered)
 
 
     # def model_measurements(self, vec):

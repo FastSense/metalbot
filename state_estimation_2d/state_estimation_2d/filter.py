@@ -7,10 +7,8 @@ from . import model, measurement
 
 class Filter2D:
     def __init__(self, P_init, R, Q, dt = 0.1):
-        self.model = Model2D(dt)
-        self.measurements = Measurement2D()
         self.z_odom = np.zeros(3)
-        self.z_imu = np.zeros(3)
+        self.z_imu = np.zeros(1)
         self.R = R
         self.Q = Q
         self.x_predict = np.zeros(8)
