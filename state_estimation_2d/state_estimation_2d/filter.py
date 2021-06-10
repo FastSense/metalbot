@@ -4,11 +4,11 @@ from numpy.linalg import inv
 import model, measurement
 
 class Filter2D:
-    def __init__(self, x_init, P_init, R, Q, dt = 0.1):
-        self.z_odom = np.zeros(3)
+    def __init__(self, x_init, P_init, R_odom, R_imu, Q, dt = 0.1):
+        self.z_odom = np.zeros(6)
         self.z_imu = np.zeros(1)
-        self.R_odom = np.eye(3)
-        self.R_imu = np.eye(1)
+        self.R_odom = R_odom
+        self.R_imu = R_imu
         self.Q = Q
         self.x_opt = x_init
         self.P_opt = P_init
@@ -28,7 +28,7 @@ class Filter2D:
         # J = self.model.transform_jacobian()
         # self.P_predict = J @ self.P_opt @ J.T + self.Q
 
-    def predict_next_state():
+    def predict_next_state(self):
         # Get next state from model predictions using previous optimal state
         #Take previous optimal state
         pos = self.x_opt[0:2]
@@ -60,7 +60,8 @@ class Filter2D:
 
     def update(self, x_predict, P_predict):
         self.update_odom(x_predict, P_predict)
-        self.update_imu(x_predict, P_predict)
+        #self.update_imu(x_predict, P_predict)
+        print(self.x_opt)
         return self.x_opt, self.P_opt
 
     def update_odom(self, x_predict, P_predict):

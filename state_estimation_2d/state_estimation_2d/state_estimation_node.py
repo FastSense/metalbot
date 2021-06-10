@@ -17,13 +17,18 @@ from nav_msgs.msg import Odometry
 import message_filters
 import numpy as np
 import json
+import tf2_py as tf2
+import tf2_ros
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import Point, Quaternion, Pose, PoseWithCovariance, PoseWithCovarianceStamped
+import scipy
+from filterpy.common import Q_discrete_white_noise
 
-import Model2D
-import Measurement2D
-import Filter2D
-from . import geometry
+
+import filter
+import geometry
 
 class StateEstimation2D(Node):
     def __init__(self):
@@ -42,8 +47,25 @@ class StateEstimation2D(Node):
         self.odom = Odometry()
         self.imu = Imu()
 
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
         self.dt = 0.01
-        self.filter = Filter2D(x_init = np.zeros(8), P_init = np.eye(8) * 500, R = np.eye(3), Q = np.eye(8))
+        self.R_odom = np.array([[0.00001, 0, 0, 0, 0, 0],
+                                [0, 0.00001, 0, 0, 0, 0],
+                                [0, 0, 0.00001, 0, 0, 0],
+                                [0, 0, 0, 0.00001, 0, 0],
+                                [0, 0, 0, 0, 0.001, 0],
+                                [0, 0, 0, 0, 0, 0.001]])
+        self.R_imu = np.array([0.001])
+        Q_rot = np.array([
+            [0.333 * self.dt**3, -0.5 * self.dt**2],
+            [ -0.5 * self.dt**2,           self.dt],
+        ]) * 0.001**2
+        self.Q = scipy.linalg.block_diag(
+            Q_discrete_white_noise(dim=3, dt=self.dt, var=0.00001, block_size=2),
+            Q_rot,
+        )
+        self.filter = filter.Filter2D(x_init = np.zeros(8), P_init = np.eye(8) * 0.01, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
         self.odom_filtered = Odometry()
         self.got_measurements = 0
 
@@ -66,14 +88,21 @@ class StateEstimation2D(Node):
         # covariance_to_vector(msg)
 
     def odometry_to_vector(self, odom):
-        z_odom = np.zeros(3)
-        z_odom[0] = odom.twist.twist.linear.x
-        z_odom[1] = odom.twist.twist.linear.y
-        z_odom[2] = odom.twist.twist.angular.z
+        z_odom = np.zeros(6)
+        z_odom[0] = odom.pose.pose.position.x
+        z_odom[1] = odom.pose.pose.position.y
+        z_odom[2] = odom.twist.twist.linear.x
+        z_odom[3] = odom.twist.twist.linear.y
+        z_odom[4] = odom.pose.pose.orientation.z
+        z_odom[5] = odom.twist.twist.angular.z
+        print(z_odom[3])
         return z_odom
 
     def imu_callback(self, msg):
         self.imu = msg
+        # tf = self.tf_buffer.lookup_transform("imu", "odom", Time(seconds=0))
+        # translation = tf.transform.translation
+        # rotation = tf.transform.rotation
         z_imu = self.imu_to_vector(msg)
         self.filter.set_imu(z_imu)
         self.got_measurements = 1
@@ -86,7 +115,7 @@ class StateEstimation2D(Node):
         z_imu[0] = imu.angular_velocity.z
         return z_imu
 
-    def update_callback(self):
+    def update(self):
         if self.got_measurements:
             x_predict, P_predict = self.filter.predict()
             x_opt, P_opt = self.filter.update(x_predict, P_predict)
@@ -96,15 +125,15 @@ class StateEstimation2D(Node):
     def state_to_odometry(self, x, P):
         self.odom_filtered.header = self.odom.header
         self.odom_filtered.child_frame_id = self.odom.child_frame_id
-        self.odom_filtered.pose.position.x = x[0]
-        self.odom_filtered.pose.position.y = x[1]
-        self.odom_filtered.pose.position.z = self.odom.pose.position.z
-        roll, pitch, yaw = euler_from_quaternion(msg.pose.position.orientation)
-        q = quaternion_from_euler(roll, pitch, x[6])
-        self.odom_filtered.pose.orientation.x = q[0]
-        self.odom_filtered.pose.orientation.y = q[1]
-        self.odom_filtered.pose.orientation.z = q[2]
-        self.odom_filtered.pose.orientation.w = q[3]
+        self.odom_filtered.pose.pose.position.x = x[0]
+        self.odom_filtered.pose.pose.position.y = x[1]
+        self.odom_filtered.pose.pose.position.z = self.odom.pose.pose.position.z
+        roll, pitch, yaw = geometry.euler_from_quaternion(self.odom.pose.pose.orientation)
+        q = geometry.quaternion_from_euler(roll, pitch, x[6])
+        self.odom_filtered.pose.pose.orientation.x = q[0]
+        self.odom_filtered.pose.pose.orientation.y = q[1]
+        self.odom_filtered.pose.pose.orientation.z = q[2]
+        self.odom_filtered.pose.pose.orientation.w = q[3]
         self.odom_filtered.twist.twist.linear.x = x[2]
         self.odom_filtered.twist.twist.linear.y = x[3]
         self.odom_filtered.twist.twist.linear.z = self.odom.twist.twist.linear.z
