@@ -95,7 +95,6 @@ class StateEstimation2D(Node):
         z_odom[3] = odom.twist.twist.linear.y
         z_odom[4] = odom.pose.pose.orientation.z
         z_odom[5] = odom.twist.twist.angular.z
-        print(z_odom[3])
         return z_odom
 
     def imu_callback(self, msg):
