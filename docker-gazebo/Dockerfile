@@ -1,5 +1,6 @@
 FROM osrf/ros:foxy-desktop
 
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
 
 ##################################################################
 # ------------------------------ CUDA -------------------------- #
@@ -84,21 +85,6 @@ RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 
 
 
-# >>>>>>>>>>>> Gazebo
-# Install Gazebo
-RUN curl -sSL http://get.gazebosim.org | sh
-
-# Install gazebo ros2 packages
-RUN apt install -y ros-foxy-ros-core ros-foxy-geometry2
-RUN apt install -y ros-foxy-gazebo-ros-pkgs
-RUN apt install -y ros-foxy-navigation2
-RUN apt install -y ros-foxy-nav2-bringup
-RUN apt install -y ros-foxy-turtlebot3
-
-# <<<<<<<<<<<< Gazebo
-
-
-
 # >>>>>>>>>>>> Python packages
 RUN apt-get update && \
     apt-get install -y \
@@ -114,7 +100,6 @@ RUN pip3 install --upgrade pip && \
     pip3 install \
         rospkg \
         numpy \
-        pynput \
         pandas \
         numba \
         matplotlib \
@@ -123,13 +108,41 @@ RUN pip3 install --upgrade pip && \
         tqdm \
         yaml-1.3 \
         nnio \
-        onnxruntime-gpu
-
-RUN pip3 install --upgrade pip && \
-    pip3 install \
-	netifaces
+        onnxruntime-gpu \
+        pynput \
+        uvicorn \
+        vidgear \
+        starlette \
+        aiofiles \
+        aiohttp \
+        aiortc \
+		netifaces
 # <<<<<<<<<<<<< Python packages
 
+
+# >>>>>>>>>>>> Gazebo
+# Install Gazebo
+RUN curl -sSL http://get.gazebosim.org | sh
+
+# Install gazebo ros2 packages
+
+RUN apt install -y ros-foxy-gazebo-ros-pkgs
+RUN apt install -y ros-foxy-ros-core
+RUN apt install -y ros-foxy-navigation2
+RUN apt install -y ros-foxy-nav2-bringup
+RUN apt install -y ros-foxy-turtlebot3
+RUN apt install -y ros-foxy-geometry2
+
+# RUN apt-get update && \
+	#a pt-get upgrade && \
+	# apt-get install -y \
+	# ros-foxy-ros-core \
+	# ros-foxy-navigation2 \
+	# ros-foxy-nav2-bringup \
+	# ros-foxy-gazebo-ros-pkgs
+	# ros-foxy-turtlebot3 \
+	# ros-foxy-geometry2
+# <<<<<<<<<<<< Gazebo
 
 
 # >>>>>>>>>>>> Utils 
