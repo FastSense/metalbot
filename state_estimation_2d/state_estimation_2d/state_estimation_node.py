@@ -119,6 +119,7 @@ class StateEstimation2D(Node):
             x_predict, P_predict = self.filter.predict()
             x_opt, P_opt = self.filter.update(x_predict, P_predict)
             self.state_to_odometry(x_opt, P_opt)
+            print(x_opt)
             self.pose_pub.publish(self.odom_filtered)
 
     def state_to_odometry(self, x, P):

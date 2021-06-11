@@ -60,8 +60,7 @@ class Filter2D:
 
     def update(self, x_predict, P_predict):
         self.update_odom(x_predict, P_predict)
-        self.update_imu(self.x_opt, self.P_opt)
-        print(self.x_opt)
+        # self.update_imu(self.x_opt, self.P_opt)
         return self.x_opt, self.P_opt
 
     def update_odom(self, x_predict, P_predict):
