@@ -173,6 +173,30 @@ RUN apt-get update && \
 
 
 
+# >>>>>>>>>>>> OAK-D camera utils
+RUN apt-get update && apt-get install -y wget build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
+RUN wget http://docs.luxonis.com/_static/install_dependencies.sh && chmod +x install_dependencies.sh && ./install_dependencies.sh
+RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.tar.bz2
+RUN tar xf libusb-1.0.24.tar.bz2
+RUN cd libusb-1.0.24 && \
+    ./configure --disable-udev && \
+    make -j && make install
+
+RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
+
+RUN git clone https://github.com/luxonis/depthai-python /depthai-python
+RUN mkdir -p /depthai-python/build
+RUN cd /depthai-python && \
+    git clone https://github.com/luxonis/depthai-core && \
+    git submodule update --init --recursive && \
+    cd build && \
+    cmake .. && \
+    make -j
+ENV PYTHONPATH=/depthai-python/build
+# <<<<<<<<<<<< OAK-D camera utils
+
+
+
 # >>>>>>>>>>>> Create User
 ENV ROSUSER="user"
 
@@ -198,3 +222,9 @@ WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 # <<<<<<<<<<<< Scripts
 
+
+
+# >>>>>>>>>>>> OAK-D repo for testing
+RUN git clone https://github.com/luxonis/depthai
+RUN git clone https://github.com/luxonis/depthai-python
+# <<<<<<<<<<<< OAK-D repo for testing
