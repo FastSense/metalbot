@@ -83,7 +83,27 @@ RUN apt-get update && \
 RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 # <<<<<<<<<<<< ROS2 dependencies
 
-
+# >>>>>>>>>>>> Gstreames packages
+RUN apt-get update && \
+    apt-get install -y \
+        libgstreamer1.0-0 \
+        gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-libav \
+        gstreamer1.0-doc \
+        gstreamer1.0-tools \
+        gstreamer1.0-x \
+        gstreamer1.0-alsa \
+        gstreamer1.0-gl \
+        gstreamer1.0-gtk3 \
+        gstreamer1.0-qt5 \
+        gstreamer1.0-pulseaudio \
+        libgstreamer-plugins-base1.0-dev \
+        libopencv-dev \
+        python3-opencv
+# <<<<<<<<<<<<< Gstreames packages
 
 # >>>>>>>>>>>> Python packages
 RUN apt-get update && \
@@ -116,9 +136,12 @@ RUN pip3 install --upgrade pip && \
         aiofiles \
         aiohttp \
         aiortc \
-		netifaces
+        scikit-build \ 
+        cmake \
+        opencv-python \
+        opencv-contrib-python \
+        netifaces
 # <<<<<<<<<<<<< Python packages
-
 
 # >>>>>>>>>>>> Gazebo
 # Install Gazebo
@@ -126,6 +149,8 @@ RUN curl -sSL http://get.gazebosim.org | sh
 
 # Install gazebo ros2 packages
 
+RUN apt-get update -y
+RUN apt-get upgrade -y
 RUN apt install -y ros-foxy-gazebo-ros-pkgs
 RUN apt install -y ros-foxy-ros-core
 RUN apt install -y ros-foxy-navigation2
@@ -133,15 +158,6 @@ RUN apt install -y ros-foxy-nav2-bringup
 RUN apt install -y ros-foxy-turtlebot3
 RUN apt install -y ros-foxy-geometry2
 
-# RUN apt-get update && \
-	#a pt-get upgrade && \
-	# apt-get install -y \
-	# ros-foxy-ros-core \
-	# ros-foxy-navigation2 \
-	# ros-foxy-nav2-bringup \
-	# ros-foxy-gazebo-ros-pkgs
-	# ros-foxy-turtlebot3 \
-	# ros-foxy-geometry2
 # <<<<<<<<<<<< Gazebo
 
 
