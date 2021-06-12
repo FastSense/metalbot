@@ -83,28 +83,6 @@ RUN apt-get update && \
 RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 # <<<<<<<<<<<< ROS2 dependencies
 
-# >>>>>>>>>>>> Gstreames packages
-RUN apt-get update && \
-    apt-get install -y \
-        libgstreamer1.0-0 \
-        gstreamer1.0-plugins-base \
-        gstreamer1.0-plugins-good \
-        gstreamer1.0-plugins-bad \
-        gstreamer1.0-plugins-ugly \
-        gstreamer1.0-libav \
-        gstreamer1.0-doc \
-        gstreamer1.0-tools \
-        gstreamer1.0-x \
-        gstreamer1.0-alsa \
-        gstreamer1.0-gl \
-        gstreamer1.0-gtk3 \
-        gstreamer1.0-qt5 \
-        gstreamer1.0-pulseaudio \
-        libgstreamer-plugins-base1.0-dev \
-        libopencv-dev \
-        python3-opencv
-# <<<<<<<<<<<<< Gstreames packages
-
 # >>>>>>>>>>>> Python packages
 RUN apt-get update && \
     apt-get install -y \
@@ -138,17 +116,19 @@ RUN pip3 install --upgrade pip && \
         aiortc \
         scikit-build \ 
         cmake \
-        opencv-python \
-        opencv-contrib-python \
-        netifaces
+        netifaces \
+        opencv-python \ 
+        opencv-contrib-python
+
 # <<<<<<<<<<<<< Python packages
+
 
 # >>>>>>>>>>>> Gazebo
 # Install Gazebo
 RUN curl -sSL http://get.gazebosim.org | sh
+# <<<<<<<<<<<< Gazebo
 
-# Install gazebo ros2 packages
-
+# >>>>>>>>>>>> ROS2_packages
 RUN apt-get update -y
 RUN apt-get upgrade -y
 RUN apt install -y ros-foxy-gazebo-ros-pkgs
@@ -157,8 +137,61 @@ RUN apt install -y ros-foxy-navigation2
 RUN apt install -y ros-foxy-nav2-bringup
 RUN apt install -y ros-foxy-turtlebot3
 RUN apt install -y ros-foxy-geometry2
+# <<<<<<<<<<<< ROS2_packages
 
-# <<<<<<<<<<<< Gazebo
+
+## >>>>>>>>>>>> OpenCV
+RUN apt-get install -y libgstreamer1.0-0 \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-doc \
+    gstreamer1.0-tools \
+    gstreamer1.0-x \
+    gstreamer1.0-alsa \
+    gstreamer1.0-gl \
+    gstreamer1.0-gtk3 \
+    gstreamer1.0-qt5 \
+    gstreamer1.0-pulseaudio \
+    libgstreamer-plugins-base1.0-dev 
+
+
+# RUN git clone https://github.com/opencv/opencv.git --branch=4.5.0
+# RUN git clone https://github.com/opencv/opencv_contrib.git --branch=4.5.0
+
+# RUN mkdir opencv/build
+# RUN cd opencv/build && \
+#     ls && \
+#     cmake -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -DWITH_GSTREAMER=ON   # -DBUILD_opencv_python3=ON .. && \
+#   make -j3 && \
+#   make install
+## <<<<<<<<<<<< OpenCV
+
+
+# >>>>>>>>>>>> OAK-D camera utils
+RUN apt-get update && apt-get install -y wget build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
+RUN wget http://docs.luxonis.com/_static/install_dependencies.sh && chmod +x install_dependencies.sh && ./install_dependencies.sh
+RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.tar.bz2
+RUN tar xf libusb-1.0.24.tar.bz2
+RUN cd libusb-1.0.24 && \
+    ./configure --disable-udev && \
+    make -j4 && make install
+
+RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
+
+RUN git clone https://github.com/luxonis/depthai-python /depthai-python
+RUN mkdir -p /depthai-python/build
+RUN cd /depthai-python && \
+    git clone https://github.com/luxonis/depthai-core && \
+    git submodule update --init --recursive && \
+    cd build && \
+    cmake .. && \
+    make -j4
+ENV PYTHONPATH=/depthai-python/build
+# <<<<<<<<<<<< OAK-D camera utils
+
 
 
 # >>>>>>>>>>>> Utils 
@@ -173,27 +206,6 @@ RUN apt-get update && \
 
 
 
-# >>>>>>>>>>>> OAK-D camera utils
-RUN apt-get update && apt-get install -y wget build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
-RUN wget http://docs.luxonis.com/_static/install_dependencies.sh && chmod +x install_dependencies.sh && ./install_dependencies.sh
-RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.tar.bz2
-RUN tar xf libusb-1.0.24.tar.bz2
-RUN cd libusb-1.0.24 && \
-    ./configure --disable-udev && \
-    make -j && make install
-
-RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
-
-RUN git clone https://github.com/luxonis/depthai-python /depthai-python
-RUN mkdir -p /depthai-python/build
-RUN cd /depthai-python && \
-    git clone https://github.com/luxonis/depthai-core && \
-    git submodule update --init --recursive && \
-    cd build && \
-    cmake .. && \
-    make -j
-ENV PYTHONPATH=/depthai-python/build
-# <<<<<<<<<<<< OAK-D camera utils
 
 
 
@@ -207,6 +219,10 @@ user $ROSUSER
 # <<<<<<<<<<<< Create User
 
 
+# >>>>>>>>>>>> OpenCV
+COPY scripts/build_opencv.sh .
+RUN ./build_opencv.sh
+# <<<<<<<<<<<< OpenCV
 
 # >>>>>>>>>>>> Scripts
 RUN mkdir -p /home/$ROSUSER/scripts
@@ -218,10 +234,10 @@ RUN ./utils-setup.sh
 COPY scripts/ros-setup.sh .
 RUN ./ros-setup.sh
 
+
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 # <<<<<<<<<<<< Scripts
-
 
 
 # >>>>>>>>>>>> OAK-D repo for testing
