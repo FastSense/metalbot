@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    update_rate = '30'
+    update_rate = '10'
     rosbot_update_rate = launch.substitutions.LaunchConfiguration(
         'rosbot_update_rate',
         default=update_rate
@@ -16,11 +16,11 @@ def generate_launch_description():
                   
     return LaunchDescription([
 
-        # launch.actions.DeclareLaunchArgument(
-        #     'rosbot_update_rate',
-        #     default_value='10',
-        #     description='update_rate'
-        # ),
+        launch.actions.DeclareLaunchArgument(
+            'rosbot_update_rate',
+            default_value='10',
+            description='update_rate'
+        ),
 
         # launh Logger node
         Node(
@@ -31,7 +31,7 @@ def generate_launch_description():
             parameters=[
                 {"rosbot_update_rate":rosbot_update_rate},
             ],
-            arguments=[rosbot_update_rate]
+            # arguments=[rosbot_update_rate]
         ),
 
     ])

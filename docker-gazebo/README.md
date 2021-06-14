@@ -9,12 +9,12 @@ Build docker:
 
 Run docker:
 ```bash
-GZ_DOCKER=$(./run.sh)
+./run.sh
 ```
 
 Attach to this docker:
 ```bash
-docker attach $GZ_DOCKER
+docker attach rosbot2
 ```
 
 Recommended to use tmux inside docker:

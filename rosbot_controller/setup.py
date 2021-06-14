@@ -25,8 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'control_gen = rosbot_controller.control_generator:main',
-            'spawn_rosbot = rosbot_controller.spawn_rosbot:main', 
-            'spawn_rosbot_test = rosbot_controller.spawn_rosbot_test:main', 
+            'spawn_rosbot = rosbot_controller.spawn_rosbot:main',
+            'rosbot_teleop = rosbot_controller.rosbot_teleop:main',
         ],
     },
 )
