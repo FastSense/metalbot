@@ -26,9 +26,8 @@ from geometry_msgs.msg import Point, Quaternion, Pose, PoseWithCovariance, PoseW
 import scipy
 from filterpy.common import Q_discrete_white_noise
 
-
-import filter
-import geometry
+from state_estimation_2d.filter import *
+from state_estimation_2d.geometry import *
 
 class StateEstimation2D(Node):
     def __init__(self):
@@ -65,7 +64,7 @@ class StateEstimation2D(Node):
             Q_discrete_white_noise(dim=3, dt=self.dt, var=0.00001, block_size=2),
             Q_rot,
         )
-        self.filter = filter.Filter2D(x_init = np.zeros(8), P_init = np.eye(8) * 0.01, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
+        self.filter = Filter2D(x_init = np.zeros(8), P_init = np.eye(8) * 0.01, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
         self.odom_filtered = Odometry()
         self.got_measurements = 0
 

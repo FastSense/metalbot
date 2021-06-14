@@ -1,7 +1,9 @@
+#!/usr/bin/env python
 import numpy as np
 from numpy.linalg import inv
 
-import model, measurement
+from state_estimation_2d.model import *
+from state_estimation_2d.measurement import *
 
 class Filter2D:
     def __init__(self, x_init, P_init, R_odom, R_imu, Q, dt = 0.1):
