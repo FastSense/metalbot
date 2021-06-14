@@ -17,7 +17,7 @@ class ControlGenerator(Node):
         super().__init__('control_generator')
 
         self.init_parameters()
-        self.get_parametes()
+        self.get_node_parametes()
 
         self.cmd_pub = self.create_publisher(Twist, self.control_topic, 10)
         self.curr_index = 0
@@ -77,7 +77,7 @@ class ControlGenerator(Node):
         # from_file
         self.declare_parameter('file_path', "")
 
-    def get_parametes(self):
+    def get_node_parametes(self):
         """
         Gets node parameters
         """

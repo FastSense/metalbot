@@ -15,7 +15,7 @@ class RosbotTeleop(Node):
         super().__init__('rosbot_teleop')
         self.curr_cmd = Twist()
         self.init_parameters()
-        self.get_parametes()
+        self.get_node_parametes()
         self.init_subs()
         self.keyboard_sub = self.create_subscription(
             String,
@@ -63,7 +63,7 @@ class RosbotTeleop(Node):
             ]
         )
 
-    def get_parametes(self):
+    def get_node_parametes(self):
         """
         Gets node parameters
         """

@@ -43,7 +43,7 @@ class Logger(Node):
         super().__init__('logger')
       
         self.init_parameters()
-        self.get_parametes()
+        self.get_node_parametes()
         self.init_subs()
         self.init_containers()
         
@@ -65,7 +65,7 @@ class Logger(Node):
         self.declare_parameter('nn_model_frame', 'nn_model_link')
         # self.declare_parameter('tf_topic', '/tf')
 
-    def get_parametes(self):
+    def get_node_parametes(self):
         """
         Gets node parameters
         """
