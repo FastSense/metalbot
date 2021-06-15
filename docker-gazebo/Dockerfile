@@ -153,11 +153,10 @@ RUN cd libusb-1.0.24 && \
 
 RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
 
-# depthai cAPI
+# depthai API
 RUN git clone https://github.com/luxonis/depthai-python /depthai-python
 RUN mkdir -p /depthai-python/build
 RUN cd /depthai-python && \
-    git checkout develop && \
     git clone https://github.com/luxonis/depthai-core && \
     git submodule update --init --recursive && \
     cd build && \
@@ -166,7 +165,7 @@ RUN cd /depthai-python && \
 ENV PYTHONPATH=/depthai-python/build
 
 # ROS dependencies
-RUN wget -qO- https://raw.githubusercontent.com/luxonis/depthai-ros/foxy-devel/install_dependencies.sh | bash
+#RUN wget -qO- https://raw.githubusercontent.com/luxonis/depthai-ros/foxy-devel/install_dependencies.sh | bash
 #RUN rosdep update
 #RUN rosdep install -y -r -q --from-paths src --ignore-src --rosdistro foxy
 # <<<<<<<<<<<< OAK-D camera utils
