@@ -13,5 +13,4 @@ docker run -it -d --privileged --net=host \
     -e DISPLAY=$DISPLAY \
     -e ROS_HOSTNAME="localhost" \
     -e ROS_MASTER_URI="http://localhost:11311" \
-    -e ROS_DOMAIN_ID=`hostname` \
     -e QT_X11_NO_MITSHM=1 $image_name zsh
