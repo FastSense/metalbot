@@ -20,3 +20,6 @@
 [submodule "topic_streamer"]
 	path = topic_streamer
 	url = git@github.com:FastSense/topic_streamer.git
+[submodule "webrtc-teleop"]
+	path = webrtc-teleop
+	url = git@github.com:FastSense/webrtc-teleop.git
