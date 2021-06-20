@@ -28,22 +28,31 @@ class Visualizer(Node):
 
         self.odom_sub = self.create_subscription(
             Odometry,
-            'odom_noised',
+            'odom',
             self.odom_callback, 
+            15)
+
+        self.odom_noised_sub = self.create_subscription(
+            Odometry,
+            'odom_noised',
+            self.odom_noised_callback, 
             15)
         
         self.odom_filtered_sub = self.create_subscription(
             Odometry,
-            'odom',
+            'odom_filtered',
             self.odom_filtered_callback, 
             15)
 
-        self.path_pub = self.create_publisher(Marker, '/' + 'path', 1)
+        self.path_ground_truth_pub = self.create_publisher(Marker, '/' + 'path_ground_truth', 1)
+        self.path_noised_pub = self.create_publisher(Marker, '/' + 'path_noised', 1)
         self.path_filtered_pub = self.create_publisher(Marker, '/' + 'path_filtered', 1)
         self.odom = Odometry()
+        self.odom_noised = Odometry()
         self.odom_filtered = Odometry()
         self.last_odom = Odometry()
         self.last_odom_filtered = Odometry()
+        self.last_odom_noised = Odometry()
 
         self.pMarker = Marker()
         self.pMarker.header.frame_id = self.origin_frame
@@ -75,11 +84,29 @@ class Visualizer(Node):
         self.pMarker_filtered.color.b = 0.0
         self.pMarker_filtered.color.a = 1.0
 
+        self.pMarker_noised = Marker()
+        self.pMarker_noised.header.frame_id = self.origin_frame
+        self.pMarker_noised.pose.orientation.w = 1.0
+        self.pMarker_noised.scale.x = 0.03
+        self.pMarker_noised.scale.y = 0.03
+        self.pMarker_noised.scale.z = 0.03
+
+        self.pMarker_noised.type = Marker.SPHERE  # LINE_STRIP
+        self.pMarker_noised.action = Marker.ADD # ADD
+
+        self.pMarker_noised.color.r = 0.0
+        self.pMarker_noised.color.g = 0.0
+        self.pMarker_noised.color.b = 1.0
+        self.pMarker_noised.color.a = 1.0
+
     def odom_callback(self, msg):
         self.odom = msg
 
     def odom_filtered_callback(self, msg):
         self.odom_filtered = msg
+    
+    def odom_noised_callback(self, msg):
+        self.odom_noised = msg
 
     
     def publish_pose_marker(self):
@@ -91,21 +118,30 @@ class Visualizer(Node):
         self.pMarker_filtered.header.stamp = self.get_clock().now().to_msg()
         self.pMarker_filtered.id = self.path_len_
         self.pMarker_filtered.pose.position = self.odom_filtered.pose.pose.position
+        
+        self.pMarker_noised.header.stamp = self.get_clock().now().to_msg()
+        self.pMarker_noised.id = self.path_len_
+        self.pMarker_noised.pose.position = self.odom_noised.pose.pose.position
 
         self.pMarker.points.append(self.last_odom.pose.pose.position)
         self.pMarker.points.append(self.odom.pose.pose.position)
         self.pMarker_filtered.points.append(self.last_odom_filtered.pose.pose.position)
         self.pMarker_filtered.points.append(self.odom_filtered.pose.pose.position)
+        self.pMarker_noised.points.append(self.last_odom_noised.pose.pose.position)
+        self.pMarker_noised.points.append(self.odom_noised.pose.pose.position)
 
         self.pMarker.lifetime = Duration(seconds=0).to_msg()
         self.pMarker_filtered.lifetime = Duration(seconds=0).to_msg()
+        self.pMarker_noised.lifetime = Duration(seconds=0).to_msg()
 
-        self.path_pub.publish(self.pMarker)
+        self.path_ground_truth_pub.publish(self.pMarker)
         self.path_filtered_pub.publish(self.pMarker_filtered)
+        self.path_noised_pub.publish(self.pMarker_noised)
 
         self.path_len_ = self.path_len_ + 1
         self.last_odom = self.odom 
         self.last_odom_filtered = self.odom_filtered 
+        self.last_odom_noised = self.odom_noised 
         
     def timer_callback(self):
         self.publish_pose_marker()

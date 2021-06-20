@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+        'path_visualizer = path_visualizer.visualizer_node:main',
         ],
     },
 )
