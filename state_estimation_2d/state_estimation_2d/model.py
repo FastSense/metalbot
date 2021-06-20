@@ -1,12 +1,13 @@
 import numpy as np
     
-def transform_jacobian(dt):
-    J_f = np.eye(8)
-    J_f[0, 2] = dt
-    J_f[1, 3] = dt
-    J_f[2, 4] = dt
-    J_f[3, 5] = dt
-    J_f[6, 7] = dt
-    J_f[0, 4] = 0.5 * dt * dt
-    J_f[1, 5] = 0.5 * dt * dt
+def transform_jacobian(x, dt):
+    J_f = np.eye(6)
+    # J_f[0, 2] = dt
+    # J_f[1, 3] = dt
+    # J_f[4, 5] = dt
+    J_f[0, 2] = np.cos(x[4]) * dt
+    J_f[1, 2] = np.sin(x[4]) * dt
+    J_f[0, 4] = -x[2] * np.sin(x[4]) * dt
+    J_f[1, 4] = x[2] * np.cos(x[4]) * dt
+    J_f[4, 5] = dt
     return J_f

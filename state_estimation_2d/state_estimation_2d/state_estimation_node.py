@@ -25,6 +25,7 @@ from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import Point, Quaternion, Pose, PoseWithCovariance, PoseWithCovarianceStamped
 import scipy
 from filterpy.common import Q_discrete_white_noise
+from scipy.spatial.transform import Rotation as R
 
 from state_estimation_2d.filter import *
 from state_estimation_2d.geometry import *
@@ -35,7 +36,7 @@ class StateEstimation2D(Node):
 
         self.odom_sub = self.create_subscription(
             Odometry,
-            'odom',
+            'odom_noised',
             self.odometry_callback,
             10)
         self.imu_sub = self.create_subscription(
@@ -46,25 +47,26 @@ class StateEstimation2D(Node):
         self.odom = Odometry()
         self.imu = Imu()
 
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.dt = 0.01
-        self.R_odom = np.array([[0.00001, 0, 0, 0, 0, 0],
-                                [0, 0.00001, 0, 0, 0, 0],
-                                [0, 0, 0.00001, 0, 0, 0],
-                                [0, 0, 0, 0.00001, 0, 0],
-                                [0, 0, 0, 0, 0.001, 0],
-                                [0, 0, 0, 0, 0, 0.001]])
+        self.dt = 0.1
+        # self.R_odom = np.array([[0.7, 0, 0, 0, 0, 0],
+        #                         [0, 0.7, 0, 0, 0, 0],
+        #                         [0, 0, 0.7, 0, 0, 0],
+        #                         [0, 0, 0, 0.7, 0, 0],
+        #                         [0, 0, 0, 0, 0.1, 0],
+        #                         [0, 0, 0, 0, 0, 0.1]])
+        self.R_odom = np.array([[0.5, 0, 0],
+                                [0, 0.5, 0],
+                                [0, 0, 0.1]])
         self.R_imu = np.array([0.001])
         Q_rot = np.array([
-            [0.333 * self.dt**3, -0.5 * self.dt**2],
-            [ -0.5 * self.dt**2,           self.dt],
-        ]) * 0.001**2
+            [0.333 * self.dt**3, 0.5 * self.dt**2],
+            [ 0.5 * self.dt**2,           self.dt],
+        ]) * 0.1
         self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=3, dt=self.dt, var=0.00001, block_size=2),
+            Q_discrete_white_noise(dim=2, dt=self.dt, var=0.01, block_size=2),
             Q_rot,
         )
-        self.filter = Filter2D(x_init = np.zeros(8), P_init = np.eye(8) * 0.01, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
+        self.filter = Filter2D(x_init = np.zeros(6), P_init = np.eye(6) * 0.007, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
         self.odom_filtered = Odometry()
         self.got_measurements = 0
 
@@ -87,13 +89,10 @@ class StateEstimation2D(Node):
         # covariance_to_vector(msg)
 
     def odometry_to_vector(self, odom):
-        z_odom = np.zeros(6)
-        z_odom[0] = odom.pose.pose.position.x
-        z_odom[1] = odom.pose.pose.position.y
-        z_odom[2] = odom.twist.twist.linear.x
-        z_odom[3] = odom.twist.twist.linear.y
-        z_odom[4] = odom.pose.pose.orientation.z
-        z_odom[5] = odom.twist.twist.angular.z
+        z_odom = np.zeros(3)
+        z_odom[0] = odom.twist.twist.linear.x
+        z_odom[1] = odom.twist.twist.linear.y
+        z_odom[2] = odom.twist.twist.angular.z
         return z_odom
 
     def imu_callback(self, msg):
@@ -116,9 +115,10 @@ class StateEstimation2D(Node):
     def update(self):
         if self.got_measurements:
             x_predict, P_predict = self.filter.predict()
+            # print(x_predict)
             x_opt, P_opt = self.filter.update(x_predict, P_predict)
+            # self.state_to_odometry(x_opt, P_opt)
             self.state_to_odometry(x_opt, P_opt)
-            print(x_opt)
             self.pose_pub.publish(self.odom_filtered)
 
     def state_to_odometry(self, x, P):
@@ -127,8 +127,9 @@ class StateEstimation2D(Node):
         self.odom_filtered.pose.pose.position.x = x[0]
         self.odom_filtered.pose.pose.position.y = x[1]
         self.odom_filtered.pose.pose.position.z = self.odom.pose.pose.position.z
-        roll, pitch, yaw = geometry.euler_from_quaternion(self.odom.pose.pose.orientation)
-        q = geometry.quaternion_from_euler(roll, pitch, x[6])
+        # roll, pitch, yaw = euler_from_quaternion(self.odom.pose.pose.orientation)
+        r = R.from_euler('z', x[4], degrees=True)
+        q = r.as_quat()
         self.odom_filtered.pose.pose.orientation.x = q[0]
         self.odom_filtered.pose.pose.orientation.y = q[1]
         self.odom_filtered.pose.pose.orientation.z = q[2]
@@ -138,34 +139,37 @@ class StateEstimation2D(Node):
         self.odom_filtered.twist.twist.linear.z = self.odom.twist.twist.linear.z
         self.odom_filtered.twist.twist.angular.x = self.odom.twist.twist.angular.x
         self.odom_filtered.twist.twist.angular.y = self.odom.twist.twist.angular.y
-        self.odom_filtered.twist.twist.angular.z = x[7]
+        self.odom_filtered.twist.twist.angular.z = x[5]
         self.odom_filtered.pose.covariance = self.pose_covariance_to_vector(P)
         self.odom_filtered.twist.covariance = self.twist_covariance_to_vector(P)
 
     def pose_covariance_to_vector(self, P):
         cov_vector = self.odom.pose.covariance
+        cov_vector[14] = 0.1
+        cov_vector[21] = 0.01
+        cov_vector[28] = 0.01
         cov_vector[0] = P[0,0]
         cov_vector[1] = P[0,1]
-        cov_vector[5] = P[0,6]
+        cov_vector[5] = P[0,4]
         cov_vector[6] = P[1,0]
         cov_vector[7] = P[1,1]
-        cov_vector[11] = P[1,6]
-        cov_vector[30] = P[6,0]
-        cov_vector[31] = P[6,1]
-        cov_vector[35] = P[6,6]
+        cov_vector[11] = P[1,4]
+        cov_vector[30] = P[4,0]
+        cov_vector[31] = P[4,1]
+        cov_vector[35] = P[4,4]
         return cov_vector
     
     def twist_covariance_to_vector(self, P):
         cov_vector = self.odom.twist.covariance
         cov_vector[0] = P[2,2]
         cov_vector[1] = P[2,3]
-        cov_vector[5] = P[2,7]
+        cov_vector[5] = P[2,5]
         cov_vector[6] = P[3,2]
         cov_vector[7] = P[3,3]
-        cov_vector[11] = P[3,7]
-        cov_vector[30] = P[7,2]
-        cov_vector[31] = P[7,3]
-        cov_vector[35] = P[7,7]
+        cov_vector[11] = P[3,5]
+        cov_vector[30] = P[5,2]
+        cov_vector[31] = P[5,3]
+        cov_vector[35] = P[5,5]
         return cov_vector
 
 
