@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+        'odom_noiser = odom_noiser.noiser_node:main',
         ],
     },
 )

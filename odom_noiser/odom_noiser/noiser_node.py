@@ -26,9 +26,9 @@ class Noiser(Node):
         self.theta_sum = 0
         self.dt = 0.1
 
-        self.pose_noise_std = 0.01
+        self.pose_noise_std = 0.1
         self.orient_noise_std = 0.1
-        self.lin_vel_noise_std = 0.01
+        self.lin_vel_noise_std = 0.5
         self.rot_vel_noise_std = 0.1
 
     def odometry_callback(self, msg):
@@ -37,18 +37,17 @@ class Noiser(Node):
         self.odom_noised.pose.covariance = msg.pose.covariance
         self.odom_noised.twist.covariance = msg.twist.covariance
         vel_noised_x = msg.twist.twist.linear.x + random.gauss(0, self.lin_vel_noise_std)
-        vel_noised_y = msg.twist.twist.linear.y + random.gauss(0, self.lin_vel_noise_std)
         vel_noised_theta = msg.twist.twist.angular.z + random.gauss(0, self.rot_vel_noise_std)
-        self.x_sum = self.x_sum + vel_noised_x * self.dt
-        self.y_sum = self.y_sum + vel_noised_y * self.dt
         self.theta_sum = self.theta_sum + vel_noised_theta * self.dt
-        self.odom_noised.pose.pose.position.x = self.x_sum + vel_noised_x * self.dt
-        self.odom_noised.pose.pose.position.y = self.y_sum + vel_noised_y * self.dt
+        self.x_sum = self.x_sum + vel_noised_x * np.cos(self.theta_sum) * self.dt
+        self.y_sum = self.y_sum + vel_noised_x * np.sin(self.theta_sum) * self.dt
+        self.odom_noised.pose.pose.position.x = self.x_sum 
+        self.odom_noised.pose.pose.position.y = self.y_sum 
         self.odom_noised.pose.pose.position.z = msg.pose.pose.position.z
         self.odom_noised.pose.pose.orientation = msg.pose.pose.orientation
         self.odom_noised.pose.pose.orientation.z = self.theta_sum
         self.odom_noised.twist.twist.linear.x = vel_noised_x
-        self.odom_noised.twist.twist.linear.y = vel_noised_y
+        self.odom_noised.twist.twist.linear.y = msg.twist.twist.linear.y
         self.odom_noised.twist.twist.linear.z = msg.twist.twist.linear.z
         self.odom_noised.twist.twist.angular.x = msg.twist.twist.angular.x
         self.odom_noised.twist.twist.angular.y = msg.twist.twist.angular.y
