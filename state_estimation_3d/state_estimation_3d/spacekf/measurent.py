@@ -51,11 +51,45 @@ def static_vec(q_center, vec, dim, extrinsic=None):
     return z_prior, H
 
 @njit
-def odometry_jac12(state, q_center, dt_btw_frames, extrinsic=None):
+def odometry12(vel, rot_vel, delta_t, extrinsic=None):
+    '''
+    measurement = (angle about x, angle about y, angle about z, translation x, translation y, translation z)
+    '''
+    # Measurement
+    z_prior = np.empty(6)
+    z_prior[:3] = rot_vel * delta_t
+    z_prior[3:] = vel * delta_t
+
+    # Extrinsic transform
+    if extrinsic is not None:
+        rot_extrinsic = np.ascontiguousarray(extrinsic[:3,:3])
+        z_prior[:3] = rot_extrinsic @ np.ascontiguousarray(z_prior[:3])
+        z_prior[3:] = rot_extrinsic @ np.ascontiguousarray(z_prior[3:])
+        rot_extrinsic_dt = rot_extrinsic * delta_t
+
     # Compose H
     H = np.zeros((6, 12))
-
-    return H
+    # delta h_tr / delta vel
+    if extrinsic is None:
+        H[3, 1] = delta_t
+        H[4, 3] = delta_t
+        H[5, 5] = delta_t
+    else:
+        H[3:, 1:6:2] = rot_extrinsic_dt
+    # delta h_tr / delta epsilon
+    vel_cross = geometry.vector_to_pseudo_matrix(z_prior[3:])
+    if extrinsic is None:
+        H[3:, 6::2] = vel_cross * delta_t
+    else:
+        H[3:, 6::2] = vel_cross @ rot_extrinsic_dt
+    # delta h_angle / delta omega
+    if extrinsic is None:
+        H[0, 7] = delta_t
+        H[1, 9] = delta_t
+        H[2, 11] = delta_t
+    else:
+        H[:3, 7::2] = rot_extrinsic_dt
+    return z_prior, H
 
 @njit
 def odometry_jac15(state, q_center, dt_btw_frames, dt_since_last_frame, extrinsic=None):

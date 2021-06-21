@@ -21,7 +21,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.01)
+        self.declare_parameter('period', 0.1)
         self.declare_parameter('vel_std', 0.1)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -80,7 +80,7 @@ class EKFNode(Node):
         self.tracker.predict()
         # Update
         if self.imu_buffer is not None:
-            self.update_imu(self.imu_buffer)
+            # self.update_imu(self.imu_buffer)
             self.imu_buffer = None
         if self.odom_buffer is not None:
             self.update_odom(self.odom_buffer)
@@ -89,9 +89,6 @@ class EKFNode(Node):
         self.publish_pose()
 
     def update_imu(self, msg):
-        # extrinsic = np.empty(4)
-        # extrinsic[0] = msg.header.orientation.w
-
         # Make KF-compatible measurements
         rot_vel = np.empty(3)
         rot_vel[0] = msg.angular_velocity.x
@@ -112,6 +109,24 @@ class EKFNode(Node):
         self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic_acc)
         self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic_gyro)
 
+    def update_odom(self, msg):
+        # Make KF-compatible measurements
+        odom = np.array([
+            msg.twist.twist.angular.x,
+            msg.twist.twist.angular.y,
+            msg.twist.twist.angular.z,
+            msg.twist.twist.linear.x,
+            msg.twist.twist.linear.y,
+            msg.twist.twist.linear.z,
+        ])
+        R = np.array(msg.twist.covariance).reshape([6, 6])
+
+        # Get extrinsics from tf
+        extrinsic = self.get_extrinsic('oakd_left', 'base_link')
+
+        # Update
+        self.tracker.update_odometry(odom, R, delta_t=1, extrinsic=extrinsic)
+
     def get_extrinsic(self, frame1, frame2):
         trans = self.tf_buffer.lookup_transform(frame1, frame2, self.get_clock().now())
         tr = np.array([
@@ -128,9 +143,6 @@ class EKFNode(Node):
         rot = Rotation.from_quat(rot_q).as_matrix()
         extrinsic = np.concatenate([rot, tr], 1)
         return extrinsic
-
-    def update_odom(self, msg):
-        pass
 
     def publish_pose(self):
         # Make odometry message

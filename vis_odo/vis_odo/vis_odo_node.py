@@ -65,7 +65,7 @@ class OdometryNode(Node):
         # Covariance matrix
         std_linear = 0.1
         std_angular = 0.1
-        covariance = np.diag([std_angular] * 3 + [std_linear] * 3)
+        covariance = np.diag([std_angular**2 / self.period] * 3 + [std_linear**2 / self.period] * 3)
         self.covariance = list(covariance.flatten())
 
     def left_rect_callback(self, msg):
@@ -122,7 +122,6 @@ class OdometryNode(Node):
         msg.twist.twist.linear.z = spd[5]
         msg.twist.covariance = self.covariance
         self.odom_publisher.publish(msg)
-        # print(msg)
 
 
 def main(args=None):

@@ -41,7 +41,7 @@ class SpaceKF12:
     '''
 
     DIM = 12
-    ACCEL_STD = 10.0
+    ACCEL_STD = 5.0
 
     def __init__(
         self,
@@ -103,7 +103,7 @@ class SpaceKF12:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_odometry(self, z, R, dt_btw_frames, dt_since_last_frame, extrinsic=None):
+    def update_odometry(self, z, R, delta_t, extrinsic=None):
         '''
         Update state by a visual odometry measurement coming from a neural network.
 
@@ -111,8 +111,9 @@ class SpaceKF12:
         ----------
             z (np.array of shape [6]): Output of a neural network. Contains rotations and translations: `[rot_x, rot_y, rot_z, dx, dy, dz]`.
         '''
-        H = measurent.odometry_jac(self.x, self.q, dt_btw_frames, dt_since_last_frame, extrinsic=extrinsic)
-        self.update_linear(H, z, R)
+        z_prior, H = measurent.odometry12(self.vel, self.rot_vel, delta_t, extrinsic=extrinsic)
+        y = z - z_prior
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
     def reset_manifold(self):
         '''
