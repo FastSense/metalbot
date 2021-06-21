@@ -67,8 +67,8 @@ time.sleep(10)
 # Sample trajectory parameters
 v_max = round(np.random.uniform(low=0.0, high=1.5), 2)    # max linear velocity
 w_max = round(np.random.uniform(low=0.0, high=2.5), 2)    # max angular velocity
-a_lin = round(np.random.uniform(low=-0.5, high=0.5), 4)   # linear acceleration
-a_ang = round(np.random.uniform(low=-0.5, high=0.5), 4)   # angular acceleration
+a_lin = round(np.random.uniform(low=-1.0, high=1.0), 4)   # linear acceleration
+a_ang = round(np.random.uniform(low=-1.0, high=1.0), 4)   # angular acceleration
 period_lin = 25 # np.random.randint(5, int(Tmax/2))       # linear velocity changing period
 period_ang = 25 # np.random.randint(5, int(Tmax/2))       # angular velocity changing period
 

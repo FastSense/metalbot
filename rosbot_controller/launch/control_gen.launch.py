@@ -2,7 +2,8 @@ import os
 import launch
 from launch import LaunchDescription
 from launch_ros.actions import Node
-
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
 def generate_launch_description():
 
     # Declare 
@@ -21,158 +22,103 @@ def generate_launch_description():
     defaut_a_ang = "0.25"
     defaut_file_path = ""
 
-    mode = launch.substitutions.LaunchConfiguration(
-        'mode',
-        default=defaut_mode
-    )
-
-    num_of_subs = launch.substitutions.LaunchConfiguration(
-        'num_of_subs',
-        default=defaut_num_of_subs
-    )
-
-    control_topic = launch.substitutions.LaunchConfiguration(
-        'control_topic',
-        default=defaut_control_topic
-    )
-
-    pub_rate = launch.substitutions.LaunchConfiguration(
-        'pub_rate',
-        default=defaut_pub_rate
-    )
-
-    Tmax = launch.substitutions.LaunchConfiguration(
-        'Tmax',
-        default=defaut_Tmax
-    )
-
-    period_lin = launch.substitutions.LaunchConfiguration(
-        'period_lin',
-        default=defaut_period_lin
-    )
-    
-    period_ang = launch.substitutions.LaunchConfiguration(
-        'period_ang',
-        default=defaut_period_ang
-    )
-    
-    v_min = launch.substitutions.LaunchConfiguration(
-        'v_min',
-        default=defaut_v_min
-    )
-    
-    v_max = launch.substitutions.LaunchConfiguration(
-        'v_max',
-        default=defaut_v_max
-    )
-    
-    w_min = launch.substitutions.LaunchConfiguration(
-        'w_min',
-        default=defaut_w_min
-    )
-    
-    w_max = launch.substitutions.LaunchConfiguration(
-        'w_max',
-        default=defaut_w_max
-    )
-    
-    a_lin = launch.substitutions.LaunchConfiguration(
-        'a_lin',
-        default=defaut_a_lin
-    )
-    
-    a_ang = launch.substitutions.LaunchConfiguration(
-        'a_ang',
-        default=defaut_a_ang
-    )
-    
-    file_path = launch.substitutions.LaunchConfiguration(
-        'file_path',
-        default=defaut_file_path
-    )
+    mode = LaunchConfiguration('mode', default=defaut_mode)
+    num_of_subs = LaunchConfiguration('num_of_subs', default=defaut_num_of_subs)
+    control_topic = LaunchConfiguration('control_topic', default=defaut_control_topic)
+    pub_rate = LaunchConfiguration('pub_rate', default=defaut_pub_rate)
+    Tmax = LaunchConfiguration('Tmax', default=defaut_Tmax)
+    period_lin = LaunchConfiguration('period_lin', default=defaut_period_lin)
+    period_ang = LaunchConfiguration('period_ang', default=defaut_period_ang)
+    v_min = LaunchConfiguration('v_min', default=defaut_v_min)
+    v_max = LaunchConfiguration('v_max', default=defaut_v_max)
+    w_min = LaunchConfiguration('w_min', default=defaut_w_min)	
+    w_max = LaunchConfiguration('w_max', default=defaut_w_max)
+    a_lin = LaunchConfiguration('a_lin', default=defaut_a_lin)
+    a_ang = LaunchConfiguration('a_ang', default=defaut_a_ang)
+    file_path = LaunchConfiguration('file_path', default=defaut_file_path)
 
 
     return LaunchDescription([
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'mode',
             default_value=defaut_mode,
             description='periodic / from_file'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'num_of_subs',
             default_value=defaut_num_of_subs,
             description='Number of desired subscribers'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'control_topic',
             default_value=defaut_control_topic,
             description='Control topic name'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'pub_rate',
             default_value=defaut_pub_rate,
             description='Control publication frequency'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'Tmax',
             default_value=defaut_Tmax,
             description='control generator running time'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'period_lin',
             default_value=defaut_period_lin,
             description='Linear velocity change period'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'period_ang',
             default_value=defaut_period_ang,
             description='Angular velocity change period'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'v_min',
             default_value=defaut_v_min,
             description='Minimum linear speed'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'v_max',
             default_value=defaut_v_max,
             description='Maximum linear speed'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'w_min',
             default_value=defaut_w_min,
             description='Minimum angular speed'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'w_max',
             default_value=defaut_w_max,
             description='Maximum angular speed'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'a_lin',
             default_value=defaut_a_lin,
             description='Linear acceleration'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'a_ang',
             default_value=defaut_a_ang,
             description='Angular acceleration'
         ),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'file_path',
             default_value=defaut_file_path,
             description='Path to file with control'

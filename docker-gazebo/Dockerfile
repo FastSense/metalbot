@@ -118,7 +118,9 @@ RUN pip3 install --upgrade pip && \
         cmake \
         netifaces \
         opencv-python \ 
-        opencv-contrib-python
+        opencv-contrib-python \
+        msgpack_numpy \
+        jinja2
 
 # <<<<<<<<<<<<< Python packages
 
