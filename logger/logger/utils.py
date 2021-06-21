@@ -50,8 +50,10 @@ def parse_csv_file(file_path):
     
 def parse_logger_output_data(folder_path):
     """
-    Args:
-    Return:
+    :Args:
+        :folder_path: (str) - path to the folder with logger data
+    :Return:
+        :data: (list of pd.DataFrame) - output data files
     """
     data = 5 * [pd.DataFrame()]
 

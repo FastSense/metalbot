@@ -8,6 +8,9 @@ from sensor_msgs.msg import Joy
 
 class RosbotTeleop(Node):
     """
+    A class that interprets the pressed keys on 
+    the keyboard into control commands and publishes them
+    Keys for control: W A S D shift space
     :Attributes:
         :curr_cmd: (Twist) current control
         :keyboard_sub: (ros2 subscriber) keyboard subscriber
