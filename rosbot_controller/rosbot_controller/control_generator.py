@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import pandas as pd
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -72,11 +73,11 @@ class ControlGenerator(Node):
         self.wait_for_subs()
         if self.mode == 'periodic':
             self.v_seq, self.w_seq = self.generate_control_sequences()
+            self.v_seq = self.v_seq[:self.Tmax_it]
+            self.w_seq = self.w_seq[:self.Tmax_it]
         elif self.mode == "from_file":
             self.v_seq, self.w_seq = self.parse_control_from_file()
 
-        self.v_seq = self.v_seq[:self.Tmax_it]
-        self.w_seq = self.w_seq[:self.Tmax_it]
         self.start = True
 
     def init_parameters(self):
@@ -201,16 +202,17 @@ class ControlGenerator(Node):
 
         return seq
 
-    def parse_control_from_file():
+    def parse_control_from_file(self):
         """
         The method parses control sequences from a file and returns them
         :Return:
             :v_seq: (numpy array) - linear control sequence 
             :w_seq: (numpy array) - angular control sequence
         """
-        control_data = pd.read_csv(self.file_path, delimeter=' ')
+        control_data = pd.read_csv(self.file_path, delimiter=' ')
         v_seq, w_seq = control_data['v_x'], control_data['w_z']
         v_seq, w_seq = np.array(v_seq), np.array(w_seq)
+        self.Tmax_it = len(v_seq)
         return v_seq, w_seq
 
     def pub_control(self):
