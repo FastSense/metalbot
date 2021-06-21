@@ -4,6 +4,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
+
 def generate_launch_description():
 
     # Declare 
@@ -40,8 +41,7 @@ def generate_launch_description():
 
     return LaunchDescription([
 
-        DeclareLaunchArgument(
-            'mode',
+        DeclareLaunchArgument('mode',
             default_value=defaut_mode,
             description='periodic / from_file'
         ),
