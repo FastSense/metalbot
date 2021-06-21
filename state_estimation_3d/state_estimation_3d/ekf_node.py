@@ -9,6 +9,7 @@ from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 import tf2_ros
 
+from . import spacekf
 
 class EKFNode(Node):
     def __init__(self):
@@ -18,6 +19,12 @@ class EKFNode(Node):
 
         # Declare parameters
         self.declare_parameter('period', 0.1)
+        self.declare_parameter('acceleration_std', 0.1)
+        self.declare_parameter('rot_vel_std', 0.1)
+
+        # Kalman filter parameters
+        acceleration_std = self.get_parameter('acceleration_std').get_parameter_value().double_value
+        rot_vel_std = self.get_parameter('rot_vel_std').get_parameter_value().double_value
 
         # Subscribe to sensor topics
         self.create_subscription(
@@ -44,6 +51,12 @@ class EKFNode(Node):
         self.period = self.get_parameter('period').get_parameter_value().double_value
         self.create_timer(self.period, self.step)
 
+        # Create Kalman filter
+        self.tracker = spacekf.SpaceKF12(dt=self.period, acceleration_std=acceleration_std, rot_vel_std=rot_vel_std)
+        self.tracker.P = self.tracker.P * 0.01
+
+        # Buffers for measurements
+
     def odometry_callback(self, msg):
         pass
 
@@ -54,21 +67,22 @@ class EKFNode(Node):
         '''
         EKF predict and update step
         '''
-        
+        self.tracker.predict()
+        self.publish_pose()
 
     def publish_pose(self):
         # Make odometry message
         msg = Odometry()
-        msg.header.stamp = self.last_pair[0].header.stamp
-        msg.header.frame_id = self.last_pair[0].header.frame_id
-        msg.child_frame_id = self.last_pair[0].header.frame_id
-        msg.twist.twist.angular.x = spd[0]
-        msg.twist.twist.angular.y = spd[1]
-        msg.twist.twist.angular.z = spd[2]
-        msg.twist.twist.linear.x = spd[3]
-        msg.twist.twist.linear.y = spd[4]
-        msg.twist.twist.linear.z = spd[5]
-        msg.twist.covariance = self.covariance
+        msg.header.stamp = self.get_clock().now()
+        msg.header.frame_id = 'map'
+        msg.child_frame_id = 'base_link'
+        msg.twist.twist.angular.x = self.tracker.rot_vel[0]
+        msg.twist.twist.angular.y = self.tracker.rot_vel[1]
+        msg.twist.twist.angular.z = self.tracker.rot_vel[2]
+        msg.twist.twist.linear.x = self.tracker.vel[0]
+        msg.twist.twist.linear.y = self.tracker.vel[1]
+        msg.twist.twist.linear.z = self.tracker.vel[2]
+        msg.twist.covariance = self.tracker.P
         self.odom_publisher.publish(msg)
 
 
