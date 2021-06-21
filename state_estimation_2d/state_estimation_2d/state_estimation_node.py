@@ -10,6 +10,7 @@ import cv2
 import os
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Imu
@@ -29,6 +30,7 @@ from scipy.spatial.transform import Rotation as R
 
 from state_estimation_2d.filter import *
 from state_estimation_2d.geometry import *
+import nnio
 
 class StateEstimation2D(Node):
     def __init__(self):
@@ -44,8 +46,16 @@ class StateEstimation2D(Node):
             'imu',
             self.imu_callback,
             15)
+        self.cmd_vel_sub = self.create_subscription(
+            Twist,
+            'cmd_vel',
+            self.control_callback,
+            15)
+        self.control = Twist()
         self.odom = Odometry()
         self.imu = Imu()
+        self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
+        self.model = nnio.ONNXModel(self.model_path)
 
         self.dt = 0.1
         # self.R_odom = np.array([[0.7, 0, 0, 0, 0, 0],
@@ -57,7 +67,7 @@ class StateEstimation2D(Node):
         self.R_odom = np.array([[0.5, 0, 0],
                                 [0, 0.5, 0],
                                 [0, 0, 0.1]])
-        self.R_imu = np.array([0.001])
+        self.R_imu = np.array([0.1])
         Q_rot = np.array([
             [0.333 * self.dt**3, 0.5 * self.dt**2],
             [ 0.5 * self.dt**2,           self.dt],
@@ -77,6 +87,10 @@ class StateEstimation2D(Node):
 
         self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
         
+    def control_callback(self, msg):
+        self.control = msg
+        self.filter.set_control(self.control)
+    
     def odometry_callback(self, msg):
         self.odom = msg
         z_odom = self.odometry_to_vector(msg)
@@ -114,7 +128,8 @@ class StateEstimation2D(Node):
 
     def update(self):
         if self.got_measurements:
-            x_predict, P_predict = self.filter.predict()
+            # x_predict, P_predict = self.filter.predict()
+            x_predict, P_predict = self.filter.update_state_by_nn_model(self.model)
             # print(x_predict)
             x_opt, P_opt = self.filter.update(x_predict, P_predict)
             # self.state_to_odometry(x_opt, P_opt)
