@@ -5,76 +5,67 @@ from . import geometry, physics
 
 
 @njit
-def acc_local(state, q_center, gravity, extrinsic=None):
-    # Get acceleration
-    acc = state[2:9:3] - gravity
-    # Get rotation matrix
-    rot_matrix_inv = geometry.quat_as_matrix(q_center).T
+def acc_local15(state, q_center, gravity, extrinsic=None):
+    pass
+    # TODO
+    #return z_prior, H
+
+@njit
+def rot_vel_local(rot_vel, dim, extrinsic=None):
+    # Get rot_vel
+    z_prior = rot_vel
+
+    # Extrinsic transform
     if extrinsic is not None:
         rot_extrinsic = np.ascontiguousarray(extrinsic[:3,:3])
-        rot_matrix_inv = rot_extrinsic @ rot_matrix_inv
-    # Rotate the vector backwards
-    q_inv = geometry.quat_inv(q_center)
-    acc_lin = geometry.rotate_vector(acc, q_inv)
-    if extrinsic is None:
-        z_prior = acc_lin
-    else:
-        # Add rotational acceleration
-        w = state[10::2]
-        rxw = np.cross(extrinsic[:3,3], w)
-        acc_rot = np.cross(rxw, w)
-        z_prior = acc_lin# + acc_rot
-    
+        z_prior = rot_extrinsic @ np.ascontiguousarray(z_prior)
+
     # Compose H
-    H = np.zeros((3,15))
-    H[:, 2:9:3] = rot_matrix_inv
-    H[:, 9::2] = geometry.vector_to_pseudo_matrix(acc)
-    # Add rotational acceleration
-    # if extrinsic is not None:
-    #     H[:, 10::2] = geometry.vector_to_pseudo_matrix(rxw)
+    H = np.zeros((3, dim))
+    if extrinsic is None:
+        H[0, dim - 5] = 1
+        H[1, dim - 3] = 1
+        H[2, dim - 1] = 1
+    else:
+        H[:, dim - 5::2] = rot_extrinsic
     return z_prior, H
 
 @njit
-def rot_vel_local(state, extrinsic=None):
-    w = state[10::2]
-    if extrinsic is None:
-        z_prior = w
-    else:
+def static_vec(q_center, vec, dim, extrinsic=None):
+    # Rotate the vector backwards
+    q_inv = geometry.quat_inv(q_center)
+    z_prior = geometry.rotate_vector(vec, q_inv)
+
+    # Extrinsic transform
+    if extrinsic is not None:
         rot_extrinsic = np.ascontiguousarray(extrinsic[:3,:3])
-        z_prior = rot_extrinsic @ np.ascontiguousarray(w)
+        z_prior = rot_extrinsic @ np.ascontiguousarray(z_prior)
 
     # Compose H
-    H = np.zeros((3,15))
+    H = np.zeros((3, dim))
+    vec_cross = geometry.vector_to_pseudo_matrix(z_prior)
     if extrinsic is None:
-        H[0, 10] = 1
-        H[1, 12] = 1
-        H[2, 14] = 1
+        H[:, dim - 6::2] = vec_cross
     else:
-        H[:, 10::2] = rot_extrinsic
+        H[:, dim - 6::2] = vec_cross @ rot_extrinsic
     return z_prior, H
 
 @njit
-def static_vec(q_center, vec):
-    # Rotate the vector backwards
-    q_inv = geometry.quat_inv(q_center)
-    return geometry.rotate_vector(vec, q_inv)
-@njit
-def static_vec_jac(q_center, vec):
-    vec_cross = geometry.vector_to_pseudo_matrix(vec)
+def odometry_jac12(state, q_center, dt_btw_frames, extrinsic=None):
     # Compose H
-    H = np.zeros((3,15))
-    H[:, 9::2] = vec_cross
+    H = np.zeros((6, 12))
+
     return H
 
 @njit
-def odometry_jac(state, q_center, dt_btw_frames, dt_since_last_frame, extrinsic=None):
+def odometry_jac15(state, q_center, dt_btw_frames, dt_since_last_frame, extrinsic=None):
     # Go back in time
-    state_1, q_1 = physics.transition_function(
+    state_1, q_1 = physics.transition_function15(
         state,
         q_center,
         -(dt_btw_frames + dt_since_last_frame),
     )
-    state_2, _ = physics.transition_function(
+    state_2, _ = physics.transition_function15(
         state,
         q_center,
         -dt_since_last_frame,

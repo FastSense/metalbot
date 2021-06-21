@@ -5,7 +5,7 @@ package_name = 'state_estimation_3d'
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=['state_estimation_3d', 'state_estimation_3d.spacekf'],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'ekf_node = state_estimation_3d.ekf_node:main'
         ],
     },
 )

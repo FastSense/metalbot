@@ -97,11 +97,9 @@ def chart_inv(epsilon, q0=None):
     return q
 
 @njit
-def reset_manifold(state, q_center):
+def reset_manifold(epsilon, q_center):
     # Rotate the center
-    epsilon = state[9::2]
     next_center = chart_inv(epsilon, q_center)
     # Clear epsilon
-    next_state = state.copy()
-    next_state[9::2] = 0
-    return next_state, next_center
+    next_epsilon = np.zeros_like(epsilon)
+    return next_epsilon, next_center

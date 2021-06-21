@@ -1,3 +1,3 @@
-from .filter import SpaceKF_1, SpaceKF12
+from .filter import SpaceKF12, SpaceKF15
 
 __version__ = '0.0.0'

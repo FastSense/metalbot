@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from scipy.spatial.transform import Rotation
 import depthai as dai
 
 import rclpy
@@ -15,13 +16,69 @@ class OAKDNode(Node):
 
         self.bridge = CvBridge()
 
-        # Camera geometry
-        left_to_right = tf2_ros.StaticTransformBroadcaster(self)
-        lr_tf = tf2_ros.TransformStamped()
-        lr_tf.header.frame_id = 'oakd_left'
-        lr_tf.child_frame_id = 'oakd_right'
-        lr_tf.transform.translation.x = 0.075
-        left_to_right.sendTransform(lr_tf)
+        # TF transforms
+        # Robot to camera body
+        tf_static_pub = tf2_ros.StaticTransformBroadcaster(self)
+        tf = tf2_ros.TransformStamped()
+        tf.header.frame_id = 'base_link'
+        tf.child_frame_id = 'oakd'
+        tf_static_pub.sendTransform(tf)
+        # Camera body to accel
+        tf_static_pub = tf2_ros.StaticTransformBroadcaster(self)
+        tf = tf2_ros.TransformStamped()
+        tf.header.frame_id = 'oakd'
+        tf.child_frame_id = 'oakd_accel'
+        rot_mat = np.array([
+            [0., 1., 0.],
+            [0., 0., 1.],
+            [1., 0., 0.],
+        ]).T
+        rot_q = Rotation.from_matrix(rot_mat).as_quat()
+        tf.transform.rotation.x = rot_q[0]
+        tf.transform.rotation.y = rot_q[1]
+        tf.transform.rotation.z = rot_q[2]
+        tf.transform.rotation.w = rot_q[3]
+        tf_static_pub.sendTransform(tf)
+        # Camera body to imu
+        tf_static_pub = tf2_ros.StaticTransformBroadcaster(self)
+        tf = tf2_ros.TransformStamped()
+        tf.header.frame_id = 'oakd'
+        tf.child_frame_id = 'oakd_gyro'
+        rot_mat = np.array([
+            [0., 0.,-1.],
+            [0., 1., 0.],
+            [1., 0., 0.],
+        ]).T
+        rot_q = Rotation.from_matrix(rot_mat).as_quat()
+        tf.transform.rotation.x = rot_q[0]
+        tf.transform.rotation.y = rot_q[1]
+        tf.transform.rotation.z = rot_q[2]
+        tf.transform.rotation.w = rot_q[3]
+        tf_static_pub.sendTransform(tf)
+        # Camera body to left eye
+        tf_static_pub = tf2_ros.StaticTransformBroadcaster(self)
+        tf = tf2_ros.TransformStamped()
+        tf.header.frame_id = 'oakd'
+        tf.child_frame_id = 'oakd_left'
+        tf.transform.translation.y = 0.075 * 0.5
+        rot_mat = np.array([
+            [0.,-1., 0],
+            [0., 0.,-1.],
+            [1., 0., 0.],
+        ]).T
+        rot_q = Rotation.from_matrix(rot_mat).as_quat()
+        tf.transform.rotation.x = rot_q[0]
+        tf.transform.rotation.y = rot_q[1]
+        tf.transform.rotation.z = rot_q[2]
+        tf.transform.rotation.w = rot_q[3]
+        tf_static_pub.sendTransform(tf)
+        # Left to Right
+        tf_static_pub = tf2_ros.StaticTransformBroadcaster(self)
+        tf = tf2_ros.TransformStamped()
+        tf.header.frame_id = 'oakd_left'
+        tf.child_frame_id = 'oakd_right'
+        tf.transform.translation.x = 0.075
+        tf_static_pub.sendTransform(tf)
 
         # Create publishers
         self.left_publisher = self.create_publisher(Image, 'left', 10)

@@ -39,6 +39,10 @@ class SpaceKF12:
     You can get yaw, pitch, roll by using property `euler`.
     You can get rotation matrix by using property `rot_matrix`.
     '''
+
+    DIM = 12
+    ACCEL_STD = 10.0
+
     def __init__(
         self,
         dt,
@@ -53,52 +57,51 @@ class SpaceKF12:
             [ -0.5 * dt**2,           dt],
         ]) * rot_vel_std**2
         self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=2, dt=dt, var=velocity_std**2, block_size=2),
+            Q_discrete_white_noise(dim=2, dt=dt, var=velocity_std**2, block_size=3),
             Q_e_w, Q_e_w, Q_e_w,
         )
         self.q = np.array([1., 0, 0, 0])
         self.dt = dt
+        # Transition function
+        self.transition_function = physics.transition_function12
+        self.transition_jac = physics.transition_jac12
 
     def predict(self, dt=None):
         # Reset manifold before each predict
         self.reset_manifold()
         # Prediction step
         dt = dt or self.dt
-        F = physics.transition_jac(self.x, self.q, dt)
-        self.x, self.q = physics.transition_function(self.x, self.q, dt)
+        F = self.transition_jac(self.rot_vel, dt)
+        self.x, self.q = self.transition_function(self.x, self.q, dt)
         self.P = F @ self.P @ F.T + self.Q
 
     def update_linear(self, H, z, R):
         y = z - H @ self.x
-        self.x, self.P = update(self.x, self.P, H, R, y)
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
     def update_acc(self, z, R, gravity=None, extrinsic=None):
         '''
         Update state by a measurement coming from on-board accelerometer.
         '''
-        z_prior = measurent.static_vec(self.q, vec=gravity or GRAVITY)
-        H = measurent.static_vec_jac(self.q, vec=gravity or GRAVITY)
-        y = z - z_prior
-        q_mat = geometry.quat_as_matrix(self.q)
-        R_glob = q_mat.T @ R @ q_mat
-        self.x, self.P = update(self.x, self.P, H, R_glob, y)
+        R_new = R + np.eye(3) * self.ACCEL_STD**2
+        self.update_static_vec(z, R_new, vec=gravity or GRAVITY, extrinsic=extrinsic)
 
     def update_rot_vel(self, z, R, extrinsic=None):
         '''
         Update state by a measurement coming from on-board gyroscope.
         '''
-        z_prior, H = measurent.rot_vel_local(self.x, extrinsic=extrinsic)
+        z_prior, H = measurent.rot_vel_local(self.rot_vel, self.DIM, extrinsic=extrinsic)
         y = z - z_prior
-        self.x, self.P = update(self.x, self.P, H, R, y)
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_static_vec(self, z, R, vec):
+    def update_static_vec(self, z, R, vec, extrinsic=None):
         '''
         Update state by a measurement of some vector which should be constant in the world coordinates.
         For example, magnetic field.
         '''
-        y = z - measurent.static_vec(self.q, vec)
-        H = measurent.static_vec_jac(self.q, vec)
-        self.x, self.P = update(self.x, self.P, H, R, y)
+        z_prior, H = measurent.static_vec(self.q, vec, self.DIM, extrinsic=extrinsic)
+        y = z - z_prior
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
     def update_odometry(self, z, R, dt_btw_frames, dt_since_last_frame, extrinsic=None):
         '''
@@ -115,9 +118,9 @@ class SpaceKF12:
         '''
         Reset the linearization center
 
-        Don't worry about this function - it is called automatically before every predict step.
+        Called automatically before every predict step.
         '''
-        self.x, self.q = geometry.reset_manifold(self.x, self.q)
+        self._epsilon, self.q = geometry.reset_manifold(self._epsilon, self.q)
 
     @property
     def pos(self):
@@ -134,6 +137,13 @@ class SpaceKF12:
         self.x[1:6:2] = value
 
     @property
+    def _epsilon(self):
+        return self.x[6::2]
+    @_epsilon.setter
+    def _epsilon(self, value):
+        self.x[6::2] = value
+
+    @property
     def rot_vel(self):
         return self.x[7::2]
     @rot_vel.setter
@@ -148,15 +158,23 @@ class SpaceKF12:
     def rot_matrix(self):
         return geometry.quat_as_matrix(self.q)
 
+    def get_pose_covariance(self):
+        '''
+        Returns 6x6 covariance matrix of pose in the form a list with length 36:
+        (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+        '''
+        indeces = [0, 2, 4, 6, 8, 10]
+        mat = self.P[indeces][:, indeces]
+        return list(mat.flatten())
 
-@njit
-def update(x, P, H, R, y):
-    S = H @ P @ H.T + R
-    K = P @ H.T @ np.linalg.inv(S)
-    new_x = x + K @ y
-    new_P = (np.eye(x.shape[0]) - K @ H) @ P
-    return new_x, new_P
-
+    def get_twist_covariance(self):
+        '''
+        Returns 6x6 covariance matrix of velocity in the form a list with length 36:
+        (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+        '''
+        indeces = [1, 3, 5, 7, 9, 11]
+        mat = self.P[indeces][:, indeces]
+        return list(mat.flatten())
 
 
 class SpaceKF15(SpaceKF12):
@@ -190,6 +208,9 @@ class SpaceKF15(SpaceKF12):
     You can get yaw, pitch, roll by using property `euler`.
     You can get rotation matrix by using property `rot_matrix`.
     '''
+
+    DIM = 15
+
     def __init__(
         self,
         dt,
@@ -209,16 +230,19 @@ class SpaceKF15(SpaceKF12):
         )
         self.q = np.array([1., 0, 0, 0])
         self.dt = dt
+        # Transition function
+        self.transition_function = physics.transition_function15
+        self.transition_jac = physics.transition_jac15
 
     def update_acc(self, z, R, gravity=None, extrinsic=None):
         '''
         Update state by a measurement coming from on-board accelerometer.
         '''
-        z_prior, H = measurent.acc_local(self.x, self.q, gravity=gravity or GRAVITY, extrinsic=extrinsic)
+        z_prior, H = measurent.acc_local15(self.x, self.q, gravity=gravity or GRAVITY, extrinsic=extrinsic)
         y = z - z_prior
-        q_mat = geometry.quat_as_matrix(self.q)
-        R_glob = q_mat.T @ R @ q_mat
-        self.x, self.P = update(self.x, self.P, H, R_glob, y)
+        # q_mat = geometry.quat_as_matrix(self.q)
+        # R_glob = q_mat.T @ R @ q_mat
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
     @property
     def pos(self):
@@ -242,8 +266,24 @@ class SpaceKF15(SpaceKF12):
         self.x[2:9:3] = value
 
     @property
+    def _epsilon(self):
+        return self.x[9::2]
+    @_epsilon.setter
+    def _epsilon(self, value):
+        self.x[9::2] = value
+
+    @property
     def rot_vel(self):
         return self.x[10::2]
     @rot_vel.setter
     def rot_vel(self, value):
         self.x[10::2] = value
+
+
+@njit
+def kalman_update(x, P, H, R, y):
+    S = H @ P @ H.T + R
+    K = P @ H.T @ np.linalg.inv(S)
+    new_x = x + K @ y
+    new_P = (np.eye(x.shape[0]) - K @ H) @ P
+    return new_x, new_P
