@@ -111,7 +111,7 @@ class SpaceKF12:
         ----------
             z (np.array of shape [6]): Output of a neural network. Contains rotations and translations: `[rot_x, rot_y, rot_z, dx, dy, dz]`.
         '''
-        z_prior, H = measurent.odometry12(self.vel, self.rot_vel, delta_t, extrinsic=extrinsic)
+        z_prior, H = measurent.odometry12(self.vel, self.rot_vel, self.q, delta_t, extrinsic=extrinsic)
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 

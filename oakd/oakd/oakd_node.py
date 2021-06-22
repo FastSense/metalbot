@@ -89,9 +89,26 @@ class OAKDNode(Node):
         self.imu_publisher = self.create_publisher(Imu, 'imu', 10)
 
         # Create timer
-        self.create_timer(1e-3, self.check_queues)
+        self.create_timer(1e-2, self.timer_callback)
         self.min_delta = None
 
+        self.initialize_device()
+
+        # Covariance matrix
+        std_accel = 0.1
+        self.covariance_accel = list((np.eye(3) * std_accel**2).flatten())
+        std_rotvel = 0.1
+        self.covariance_rotvel = list((np.eye(3) * std_rotvel**2).flatten())
+
+    def timer_callback(self):
+        try:
+            self.check_queues()
+        except RuntimeError as e:
+            print(e)
+            print('Restarting device')
+            self.initialize_device()
+
+    def initialize_device(self):
         # Start defining a pipeline
         pipeline = dai.Pipeline()
 
@@ -162,13 +179,6 @@ class OAKDNode(Node):
         self.q_right_rect = self.device.getOutputQueue(name="right_rect", maxSize=4, blocking=False)
         # self.q_rgb = self.device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
         self.q_imu = self.device.getOutputQueue(name="imu", maxSize=4, blocking=False)
-
-
-        # Covariance matrix
-        std_accel = 0.1
-        self.covariance_accel = list((np.eye(3) * std_accel**2).flatten())
-        std_rotvel = 0.1
-        self.covariance_rotvel = list((np.eye(3) * std_rotvel**2).flatten())
 
     def check_queues(self):
         # ROS time stamp

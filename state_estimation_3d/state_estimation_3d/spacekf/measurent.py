@@ -51,14 +51,18 @@ def static_vec(q_center, vec, dim, extrinsic=None):
     return z_prior, H
 
 @njit
-def odometry12(vel, rot_vel, delta_t, extrinsic=None):
+def odometry12(vel, rot_vel, q_center, delta_t, extrinsic=None):
     '''
     measurement = (angle about x, angle about y, angle about z, translation x, translation y, translation z)
     '''
+    # Rotate the vector backwards
+    q_inv = geometry.quat_inv(q_center)
+    rot_matrix_inv = geometry.quat_as_matrix(q_inv)
+
     # Measurement
     z_prior = np.empty(6)
     z_prior[:3] = rot_vel * delta_t
-    z_prior[3:] = vel * delta_t
+    z_prior[3:] = geometry.rotate_vector(vel, q_inv) * delta_t
 
     # Extrinsic transform
     if extrinsic is not None:
@@ -69,14 +73,12 @@ def odometry12(vel, rot_vel, delta_t, extrinsic=None):
 
     # Compose H
     H = np.zeros((6, 12))
-    # delta h_tr / delta vel
+    # delta h_trans / delta vel
     if extrinsic is None:
-        H[3, 1] = delta_t
-        H[4, 3] = delta_t
-        H[5, 5] = delta_t
+        H[3:, 1:6:2] = rot_matrix_inv * delta_t
     else:
-        H[3:, 1:6:2] = rot_extrinsic_dt
-    # delta h_tr / delta epsilon
+        H[3:, 1:6:2] = rot_matrix_inv @ rot_extrinsic_dt
+    # delta h_trans / delta epsilon
     vel_cross = geometry.vector_to_pseudo_matrix(z_prior[3:])
     if extrinsic is None:
         H[3:, 6::2] = vel_cross * delta_t

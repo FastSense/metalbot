@@ -21,7 +21,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.1)
+        self.declare_parameter('period', 0.03)
         self.declare_parameter('vel_std', 0.1)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -80,7 +80,7 @@ class EKFNode(Node):
         self.tracker.predict()
         # Update
         if self.imu_buffer is not None:
-            # self.update_imu(self.imu_buffer)
+            self.update_imu(self.imu_buffer)
             self.imu_buffer = None
         if self.odom_buffer is not None:
             self.update_odom(self.odom_buffer)
