@@ -2,48 +2,49 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 import rclpy
+import numpy as np
 
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
 
-from logger.utils import euler_from_quaternion, convert_ros2_time_to_float
+from logger.utils import convert_ros2_time_to_float
 from logger.create_graphs import build_general_graph_for_rosbot
+from scipy.spatial.transform import Rotation
 
 class Logger(Node):
     """
     Class for logging the state of the rosbot
-    
     Node for logging the state of the robot,
     kinematic model (optional) and neural network
     model (optional), control and time stamps
+    :Attributes:
+        :first_tick: (bool) srue if it is first callbcak
+        :init_time: (float) node start time (time of the first callback)
+        :curr_control: (list) current control [u_v, u_w]
+        :output_path: (str) Absolute path to the directory
+         where the logged data will be saved
+        :control_topic: (str) nam of the control topic (/cmd_vel)
+        :parent_frame: (str) name of the origin tf frame
+        :kinetic_model_frame: (str) name of the kinematic model tf frame
+        :nn_model_frame: (str) name of the NN model tf frame
+        :robot_state: (pandas.DataFrame) container for rosbot state
+        :kinetic_model_state: (pandas.DataFrame) container for
+         kinematic model state
+        :nn_model_state: (pandas.DataFrame) container for NN model state
+        :robot_control: (pandas.DataFrame) container for rosbot control
+        :time: (list) container for time stamps
+        :odom_sub: subscriber to /odom topic
+        :control_sub: subscriber to control topic
     """
     def __init__(self):
         """
-        :Attributes:
-            :first_tick: (bool) srue if it is first callbcak
-            :init_time: (float) node start time (time of the first callback)
-            :curr_control: (list) current control [u_v, u_w]
-            :output_path: (str) Absolute path to the directory
-             where the logged data will be saved
-            :control_topic: (str) nam of the control topic (/cmd_vel)
-            :parent_frame: (str) name of the origin tf frame
-            :kinetic_model_frame: (str) name of the kinematic model tf frame
-            :nn_model_frame: (str) name of the NN model tf frame
-            :robot_state: (pandas.DataFrame) container for rosbot state
-            :kinetic_model_state: (pandas.DataFrame) container for
-             kinematic model state
-            :nn_model_state: (pandas.DataFrame) container for NN model state
-            :robot_control: (pandas.DataFrame) container for rosbot control
-            :time: (list) container for time stamps
-            :odom_sub: subscriber to /odom topic
-            :control_sub: subscriber to control topic
         """
         super().__init__('logger')
       
         self.init_parameters()
-        self.get_parametes()
+        self.get_node_parametes()
         self.init_subs()
         self.init_containers()
         
@@ -65,7 +66,7 @@ class Logger(Node):
         self.declare_parameter('nn_model_frame', 'nn_model_link')
         # self.declare_parameter('tf_topic', '/tf')
 
-    def get_parametes(self):
+    def get_node_parametes(self):
         """
         Gets node parameters
         """
@@ -148,12 +149,13 @@ class Logger(Node):
         rosbot_pose = odom_msg.pose.pose
         rosbot_velocities = odom_msg.twist.twist
         x, y, z = rosbot_pose.position.x, rosbot_pose.position.y, rosbot_pose.position.z
-        rpy = euler_from_quaternion(
-            rosbot_pose.orientation.x,
-            rosbot_pose.orientation.y,
-            rosbot_pose.orientation.z,
-            rosbot_pose.orientation.w
-        )
+        rpy = Rotation.from_quat([
+            np.float(rosbot_pose.orientation.x),
+            np.float(rosbot_pose.orientation.y),
+            np.float(rosbot_pose.orientation.z),
+            np.float(rosbot_pose.orientation.w)]
+        ).as_euler('xyz')
+        rpy = list(rpy)
 
         v_x = rosbot_velocities.linear.x # Linear velocity
         v_y = rosbot_velocities.linear.y
@@ -220,6 +222,8 @@ class Logger(Node):
 
     def shutdown_logger_callback(self):
         """
+        Callback for the shutdown_logger service, 
+        turns off the logger node
         """
         rclpy.try_shutdown()
 
@@ -255,10 +259,6 @@ def main():
         rclpy.spin(logger)
     except:
         pass
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
 
     logger.destroy_node()
     rclpy.shutdown()

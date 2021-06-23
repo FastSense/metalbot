@@ -20,7 +20,7 @@ class RosbotSpawner(Node):
         """
         super().__init__('spawn_rosbot')
         self.init_parameters()
-        self.get_parametes()
+        self.get_node_parametes()
 
     def init_parameters(self):
         """
@@ -28,7 +28,7 @@ class RosbotSpawner(Node):
         self.declare_parameter('rosbot_update_rate', "10")
 
 
-    def get_parametes(self):
+    def get_node_parametes(self):
         """
         Gets node parameters
         """

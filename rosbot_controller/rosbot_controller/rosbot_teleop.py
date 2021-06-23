@@ -8,26 +8,39 @@ from sensor_msgs.msg import Joy
 
 class RosbotTeleop(Node):
     """
+    A class that interprets the pressed keys on 
+    the keyboard into control commands and publishes them
+    Keys for control: W A S D shift space
+    :Attributes:
+        :curr_cmd: (Twist) current control
+        :keyboard_sub: (ros2 subscriber) keyboard subscriber
+        :joystick_sub: (ros2 subscriber) joystick (gamepad) subscriber
+        :keyboard_topic: (str) keyboard topic name
+        :control_topic: (str) control topic name
+        :joystick_topic: (str) joystick topic name
+        :movable_camera: (bool) true if the camera is movable
+        :v_limit: (float) linear velocity maximum
+        :w_limit: (float) angular velocity maximum
+        :lin_a: (float) linear acceleration
+        :ang_a: (float) angular acceleration
+        :dt: (float) time delta between publications
     """
     def __init__(self):
         """
+        The method declares a node, 
+        declares and receives parameters
         """
         super().__init__('rosbot_teleop')
         self.curr_cmd = Twist()
         self.init_parameters()
-        self.get_parametes()
+        self.get_node_parametes()
         self.init_subs()
-        self.keyboard_sub = self.create_subscription(
-            String,
-            self.keyboard_topic,
-            self.keyboard_callback,
-            1
-        )
         self.cmd_pub = self.create_publisher(Twist, self.control_topic, 10)
 
 
     def init_subs(self):
         """
+        Declare subscribers
         """
         self.keyboard_sub = self.create_subscription(
             String,
@@ -63,7 +76,7 @@ class RosbotTeleop(Node):
             ]
         )
 
-    def get_parametes(self):
+    def get_node_parametes(self):
         """
         Gets node parameters
         """
@@ -80,11 +93,12 @@ class RosbotTeleop(Node):
 
     def keyboard_callback(self, keyboard_msg):
         """
+        Callback to keyboard subscriber
+        Interprets pressed keys into control commands
+        and publishes them
         """
-        # print(keyboard_msg.data)
 
         keys = keyboard_msg.data.split(" ")
-
         lin_vel = self.curr_cmd.linear.x
         ang_vel = self.curr_cmd.angular.z
         k = 1
@@ -113,16 +127,13 @@ class RosbotTeleop(Node):
             lin_vel = 0
             ang_vel = 0
 
-        # print(self.movable_camera, self.v_limit, self.w_limit, self.lin_a, self.ang_a, self.dt)
         lin_vel, ang_vel = self.clip_velocities(lin_vel, ang_vel)
 
-        # print(lin_vel, ang_vel)
         self.curr_cmd.linear.x = lin_vel
         self.curr_cmd.angular.z = ang_vel
         self.cmd_pub.publish(self.curr_cmd)
 
 
-    # (c)pizheno https://github.com/FastSense/tankbot-rc/blob/refactoring_to_class/tankbot_joystick.py#L54
     def joystick_callback(self, msg):
         """
         Callback for joystick input
@@ -136,10 +147,8 @@ class RosbotTeleop(Node):
         JOYSTICK_AXIS_HEAD_PITCH = 0     # 3
 
         # Linear velocity axis
-        # lin = msg.axes[1]
         lin_vel = -msg.axes[JOYSTICK_AXIS_LINEAR_VEL]
         # Angular velocity axis
-        # ang = msg.axes[0] * JOYSTICK_ANGULAR_SCALER
         ang_vel = msg.axes[JOYSTICK_AXIS_ANGULAR_VEL] * JOYSTICK_ANGULAR_SCALER
 
         # Exponential scaling for input
@@ -160,14 +169,11 @@ class RosbotTeleop(Node):
         self.curr_cmd.linear.x = lin_vel
         self.curr_cmd.angular.z = ang_vel
         return self.curr_cmd
-        # with self.head_cmd_lock:
-        #     self.head_cmd.angular.x = (msg.axes[JOYSTICK_AXIS_HEAD_YAW] + 1) / 2
-        #     self.head_cmd.angular.y = (-msg.axes[JOYSTICK_AXIS_HEAD_PITCH] + 1) / 2
-
 
 
     def clip_velocities(self, lin_vel, ang_vel):
         """
+        Cuts speeds based on limits
         """
 
         lin_vel = np.clip(
