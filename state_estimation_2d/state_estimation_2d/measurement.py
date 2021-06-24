@@ -3,15 +3,15 @@ import numpy as np
 def get_jacobian_odom(x):
     H = np.zeros((3, 6))
     # J_odom[0, 2] = 1 / (np.cos(x[4]) + 0.00001)
-    H[0, 2] = np.cos(x[4])
-    H[0, 3] = np.sin(x[4])
-    H[0, 4] = -x[2] * np.sin(x[4]) + x[3] * np.cos(x[4])
-    H[1, 2] = -np.sin(x[4])
-    H[1, 3] =  np.cos(x[4])
-    H[1, 4] = -x[2] * np.cos(x[4]) - x[3] * np.sin(x[4])
-    # H[0, 2] = 1 
-    # H[1, 3] = 1
-    # H[2, 5] = 1  
+    # H[0, 2] = np.cos(x[4])
+    # H[0, 3] = np.sin(x[4])
+    # H[0, 4] = -x[2] * np.sin(x[4]) + x[3] * np.cos(x[4])
+    # H[1, 2] = -np.sin(x[4])
+    # H[1, 3] =  np.cos(x[4])
+    # H[1, 4] = -x[2] * np.cos(x[4]) - x[3] * np.sin(x[4])
+    H[0, 2] = 1 
+    H[1, 3] = 1
+    H[2, 5] = 1  
 
 
     # H[0, 2] = np.cos(x[4])
@@ -45,7 +45,15 @@ def odom(x):
     # print(np.sin(x[4]))
     return z
 
-def get_jacobian_imu():
-    J_imu = np.zeros((1, 6))
-    J_imu[0, 5] = 1
-    return J_imu
+def get_jacobian_imu(x):
+    H = np.zeros((2, 6))
+    H[0, 2] = -x[5]
+    H[0, 5] = -x[2]
+    H[1, 5] = 1
+    return H
+
+def imu(x):
+    z = np.zeros(2)
+    z[0] = -x[2] * x[5]
+    z[1] = x[5]
+    return z

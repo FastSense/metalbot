@@ -30,12 +30,18 @@ from scipy.spatial.transform import Rotation as R
 
 from state_estimation_2d.filter import *
 from state_estimation_2d.geometry import *
+from state_estimation_2d.ate import *
 import nnio
 
 class StateEstimation2D(Node):
     def __init__(self):
         super().__init__('state_estimation_2d')
 
+        self.odom_gt_sub = self.create_subscription(
+            Odometry,
+            'odom',
+            self.odometry_gt_callback,
+            10)
         self.odom_sub = self.create_subscription(
             Odometry,
             'odom_noised',
@@ -53,9 +59,12 @@ class StateEstimation2D(Node):
             15)
         self.control = Twist()
         self.odom = Odometry()
+        self.odom_gt = Odometry()
         self.imu = Imu()
         self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
         self.model = nnio.ONNXModel(self.model_path)
+
+        self.ate = ErrorEstimator()
 
         self.dt = 0.1
         # self.R_odom = np.array([[0.7, 0, 0, 0, 0, 0],
@@ -73,10 +82,10 @@ class StateEstimation2D(Node):
             [ 0.5 * self.dt**2,           self.dt],
         ]) * 0.1
         self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=2, dt=self.dt, var=0.01, block_size=2),
+            Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=2),
             Q_rot,
         )
-        self.filter = Filter2D(x_init = np.zeros(6), P_init = np.eye(6) * 0.007, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
+        self.filter = Filter2D(x_init = np.zeros(6), P_init = np.eye(6) * 0.01, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
         self.odom_filtered = Odometry()
         self.got_measurements = 0
 
@@ -101,6 +110,9 @@ class StateEstimation2D(Node):
         # self.x_opt, self.P_opt = filter.update_odom()
         # self.state_to_odometry(msg)
         # covariance_to_vector(msg)
+
+    def odometry_gt_callback(self, msg):
+        self.odom_gt = msg
 
     def odometry_to_vector(self, odom):
         z_odom = np.zeros(3)
@@ -134,6 +146,7 @@ class StateEstimation2D(Node):
             x_opt, P_opt = self.filter.update(x_predict, P_predict)
             # self.state_to_odometry(x_opt, P_opt)
             self.state_to_odometry(x_opt, P_opt)
+            self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
             self.pose_pub.publish(self.odom_filtered)
 
     def state_to_odometry(self, x, P):
@@ -195,7 +208,12 @@ def main():
     try:
         rclpy.spin(state_estimator)
     except KeyboardInterrupt:
-        rclpy.logerr("Shutting down")
+        ate, std = state_estimator.ate.evaluate_ate()
+        print("ATE:")
+        print(ate)
+        print("STD:")
+        print(std)
+        # rclpy.logerr("Shutting down")
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
