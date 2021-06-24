@@ -56,7 +56,8 @@ class Filter2D:
         dt : time period in seconds
         """
 
-        model_input = np.array([[self.v, self.w, self.control[0], self.control[1], self.dt]], dtype=np.float32)
+        model_input = np.array([[self.v, self.w, self.control[0], self.control[1], self.dt]], 
+                                dtype=np.float32)
         model_output = model(model_input)
         self.v, self.w = float(model_output[0][0]), float(model_output[0][1])
         vel_vector = np.array([self.v, self.w])
@@ -80,12 +81,12 @@ class Filter2D:
         P_predict = J_f @ self.P_opt @ J_f.T + self.Q
         return P_predict
 
-    def update(self, x_predict, P_predict):
-        self.update_odom(x_predict, P_predict)
-        self.update_imu(self.x_opt, self.P_opt)
+    def update(self):
+        self.update_odom()
+        self.update_imu()
         return self.x_opt, self.P_opt
 
-    def update_odom(self, x_predict, P_predict):
+    def update_odom(self):
         H = get_jacobian_odom(self.x_opt)   
         y = self.z_odom - H @ self.x_opt
         G = H @ self.P_opt @ H.T + self.R_odom
@@ -94,7 +95,7 @@ class Filter2D:
         self.P_opt = (I - K @ H) @ self.P_opt
         self.x_opt = self.x_opt + K @ y
 
-    def update_imu(self, x_predict, P_predict):
+    def update_imu(self):
         H = get_jacobian_imu(self.x_opt) 
         y = self.z_imu - imu(self.x_opt)
         G = H @ self.P_opt @ H.T + self.R_imu

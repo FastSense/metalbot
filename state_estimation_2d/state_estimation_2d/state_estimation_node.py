@@ -2,28 +2,11 @@
 # license removed for brevity
 import rclpy
 from rclpy.node import Node
-from rclpy.time import Time
-from rclpy.time import Duration
-from rclpy.clock import Clock
-import sys
 import cv2
-import os
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
-import message_filters
 import numpy as np
-import json
-import tf2_py as tf2
-import tf2_ros
-from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener
-from tf2_msgs.msg import TFMessage
-from geometry_msgs.msg import Point, Quaternion, Pose, PoseWithCovariance, PoseWithCovarianceStamped
 import scipy
 from filterpy.common import Q_discrete_white_noise
 from scipy.spatial.transform import Rotation as R
@@ -122,8 +105,8 @@ class StateEstimation2D(Node):
 
     def update(self):
         if self.got_measurements:
-            x_predict, P_predict = self.filter.update_state_by_nn_model(self.model)
-            x_opt, P_opt = self.filter.update(x_predict, P_predict)
+            self.filter.update_state_by_nn_model(self.model)
+            x_opt, P_opt = self.filter.update()
             self.state_to_odometry(x_opt, P_opt)
             self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
             self.pose_pub.publish(self.odom_filtered)
