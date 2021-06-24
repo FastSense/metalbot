@@ -1,11 +1,8 @@
 import rclpy
 from rclpy.node import Node
-import sys
 import cv2
-import os
 from nav_msgs.msg import Odometry
 import numpy as np
-import json
 import random
 
 class Noiser(Node):
@@ -20,14 +17,10 @@ class Noiser(Node):
         self.odom = Odometry()
         self.odom_noised = Odometry()
         self.pose_pub = self.create_publisher(Odometry, '/odom_noised', 10)
-
         self.x_sum = 0
         self.y_sum = 0
         self.theta_sum = 0
         self.dt = 0.1
-
-        self.pose_noise_std = 0.1
-        self.orient_noise_std = 0.1
         self.lin_vel_noise_std = 0.5
         self.rot_vel_noise_std = 0.1
 
@@ -36,8 +29,10 @@ class Noiser(Node):
         self.odom_noised.child_frame_id = msg.child_frame_id
         self.odom_noised.pose.covariance = msg.pose.covariance
         self.odom_noised.twist.covariance = msg.twist.covariance
-        vel_noised_x = msg.twist.twist.linear.x + random.gauss(0, self.lin_vel_noise_std)
-        vel_noised_theta = msg.twist.twist.angular.z + random.gauss(0, self.rot_vel_noise_std)
+        vel_noised_x = (msg.twist.twist.linear.x + 
+                        random.gauss(0, self.lin_vel_noise_std))
+        vel_noised_theta = (msg.twist.twist.angular.z + 
+                            random.gauss(0, self.rot_vel_noise_std))
         self.theta_sum = self.theta_sum + vel_noised_theta * self.dt
         self.x_sum = self.x_sum + vel_noised_x * np.cos(self.theta_sum) * self.dt
         self.y_sum = self.y_sum + vel_noised_x * np.sin(self.theta_sum) * self.dt
