@@ -36,7 +36,6 @@ import nnio
 class StateEstimation2D(Node):
     def __init__(self):
         super().__init__('state_estimation_2d')
-
         self.odom_gt_sub = self.create_subscription(
             Odometry,
             'odom',
@@ -63,20 +62,13 @@ class StateEstimation2D(Node):
         self.imu = Imu()
         self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
         self.model = nnio.ONNXModel(self.model_path)
-
         self.ate = ErrorEstimator()
-
         self.dt = 0.1
-        # self.R_odom = np.array([[0.7, 0, 0, 0, 0, 0],
-        #                         [0, 0.7, 0, 0, 0, 0],
-        #                         [0, 0, 0.7, 0, 0, 0],
-        #                         [0, 0, 0, 0.7, 0, 0],
-        #                         [0, 0, 0, 0, 0.1, 0],
-        #                         [0, 0, 0, 0, 0, 0.1]])
         self.R_odom = np.array([[0.5, 0, 0],
                                 [0, 0.5, 0],
                                 [0, 0, 0.1]])
-        self.R_imu = np.array([0.1])
+        self.R_imu = np.array([[0.1, 0],
+                               [0, 0.1]])
         Q_rot = np.array([
             [0.333 * self.dt**3, 0.5 * self.dt**2],
             [ 0.5 * self.dt**2,           self.dt],
@@ -85,15 +77,15 @@ class StateEstimation2D(Node):
             Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=2),
             Q_rot,
         )
-        self.filter = Filter2D(x_init = np.zeros(6), P_init = np.eye(6) * 0.01, R_odom = self.R_odom, R_imu = self.R_imu, Q = self.Q)
+        self.filter = Filter2D(x_init = np.zeros(6), 
+                               P_init = np.eye(6) * 0.01, 
+                               R_odom = self.R_odom, 
+                               R_imu = self.R_imu, 
+                               Q = self.Q)
         self.odom_filtered = Odometry()
         self.got_measurements = 0
-
-        self.predict_timer = self.create_timer(
-            self.dt,
-            self.update
-        )
-
+        self.predict_timer = self.create_timer(self.dt,
+                                               self.update)
         self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
         
     def control_callback(self, msg):
@@ -105,11 +97,6 @@ class StateEstimation2D(Node):
         z_odom = self.odometry_to_vector(msg)
         self.filter.set_odometry(z_odom)
         self.got_measurements = 1
-        # self.odom = msg
-        # filter.set_odometry(msg)
-        # self.x_opt, self.P_opt = filter.update_odom()
-        # self.state_to_odometry(msg)
-        # covariance_to_vector(msg)
 
     def odometry_gt_callback(self, msg):
         self.odom_gt = msg
@@ -123,28 +110,20 @@ class StateEstimation2D(Node):
 
     def imu_callback(self, msg):
         self.imu = msg
-        # tf = self.tf_buffer.lookup_transform("imu", "odom", Time(seconds=0))
-        # translation = tf.transform.translation
-        # rotation = tf.transform.rotation
         z_imu = self.imu_to_vector(msg)
         self.filter.set_imu(z_imu)
         self.got_measurements = 1
-        # self.imu = msg
-        # filter.set_imu(msg)
-        # self.x_opt, self.P_opt = filter.update_imu()
     
     def imu_to_vector(self, imu):
-        z_imu = np.zeros(1)
-        z_imu[0] = imu.angular_velocity.z
+        z_imu = np.zeros(2)
+        z_imu[0] = imu.linear_acceleration.y
+        z_imu[1] = imu.angular_velocity.z
         return z_imu
 
     def update(self):
         if self.got_measurements:
-            # x_predict, P_predict = self.filter.predict()
             x_predict, P_predict = self.filter.update_state_by_nn_model(self.model)
-            # print(x_predict)
             x_opt, P_opt = self.filter.update(x_predict, P_predict)
-            # self.state_to_odometry(x_opt, P_opt)
             self.state_to_odometry(x_opt, P_opt)
             self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
             self.pose_pub.publish(self.odom_filtered)
@@ -155,7 +134,6 @@ class StateEstimation2D(Node):
         self.odom_filtered.pose.pose.position.x = x[0]
         self.odom_filtered.pose.pose.position.y = x[1]
         self.odom_filtered.pose.pose.position.z = self.odom.pose.pose.position.z
-        # roll, pitch, yaw = euler_from_quaternion(self.odom.pose.pose.orientation)
         r = R.from_euler('z', x[4], degrees=True)
         q = r.as_quat()
         self.odom_filtered.pose.pose.orientation.x = q[0]
@@ -213,7 +191,6 @@ def main():
         print(ate)
         print("STD:")
         print(std)
-        # rclpy.logerr("Shutting down")
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
