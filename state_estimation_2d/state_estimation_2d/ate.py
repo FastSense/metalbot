@@ -2,6 +2,19 @@ import numpy as np
 from nav_msgs.msg import Odometry
 
 class ErrorEstimator():
+    """
+    Class for estimation error of Kalman filter relative to ground truth
+    ---------------------------
+    Attributes:
+    ate_distance: float
+        Absolute translation error
+    ate_distance_sqr: float
+        Absolute translation error squared
+    ate_mean: float
+    ate_std: float
+    ate_num_points: int
+        Number of points considered
+    """
     def __init__(self):
         self.ate_distance = 0
         self.ate_distance_sqr = 0
