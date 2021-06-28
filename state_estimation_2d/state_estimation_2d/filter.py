@@ -43,19 +43,7 @@ class Filter2D:
         self.P_opt = P_init
         self.dt = dt
         self.control = np.zeros(2)
-        self.v = 0
-        self.w = 0
         self.eps_w = 0.001
-
-    def set_control(self, msg):
-        """
-        Set velocity control from /cmd_vel
-        @ parameters
-        msg: Twist
-            Velocity
-        """
-        self.control[0] = msg.linear.x
-        self.control[1] = msg.angular.z
 
     def predict_by_nn_model(self, model, control):
         """
@@ -69,7 +57,7 @@ class Filter2D:
         P_opt:
             Covariance matrix after predict step
         """
-        model_input = np.array([[self.v, self.w, self.control[0], self.control[1], self.dt]], 
+        model_input = np.array([[self.v, self.w, control[0], control[1], self.dt]], 
                                 dtype=np.float32)
         model_output = model(model_input)
         # Predicted velocity control
@@ -101,7 +89,7 @@ class Filter2D:
     
     def predict_covariance(self):
         """Computes covariance matrix after predict step"""
-        P_predict = np.zeros((6, 6))
+        P_predict = np.zeros((5, 5))
         F = transform_jacobian(self.x_opt, self.dt)
         P_predict = F @ self.P_opt @ F.T + self.Q
         return P_predict
@@ -112,7 +100,7 @@ class Filter2D:
         y = z_odom - H @ self.x_opt
         G = H @ self.P_opt @ H.T + R_odom
         K = self.P_opt @ H.T @ inv(G)
-        I = np.eye(6)
+        I = np.eye(5)
         self.P_opt = (I - K @ H) @ self.P_opt
         self.x_opt = self.x_opt + K @ y
 
@@ -122,7 +110,7 @@ class Filter2D:
         y = z_imu - imu(self.x_opt)
         G = H @ self.P_opt @ H.T + R_imu
         K = self.P_opt @ H.T @ inv(G)
-        I = np.eye(6)
+        I = np.eye(5)
         self.P_opt = (I - K @ H) @ self.P_opt
         self.x_opt = self.x_opt + K @ y
     
@@ -135,10 +123,10 @@ class Filter2D:
     
     @property
     def w(self):
-        return self.x_opt[5]
+        return self.x_opt[4]
     @w.setter
     def w(self, value):
-        self.x_opt[5] = value
+        self.x_opt[4] = value
 
     @property
     def pos(self):
@@ -149,7 +137,7 @@ class Filter2D:
 
     @property
     def yaw(self):
-        return self.x_opt[4]
+        return self.x_opt[3]
     @yaw.setter
     def yaw(self, value):
-        self.x_opt[4] = value
+        self.x_opt[3] = value

@@ -18,22 +18,20 @@ import nnio
 
 """
 State vector:
-1. x
-2. y
-3. V_parallel       (velocity along the robot direction)
-4. V_normal         (velocity orthogonal to the robot direction)
-4. yaw
-5. yaw_vel
+0. x
+1. y
+2. V_parallel       (velocity along the robot direction)
+3. yaw
+4. yaw_vel
 
 Measurements:
 Odometry:
-1. V_parallel
-2. V_normal
-3. yaw_vel
+0. V_parallel
+1. yaw_vel
 
 IMU:
-1. a_normal         (acceleration orthogonal to the robot direction)
-2. yaw_vel
+0. a_normal         (acceleration orthogonal to the robot direction)
+1. yaw_vel
 """
 
 class StateEstimation2D(Node):
@@ -111,7 +109,7 @@ class StateEstimation2D(Node):
         self.odom_filtered = Odometry()
         self.got_measurements = 0
         self.control = np.zeros(2)
-        self.z_odom = np.zeros(3)
+        self.z_odom = np.zeros(2)
         self.z_imu = np.zeros(2)
         # Upload NN control model
         #self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
@@ -119,9 +117,8 @@ class StateEstimation2D(Node):
         self.model = nnio.ONNXModel(self.model_path)
         # Filter parameters
         self.dt = 0.1
-        self.R_odom = np.array([[0.5, 0, 0],
-                                [0, 0.5, 0],
-                                [0, 0, 0.1]])
+        self.R_odom = np.array([[0.5, 0],
+                                [0, 0.1]])
         self.R_imu = np.array([[0.1, 0],
                                [0, 0.1]])
         Q_rot = np.array([
@@ -129,11 +126,13 @@ class StateEstimation2D(Node):
             [ 0.5 * self.dt**2,           self.dt],
         ]) * 0.1
         self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=2),
+            Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=1),
+            np.array([0.1]),
+            # Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=1),
             Q_rot,
         )
-        self.filter = Filter2D(x_init = np.zeros(6), 
-                               P_init = np.eye(6) * 0.01, 
+        self.filter = Filter2D(x_init = np.zeros(5), 
+                               P_init = np.eye(5) * 0.01,                          
                                Q = self.Q)
         self.ate = ErrorEstimator()
         # Timer for update function
@@ -146,7 +145,6 @@ class StateEstimation2D(Node):
         @ parameters
         msg: Twist
         """
-        self.filter.set_control(msg)
         self.control = np.array([msg.linear.x, msg.angular.z])
     
     def odometry_callback(self, msg):
@@ -166,10 +164,9 @@ class StateEstimation2D(Node):
         odom: Odometry
             Odometry msg that needs to be transfered
         """
-        z_odom = np.zeros(3)
+        z_odom = np.zeros(2)
         z_odom[0] = odom.twist.twist.linear.x
-        z_odom[1] = odom.twist.twist.linear.y
-        z_odom[2] = odom.twist.twist.angular.z
+        z_odom[1] = odom.twist.twist.angular.z
         return z_odom
 
     def odometry_gt_callback(self, msg):
@@ -187,7 +184,6 @@ class StateEstimation2D(Node):
         msg: Imu
         """
         self.z_imu = self.imu_to_vector(msg)
-        #self.filter.set_imu(z_imu)
         self.got_measurements = 1
     
     def imu_to_vector(self, imu):
@@ -229,18 +225,18 @@ class StateEstimation2D(Node):
         self.odom_filtered.pose.pose.position.y = x[1]
         self.odom_filtered.pose.pose.position.z = self.odom_noised.pose.pose.position.z
         # Transfer yaw angle from euler to quaternion
-        r = R.from_euler('z', x[4], degrees=False)
+        r = R.from_euler('z', x[3], degrees=False)
         q = r.as_quat()
         self.odom_filtered.pose.pose.orientation.x = q[0]
         self.odom_filtered.pose.pose.orientation.y = q[1]
         self.odom_filtered.pose.pose.orientation.z = q[2]
         self.odom_filtered.pose.pose.orientation.w = q[3]
         self.odom_filtered.twist.twist.linear.x = x[2]
-        self.odom_filtered.twist.twist.linear.y = x[3]
+        self.odom_filtered.twist.twist.linear.y = self.odom_noised.twist.twist.linear.y
         self.odom_filtered.twist.twist.linear.z = self.odom_noised.twist.twist.linear.z
         self.odom_filtered.twist.twist.angular.x = self.odom_noised.twist.twist.angular.x
         self.odom_filtered.twist.twist.angular.y = self.odom_noised.twist.twist.angular.y
-        self.odom_filtered.twist.twist.angular.z = x[5]
+        self.odom_filtered.twist.twist.angular.z = x[4]
         # Fill the odometry message covariance matrix with computed KF covariance
         self.odom_filtered.pose.covariance = self.pose_covariance_to_vector(P)
         self.odom_filtered.twist.covariance = self.twist_covariance_to_vector(P)
@@ -259,13 +255,13 @@ class StateEstimation2D(Node):
         cov_vector[28] = 0.01
         cov_vector[0] = P[0,0]
         cov_vector[1] = P[0,1]
-        cov_vector[5] = P[0,4]
+        cov_vector[5] = P[0,3]
         cov_vector[6] = P[1,0]
         cov_vector[7] = P[1,1]
-        cov_vector[11] = P[1,4]
-        cov_vector[30] = P[4,0]
-        cov_vector[31] = P[4,1]
-        cov_vector[35] = P[4,4]
+        cov_vector[11] = P[1,3]
+        cov_vector[30] = P[3,0]
+        cov_vector[31] = P[3,1]
+        cov_vector[35] = P[3,3]
         return cov_vector
     
     def twist_covariance_to_vector(self, P):
@@ -278,14 +274,9 @@ class StateEstimation2D(Node):
         """
         cov_vector = self.odom_noised.twist.covariance
         cov_vector[0] = P[2,2]
-        cov_vector[1] = P[2,3]
-        cov_vector[5] = P[2,5]
-        cov_vector[6] = P[3,2]
-        cov_vector[7] = P[3,3]
-        cov_vector[11] = P[3,5]
-        cov_vector[30] = P[5,2]
-        cov_vector[31] = P[5,3]
-        cov_vector[35] = P[5,5]
+        cov_vector[5] = P[2,4]
+        cov_vector[30] = P[4,2]
+        cov_vector[35] = P[4,4]
         return cov_vector
 
 def main():
