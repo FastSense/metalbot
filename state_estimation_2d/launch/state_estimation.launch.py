@@ -17,32 +17,8 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    ld = LaunchDescription()
-    
-    # default_update_rate = '20'
-    # update_rate = launch.substitutions.LaunchConfiguration(
-    #     'update_rate',
-    #     default=default_update_rate
-    # )
-
-
-    # keyboard_listener_dir = get_package_share_directory('teleop')
-    # keyboard_listener_launch = launch.actions.IncludeLaunchDescription(
-    #         launch.launch_description_sources.PythonLaunchDescriptionSource(
-    #                 keyboard_listener_dir + '/keyboard_listener.launch.py'
-    #         ),
-    #         launch_arguments = {'output_path': update_rate}.items()
-    # )
-
-    # launch.actions.DeclareLaunchArgument(
-    #         'update_rate',
-    #         default_value=default_update_rate,
-    #         description='update rate'
-    #     ),
 # ROSBOT
     world_file_name =  'willow_garage.world'
-
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='true')
 
     urdf_file_name = 'urdf/rosbot.urdf'
     urdf = os.path.join(
@@ -70,13 +46,14 @@ def generate_launch_description():
             os.path.join(rosbot_description, 'launch', 'rosbot_spawn.launch.py'))
     )
 
+    rviz_path = "/home/user/ros2_ws/src/state_estimation_2d/rviz/default.rviz"
+
 #Teleop
     default_update_rate = '20'
     update_rate = launch.substitutions.LaunchConfiguration(
         'update_rate',
         default=default_update_rate
     )
-
 
     keyboard_listener_dir = get_package_share_directory('teleop')
     keyboard_listener_launch = launch.actions.IncludeLaunchDescription(
@@ -85,44 +62,6 @@ def generate_launch_description():
             ),
             launch_arguments = {'output_path': update_rate}.items()
     )
-
-    # rosbot = Node(
-    #     package="rosbot_description",
-    #     executable="rosbot_tf"
-    # )
-    
-
-    # ld = ld([
-    #     DeclareLaunchArgument(
-    #       'world',
-    #       default_value=[os.path.join(rosbot_description, 'worlds', world_file_name), ''],
-    #       description='SDF world file'),
-    #     DeclareLaunchArgument(
-    #         name='gui',
-    #         default_value='true'
-    #     ),
-    #     DeclareLaunchArgument(
-    #         name='use_sim_time',
-    #         default_value='true'
-    #     ),
-    #     DeclareLaunchArgument('verbose', default_value='true',
-    #                           description='Set "true" to increase messages written to terminal.'),
-    #     DeclareLaunchArgument('gdb', default_value='false',
-    #                           description='Set "true" to run gzserver with gdb'),
-    #     DeclareLaunchArgument('state', default_value='true',
-    #                             description='Set "false" not to load "libgazebo_ros_state.so"'),
-    #     gazebo_server,
-    #     gazebo_client,
-    #     spawn_rosbot,
-    # ])
-    # # ld.add_action(rosbot)
-    # ld.add_action(rviz)
-    # # ld.add_action(teleop)
-    # ld.add_action(odom_noiser)
-    # ld.add_action(state_estimation_2d)
-    # ld.add_action(path_visualizer)
-    
-    # return ld
 
     return LaunchDescription([
 
@@ -154,6 +93,8 @@ def generate_launch_description():
         Node(
             package="rviz2",
             executable="rviz2",
+            output='screen',
+            arguments=['-d '+rviz_path]
         ),
         Node(
             package="odom_noiser",
