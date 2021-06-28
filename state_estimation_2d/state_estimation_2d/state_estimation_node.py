@@ -110,6 +110,9 @@ class StateEstimation2D(Node):
         self.odom_gt = Odometry()
         self.odom_filtered = Odometry()
         self.got_measurements = 0
+        self.control = np.zeros(2)
+        self.z_odom = np.zeros(3)
+        self.z_imu = np.zeros(2)
         # Upload NN control model
         #self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
         self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
@@ -131,13 +134,11 @@ class StateEstimation2D(Node):
         )
         self.filter = Filter2D(x_init = np.zeros(6), 
                                P_init = np.eye(6) * 0.01, 
-                               R_odom = self.R_odom, 
-                               R_imu = self.R_imu, 
                                Q = self.Q)
         self.ate = ErrorEstimator()
         # Timer for update function
         self.predict_timer = self.create_timer(self.dt,
-                                               self.update)
+                                               self.step_filter)
     
     def control_callback(self, msg):
         """
@@ -146,6 +147,7 @@ class StateEstimation2D(Node):
         msg: Twist
         """
         self.filter.set_control(msg)
+        self.control = np.array([msg.linear.x, msg.angular.z])
     
     def odometry_callback(self, msg):
         """
@@ -154,8 +156,7 @@ class StateEstimation2D(Node):
         msg: Odometry
         """
         self.odom_noised = msg
-        z_odom = self.odometry_to_vector(msg)
-        self.filter.set_odometry(z_odom)
+        self.z_odom = self.odometry_to_vector(msg)
         self.got_measurements = 1
 
     def odometry_to_vector(self, odom):
@@ -185,8 +186,8 @@ class StateEstimation2D(Node):
         @ parameters
         msg: Imu
         """
-        z_imu = self.imu_to_vector(msg)
-        self.filter.set_imu(z_imu)
+        self.z_imu = self.imu_to_vector(msg)
+        #self.filter.set_imu(z_imu)
         self.got_measurements = 1
     
     def imu_to_vector(self, imu):
@@ -196,18 +197,19 @@ class StateEstimation2D(Node):
         z_imu[1] = imu.angular_velocity.z
         return z_imu
     
-    def update(self):
+    def step_filter(self):
         """
         Kalman filter iteration
         Theory: https://homes.cs.washington.edu/~todorov/courses/cseP590/readings/tutorialEKF.pdf
         """
         if self.got_measurements:
             # Predict step
-            self.filter.update_state_by_nn_model(self.model)
+            self.filter.predict_by_nn_model(self.model, self.control)
             # Measurement update step
-            x_opt, P_opt = self.filter.update()
+            self.filter.update_odom(self.z_odom, self.R_odom)
+            self.filter.update_imu(self.z_imu, self.R_imu)
             # Transfer vectors to odometry messages
-            self.state_to_odometry(x_opt, P_opt)
+            self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             # Compute error metrics
             self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
             self.pose_pub.publish(self.odom_filtered)
@@ -227,7 +229,7 @@ class StateEstimation2D(Node):
         self.odom_filtered.pose.pose.position.y = x[1]
         self.odom_filtered.pose.pose.position.z = self.odom_noised.pose.pose.position.z
         # Transfer yaw angle from euler to quaternion
-        r = R.from_euler('z', x[4], degrees=True)
+        r = R.from_euler('z', x[4], degrees=False)
         q = r.as_quat()
         self.odom_filtered.pose.pose.orientation.x = q[0]
         self.odom_filtered.pose.pose.orientation.y = q[1]
