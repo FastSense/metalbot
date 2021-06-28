@@ -2,6 +2,7 @@
 import numpy as np
 from numpy.linalg import inv
 import math
+import scipy
 
 from state_estimation_2d.model import *
 from state_estimation_2d.measurement import *
@@ -55,13 +56,24 @@ class Filter2D:
     eps_w: float
         Threshold for angular velocity
     """
-    def __init__(self, x_init, P_init, Q, dt = 0.1):
-        self.Q = Q
+    def __init__(self, x_init, P_init, dt, v_var, w_var):
         self.x_opt = x_init
         self.P_opt = P_init
         self.dt = dt
         self.control = np.zeros(2)
         self.eps_w = 0.001
+        
+        # Process noise
+        Q_rot = np.array([
+            [0.333 * dt**3, 0.5 * dt**2],
+            [  0.5 * dt**2,          dt],
+        ]) * w_var
+        Q_vel = np.array([dt]) * v_var
+        self.Q = scipy.linalg.block_diag(
+            np.zeros((2,2)),
+            Q_vel,
+            Q_rot,
+        )
 
     def predict_by_nn_model(self, model, control):
         """
