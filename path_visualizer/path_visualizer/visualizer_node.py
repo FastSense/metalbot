@@ -7,12 +7,51 @@ from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
 
 class Visualizer(Node):
+    """
+    ROS Node for visualizing odometry in rviz2
+    Creates markers for different types of odometry
+    ---------------------------------
+    Attributes:
+    odom_sub : ros::Subscriber
+        Subscriber to /odom topic with gt odometry
+    odom_noised_sub : ros::Subscriber
+        Subscriber to /odom_noised topic
+    odom_filtered_sub : ros::Subscriber
+        Subscriber to /odom_filtered topic
+    path_ground_truth_pub : ros::Publisher
+        Odometry gt marker publisher
+    path_noised_pub : ros::Publisher
+        Odometry noised marker publisher
+    path_filtered_pub : ros::Publisher
+        Odometry filtered marker publisher
+    odom : Odometry
+        gt odometry
+    odom_noised : Odometry
+        Noised odometry
+    odom_filtered : Odometry
+        Odometry filtered by Kalman Filter
+    last_odom : Odometry
+        Prev gt odometry
+    last_odom_noised : Odometry
+        Prev noised odometry
+    last_odom_filtered : Odometry
+        Prev odometry filtered by Kalman Filter
+    origin_frame: str
+        Marker frame
+    path_len : int
+        Number of path points
+    pMarker : Marker
+        gt odometry marker
+    pMarker_filtered: Marker
+        filtered odometry marker
+    pMarker_noised : Marker
+        noised odometry marker
+    timer : ros::Timer
+        Timer for publishing markers
+    """
     def __init__(self):
         super().__init__('visualizer')
 
-        self.path_len_ = 0
-        self.origin_frame = 'odom'
-        self.timer = self.create_timer(0.1, self.timer_callback)
         self.odom_sub = self.create_subscription(
             Odometry,
             'odom',
@@ -28,18 +67,28 @@ class Visualizer(Node):
             'odom_filtered',
             self.odom_filtered_callback, 
             15)
-        self.path_ground_truth_pub = self.create_publisher(Marker, 
-            '/' + 'path_ground_truth', 1)
-        self.path_noised_pub = self.create_publisher(Marker, 
-            '/' + 'path_noised', 1)
-        self.path_filtered_pub = self.create_publisher(Marker, 
-            '/' + 'path_filtered', 1)
+        self.path_ground_truth_pub = self.create_publisher(
+            Marker, 
+            '/' + 'path_ground_truth', 
+            1)
+        self.path_noised_pub = self.create_publisher(
+            Marker, 
+            '/' + 'path_noised', 
+            1)
+        self.path_filtered_pub = self.create_publisher(
+            Marker, 
+            '/' + 'path_filtered', 
+            1)
         self.odom = Odometry()
         self.odom_noised = Odometry()
         self.odom_filtered = Odometry()
         self.last_odom = Odometry()
         self.last_odom_filtered = Odometry()
         self.last_odom_noised = Odometry()
+        self.origin_frame = 'odom'
+        self.path_len_ = 0
+        
+        # Set marker headers, colors, scale
         self.pMarker = Marker()
         self.pMarker.header.frame_id = self.origin_frame
         self.pMarker.pose.orientation.w = 1.0
@@ -77,36 +126,60 @@ class Visualizer(Node):
         self.pMarker_noised.color.b = 1.0
         self.pMarker_noised.color.a = 1.0
 
+        self.timer = self.create_timer(0.1, self.timer_callback)
+
     def odom_callback(self, msg):
+        """
+        GT odometry callback
+        @ parameters
+        msg : Odometry
+            gt odometry
+        """
         self.odom = msg
 
     def odom_filtered_callback(self, msg):
+        """
+        Kalman filtered odometry callback
+        @ parameters
+        msg : Odometry
+            Filtered odometry
+        """
         self.odom_filtered = msg
     
     def odom_noised_callback(self, msg):
+        """
+        Noised odometry callback
+        @ parameters
+        msg : Odometry
+            Noised odometry
+        """
         self.odom_noised = msg
     
     def publish_pose_marker(self):
+        """
+        Publish all markers
+        @ parameters
+        """
+        #Marker for gt odometry
         self.pMarker.header.stamp = self.get_clock().now().to_msg()
         self.pMarker.id = self.path_len_
-
         self.pMarker.pose.position = self.odom.pose.pose.position
+        self.pMarker.points.append(self.last_odom.pose.pose.position)
+        self.pMarker.points.append(self.odom.pose.pose.position)
+        self.pMarker.lifetime = Duration(seconds=0).to_msg()
+        #Marker for filtered odometry
         self.pMarker_filtered.header.stamp = self.get_clock().now().to_msg()
         self.pMarker_filtered.id = self.path_len_
         self.pMarker_filtered.pose.position = self.odom_filtered.pose.pose.position
+        self.pMarker_filtered.points.append(self.last_odom_filtered.pose.pose.position)
+        self.pMarker_filtered.points.append(self.odom_filtered.pose.pose.position)
+        self.pMarker_filtered.lifetime = Duration(seconds=0).to_msg()
+        #Marker for nosied odometry
         self.pMarker_noised.header.stamp = self.get_clock().now().to_msg()
         self.pMarker_noised.id = self.path_len_
         self.pMarker_noised.pose.position = self.odom_noised.pose.pose.position
-
-        self.pMarker.points.append(self.last_odom.pose.pose.position)
-        self.pMarker.points.append(self.odom.pose.pose.position)
-        self.pMarker_filtered.points.append(self.last_odom_filtered.pose.pose.position)
-        self.pMarker_filtered.points.append(self.odom_filtered.pose.pose.position)
         self.pMarker_noised.points.append(self.last_odom_noised.pose.pose.position)
         self.pMarker_noised.points.append(self.odom_noised.pose.pose.position)
-
-        self.pMarker.lifetime = Duration(seconds=0).to_msg()
-        self.pMarker_filtered.lifetime = Duration(seconds=0).to_msg()
         self.pMarker_noised.lifetime = Duration(seconds=0).to_msg()
 
         self.path_ground_truth_pub.publish(self.pMarker)
@@ -119,6 +192,7 @@ class Visualizer(Node):
         self.last_odom_noised = self.odom_noised 
         
     def timer_callback(self):
+        """Publish markers"""
         self.publish_pose_marker()
 
 def main():
