@@ -94,7 +94,7 @@ def generate_launch_description():
             package="rviz2",
             executable="rviz2",
             output='screen',
-            arguments=['-d '+rviz_path]
+            arguments=['-d'+str(rviz_path)]
         ),
         Node(
             package="odom_noiser",
