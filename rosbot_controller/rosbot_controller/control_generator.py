@@ -1,18 +1,44 @@
 import time
 import numpy as np
-
+import pandas as pd
 import rclpy
 from rclpy.node import Node
-
 from geometry_msgs.msg import Twist
 
 
 class ControlGenerator(Node):
     """
+    A class for generating and publishing  control 
+    or control sequence from a file.
+    In the case of random control, this class generates a random control sequence.
+    This sequence changes during the specified periods and
+    is bordered by the parameters of the maximum speed and acceleration
+    In the case of control from a file, the control generator parses the control file
+    and publishes the control sequence with the specified time delta.
+    :Attributes:
+        :mode: (str) control generator mode - from_file / periodic
+        :num_of_subs: (int) desired number of subscribers
+        :control_topic: (str) topic for control
+        :v_min: (float) minimum linear speed
+        :v_max: (float) maximum linear speed
+        :w_min: (float) minimum angular speed
+        :w_max: (float) maximum angular speed
+        :a_lin: (float) liear acceleration
+        :a_ang: (float) angular acceleration
+        :dt: (float) time delta between publications
+        :Tmax_it: (int) Maximum time in iterations
+        :period_lin_it: (int) linear period time in iterations
+        :period_ang_it: (int) angular period time in iterations
+        :file_path: (str) path to file with control
+        :cmd_pub: (ros2 publiher) control publisher
+        :curr_index: (int) current control seq index
+        :start: (bool) if true - control_gen start
+        :timer: (ros2 timer) the timer by which the control is published
     """
     def __init__(self):
         """
-
+        The method declares a node, 
+        declares and receives parameters
         """
         super().__init__('control_generator')
 
@@ -27,10 +53,8 @@ class ControlGenerator(Node):
    
     def wait_for_subs(self):
         """
-
+        This method waits in a loop until the specified number of subscribers is reached.
         """
-        # TODO tyr ROS2 sleep
-        # loop_rate = self.create_rate(0.1, self.get_clock())
         subs = self.count_subscribers(self.control_topic)
         while subs < self.num_of_subs:
             # loop_rate.sleep()
@@ -42,19 +66,19 @@ class ControlGenerator(Node):
 
     def run(self):
         """
+        A function that receives control sequences 
+        and declares a timer by which it is published
         """
         self.get_logger().info("Start")
         self.wait_for_subs()
         if self.mode == 'periodic':
             self.v_seq, self.w_seq = self.generate_control_sequences()
+            self.v_seq = self.v_seq[:self.Tmax_it]
+            self.w_seq = self.w_seq[:self.Tmax_it]
         elif self.mode == "from_file":
             self.v_seq, self.w_seq = self.parse_control_from_file()
 
-        self.v_seq = self.v_seq[:self.Tmax_it]
-        self.w_seq = self.w_seq[:self.Tmax_it]
-        # print(self.v_seq, self.w_seq )
         self.start = True
-        # print("START!")
 
     def init_parameters(self):
         """
@@ -108,7 +132,7 @@ class ControlGenerator(Node):
 
     def generate_control_sequences(self):
         """
-        
+        Generates a control sequence
         """
         v_seq, w_seq = np.array([0.0]), np.array([0.0])
 
@@ -157,6 +181,9 @@ class ControlGenerator(Node):
         min, 
         dt
     ):   
+        """
+        Generates a control subsequence
+        """
         seq=list() 
         k = -1 if acceleration < 0 else 1
         acceleration = abs(acceleration)
@@ -175,13 +202,23 @@ class ControlGenerator(Node):
 
         return seq
 
-    def parse_control_from_file():
+    def parse_control_from_file(self):
         """
+        The method parses control sequences from a file and returns them
+        :Return:
+            :v_seq: (numpy array) - linear control sequence 
+            :w_seq: (numpy array) - angular control sequence
         """
-        pass
+        control_data = pd.read_csv(self.file_path, delimiter=' ')
+        v_seq, w_seq = control_data['v_x'], control_data['w_z']
+        v_seq, w_seq = np.array(v_seq), np.array(w_seq)
+        self.Tmax_it = len(v_seq)
+        return v_seq, w_seq
 
     def pub_control(self):
         """
+        Callback for a timer event.
+        publishes one next control command
         """
         if self.start:
             cmd_msg = Twist()
@@ -212,9 +249,6 @@ def main():
     control_gen = ControlGenerator()
     control_gen.run()
     rclpy.spin(control_gen)
- 
-    # control_gen.destroy_node()
-    # rclpy.shutdown()
 
 
 if __name__ == '__main__':

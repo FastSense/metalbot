@@ -1,5 +1,6 @@
 FROM osrf/ros:foxy-desktop
 
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
 
 ##################################################################
 # ------------------------------ CUDA -------------------------- #
@@ -82,18 +83,6 @@ RUN apt-get update && \
 RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 # <<<<<<<<<<<< ROS2 dependencies
 
-
-
-# >>>>>>>>>>>> Gazebo
-# Install Gazebo
-RUN curl -sSL http://get.gazebosim.org | sh
-
-# Install gazebo ros2 packages
-RUN apt install -y ros-foxy-gazebo-ros-pkgs
-# <<<<<<<<<<<< Gazebo
-
-
-
 # >>>>>>>>>>>> Python packages
 RUN apt-get update && \
     apt-get install -y \
@@ -117,25 +106,70 @@ RUN pip3 install --upgrade pip && \
         tqdm \
         yaml-1.3 \
         nnio \
-        onnxruntime-gpu
+        onnxruntime-gpu \
+        pynput \
+        uvicorn \
+        vidgear \
+        starlette \
+        aiofiles \
+        aiohttp \
+        aiortc \
+        scikit-build \ 
+        cmake \
+        netifaces \
+        opencv-python \ 
+        opencv-contrib-python \
+        msgpack_numpy \
+        jinja2
 
-RUN pip3 install --upgrade pip && \
-    pip3 install \
-	netifaces
 # <<<<<<<<<<<<< Python packages
 
 
+# >>>>>>>>>>>> Gazebo
+# Install Gazebo
+RUN curl -sSL http://get.gazebosim.org | sh
+# <<<<<<<<<<<< Gazebo
 
-# >>>>>>>>>>>> Utils 
-RUN apt-get update && \
-    apt-get install -y \
-        tmux \
-        ranger \
-        wget \
-        neovim && \
-        rm -rf /var/lib/apt/lists/*
-# <<<<<<<<<<<< Utils
+# >>>>>>>>>>>> ROS2_packages
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN apt install -y ros-foxy-gazebo-ros-pkgs
+RUN apt install -y ros-foxy-ros-core
+RUN apt install -y ros-foxy-navigation2
+RUN apt install -y ros-foxy-nav2-bringup
+RUN apt install -y ros-foxy-turtlebot3
+RUN apt install -y ros-foxy-geometry2
+# <<<<<<<<<<<< ROS2_packages
 
+
+## >>>>>>>>>>>> OpenCV
+RUN apt-get install -y libgstreamer1.0-0 \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-doc \
+    gstreamer1.0-tools \
+    gstreamer1.0-x \
+    gstreamer1.0-alsa \
+    gstreamer1.0-gl \
+    gstreamer1.0-gtk3 \
+    gstreamer1.0-qt5 \
+    gstreamer1.0-pulseaudio \
+    libgstreamer-plugins-base1.0-dev 
+
+
+# RUN git clone https://github.com/opencv/opencv.git --branch=4.5.0
+# RUN git clone https://github.com/opencv/opencv_contrib.git --branch=4.5.0
+
+# RUN mkdir opencv/build
+# RUN cd opencv/build && \
+#     ls && \
+#     cmake -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -DWITH_GSTREAMER=ON   # -DBUILD_opencv_python3=ON .. && \
+#   make -j3 && \
+#   make install
+## <<<<<<<<<<<< OpenCV
 
 
 # >>>>>>>>>>>> OAK-D camera utils
@@ -145,7 +179,7 @@ RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.2
 RUN tar xf libusb-1.0.24.tar.bz2
 RUN cd libusb-1.0.24 && \
     ./configure --disable-udev && \
-    make -j && make install
+    make -j4 && make install
 
 RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
 
@@ -162,6 +196,21 @@ ENV PYTHONPATH=/depthai-python/build
 
 
 
+# >>>>>>>>>>>> Utils 
+RUN apt-get update && \
+    apt-get install -y \
+        tmux \
+        ranger \
+        wget \
+        neovim && \
+        rm -rf /var/lib/apt/lists/*
+# <<<<<<<<<<<< Utils
+
+
+
+
+
+
 # >>>>>>>>>>>> Create User
 ENV ROSUSER="user"
 
@@ -172,6 +221,10 @@ user $ROSUSER
 # <<<<<<<<<<<< Create User
 
 
+# >>>>>>>>>>>> OpenCV
+COPY scripts/build_opencv.sh .
+RUN ./build_opencv.sh
+# <<<<<<<<<<<< OpenCV
 
 # >>>>>>>>>>>> Scripts
 RUN mkdir -p /home/$ROSUSER/scripts
@@ -183,10 +236,10 @@ RUN ./utils-setup.sh
 COPY scripts/ros-setup.sh .
 RUN ./ros-setup.sh
 
+
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 # <<<<<<<<<<<< Scripts
-
 
 
 # >>>>>>>>>>>> OAK-D repo for testing
