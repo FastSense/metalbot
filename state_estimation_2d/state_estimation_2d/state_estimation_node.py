@@ -125,10 +125,10 @@ class StateEstimation2D(Node):
             [0.333 * self.dt**3, 0.5 * self.dt**2],
             [ 0.5 * self.dt**2,           self.dt],
         ]) * 0.1
+        Q_vel = np.array([self.dt]) * 0.1
         self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=1),
-            np.array([0.1]),
-            # Q_discrete_white_noise(dim=2, dt=self.dt, var=0.1, block_size=1),
+            np.zeros((2,2)),
+            Q_vel,
             Q_rot,
         )
         self.filter = Filter2D(x_init = np.zeros(5), 
