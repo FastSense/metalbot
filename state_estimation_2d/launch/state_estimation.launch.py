@@ -102,12 +102,12 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True
         ),
-        # Node(
-        #     package="state_estimation_2d",
-        #     executable="state_estimation_2d",
-        #     output='screen',
-        #     emulate_tty=True
-        # ),
+        Node(
+            package="state_estimation_2d",
+            executable="state_estimation_2d",
+            output='screen',
+            emulate_tty=True
+        ),
         Node(
             package="path_visualizer",
             executable="path_visualizer"
