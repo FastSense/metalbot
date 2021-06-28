@@ -12,7 +12,7 @@ from filterpy.common import Q_discrete_white_noise
 from scipy.spatial.transform import Rotation as R
 
 from state_estimation_2d.filter import *
-from state_estimation_2d.geometry import *
+#from state_estimation_2d.geometry import *
 from state_estimation_2d.ate import *
 import nnio
 
@@ -111,7 +111,8 @@ class StateEstimation2D(Node):
         self.odom_filtered = Odometry()
         self.got_measurements = 0
         # Upload NN control model
-        self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
+        #self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
+        self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
         self.model = nnio.ONNXModel(self.model_path)
         # Filter parameters
         self.dt = 0.1
@@ -292,6 +293,7 @@ def main():
         rclpy.spin(state_estimator)
     except KeyboardInterrupt:
         ate, std = state_estimator.ate.evaluate_ate()
+        print('ATE:', ate)
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':

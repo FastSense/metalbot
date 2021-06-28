@@ -32,9 +32,12 @@ class ErrorEstimator():
                             odom_gt.pose.pose.position.y])
         pose_filtered = np.array([odom_filtered.pose.pose.position.x, 
                                   odom_filtered.pose.pose.position.y])
-        self.ate_distance += np.sqrt((pose_gt[0] - pose_filtered[0])**2 +
-                                     (pose_gt[1] - pose_filtered[1])**2)
-        self.ate_distance_sqr += ((pose_gt[0] - pose_filtered[0])**2 +
-                                 (pose_gt[1] - pose_filtered[1])**2)
+        dst_sqr = (
+            (pose_gt[0] - pose_filtered[0])**2
+            +
+            (pose_gt[1] - pose_filtered[1])**2
+        )
+        self.ate_distance += np.sqrt(dst_sqr)
+        self.ate_distance_sqr += dst_sqr
         self.num_points += 1
         print(self.ate_distance)
