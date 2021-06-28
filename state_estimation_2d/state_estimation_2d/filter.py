@@ -37,11 +37,7 @@ class Filter2D:
     eps_w: float
         Threshold for angular velocity
     """
-    def __init__(self, x_init, P_init, R_odom, R_imu, Q, dt = 0.1):
-        self.z_odom = np.zeros(3)
-        self.z_imu = np.zeros(2)
-        self.R_odom = R_odom
-        self.R_imu = R_imu
+    def __init__(self, x_init, P_init, Q, dt = 0.1):
         self.Q = Q
         self.x_opt = x_init
         self.P_opt = P_init
@@ -61,25 +57,7 @@ class Filter2D:
         self.control[0] = msg.linear.x
         self.control[1] = msg.angular.z
 
-    def set_odometry(self, z):
-        """
-        Set odometry measurement vector
-        @ parameters:
-        z: np.array
-            Odometry measurement vector
-        """
-        self.z_odom = z
-    
-    def set_imu(self, z):
-        """
-        Set imu measurement vector
-        @ parameters:
-        z: np.array
-            Imu measurement vector
-        """
-        self.z_imu = z
-
-    def update_state_by_nn_model(self, model):
+    def predict_by_nn_model(self, model, control):
         """
         Kalman filter predict step
         @ parameters
@@ -96,68 +74,82 @@ class Filter2D:
         model_output = model(model_input)
         # Predicted velocity control
         self.v, self.w = float(model_output[0][0]), float(model_output[0][1])
-        vel_vector = np.array([self.v, self.w])
-        self.update_state_by_model(vel_vector)
-        return self.x_opt, self.P_opt
+        self.predict()
 
-    def update_state_by_model(self, control):
+    def predict(self):
         """
         Kalman filter predict step equations using dynamic model
-        @ parameters:
-        control : control vector from NN model
         """
-        v = control[0]
-        w = control[1]
 
-        if abs(w) > self.eps_w:
-            rho = v / w
+        if abs(self.w) > self.eps_w:
+            rho = self.v / self.w
 
             # step 1. Calc new robot position relative to its previous pose
-            x_r = rho * math.sin(w * self.dt)
-            y_r = rho * (1 - math.cos(w * self.dt))
+            x_r = rho * math.sin(self.w * self.dt)
+            y_r = rho * (1 - math.cos(self.w * self.dt))
 
             # step 2. Transfrom this point to map fixed coordinate system taking into account
             # current robot pose
-            self.x_opt[0] += x_r * math.cos(self.x_opt[4]) - y_r * math.sin(self.x_opt[4])
-            self.x_opt[1] += x_r * math.sin(self.x_opt[4]) + y_r * math.cos(self.x_opt[4])
-            self.x_opt[4] += w * self.dt
+            self.pos[0] += x_r * math.cos(self.yaw) - y_r * math.sin(self.yaw)
+            self.pos[1] += x_r * math.sin(self.yaw) + y_r * math.cos(self.yaw)
+            self.yaw += self.w * self.dt
         else:
-            self.x_opt[0] += v * self.dt * math.cos(self.x_opt[4])
-            self.x_opt[1] += v * self.dt * math.sin(self.x_opt[4])
+            self.pos[0] += self.v * self.dt * math.cos(self.yaw)
+            self.pos[1] += self.v * self.dt * math.sin(self.yaw)
         
-        self.x_opt[2] = control[0]
-        self.x_opt[3] = control[1]
         self.P_opt = self.predict_covariance()
     
     def predict_covariance(self):
         """Computes covariance matrix after predict step"""
         P_predict = np.zeros((6, 6))
-        J_f = transform_jacobian(self.x_opt, self.dt)
-        P_predict = J_f @ self.P_opt @ J_f.T + self.Q
+        F = transform_jacobian(self.x_opt, self.dt)
+        P_predict = F @ self.P_opt @ F.T + self.Q
         return P_predict
 
-    def update(self):
-        """ Kalman Filter update step"""
-        self.update_odom()
-        self.update_imu()
-        return self.x_opt, self.P_opt
-
-    def update_odom(self):
+    def update_odom(self, z_odom, R_odom):
         """ Update state vector using odometry measurements"""
         H = get_jacobian_odom(self.x_opt)   
-        y = self.z_odom - H @ self.x_opt
-        G = H @ self.P_opt @ H.T + self.R_odom
+        y = z_odom - H @ self.x_opt
+        G = H @ self.P_opt @ H.T + R_odom
         K = self.P_opt @ H.T @ inv(G)
         I = np.eye(6)
         self.P_opt = (I - K @ H) @ self.P_opt
         self.x_opt = self.x_opt + K @ y
 
-    def update_imu(self):
+    def update_imu(self, z_imu, R_imu):
         """ Update state vector using imu measurements"""
         H = get_jacobian_imu(self.x_opt) 
-        y = self.z_imu - imu(self.x_opt)
-        G = H @ self.P_opt @ H.T + self.R_imu
+        y = z_imu - imu(self.x_opt)
+        G = H @ self.P_opt @ H.T + R_imu
         K = self.P_opt @ H.T @ inv(G)
         I = np.eye(6)
         self.P_opt = (I - K @ H) @ self.P_opt
         self.x_opt = self.x_opt + K @ y
+    
+    @property
+    def v(self):
+        return self.x_opt[2]
+    @v.setter
+    def v(self, value):
+        self.x_opt[2] = value
+    
+    @property
+    def w(self):
+        return self.x_opt[5]
+    @w.setter
+    def w(self, value):
+        self.x_opt[5] = value
+
+    @property
+    def pos(self):
+        return self.x_opt[:2]
+    @pos.setter
+    def pos(self, value):
+        self.x_opt[:2] = value
+
+    @property
+    def yaw(self):
+        return self.x_opt[4]
+    @yaw.setter
+    def yaw(self, value):
+        self.x_opt[4] = value
