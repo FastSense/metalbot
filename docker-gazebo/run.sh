@@ -5,6 +5,7 @@ container_name=rosbot2
 
 docker run -it -d --privileged --net=host \
     -v /dev/bus/usb:/dev/bus/usb \
+    -v /dev/:/dev/ \
     --device-cgroup-rule='c 189:* rmw' \
     --name $container_name \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
@@ -13,4 +14,4 @@ docker run -it -d --privileged --net=host \
     -e DISPLAY=$DISPLAY \
     -e ROS_HOSTNAME="localhost" \
     -e ROS_MASTER_URI="http://localhost:11311" \
-    -e QT_X11_NO_MITSHM=1 $image_name zsh
+    -e QT_X11_NO_MITSHM=1 $image_name:full zsh

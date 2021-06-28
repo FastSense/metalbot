@@ -99,10 +99,10 @@ RUN apt-get update && \
     apt-get install -y \
        python3-tk \
        python3-pip && \
-       rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip && \
-    pip3 install \
+    pip3 install --no-cache-dir \
        torch 
 
 RUN pip3 install --upgrade pip && \
@@ -156,7 +156,7 @@ RUN cd /depthai-python && \
     git submodule update --init --recursive && \
     cd build && \
     cmake .. && \
-    make -j
+    make -j 1
 ENV PYTHONPATH=/depthai-python/build
 # <<<<<<<<<<<< OAK-D camera utils
 
