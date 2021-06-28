@@ -13,10 +13,6 @@
 	branch = master
 	url = https://github.com/FastSense/teleop
 
-[submodule "aws-robomaker-bookstore-world"]
-	path = aws-robomaker-bookstore-world
-    	branch = ros2
-	url = https://github.com/aws-robotics/aws-robomaker-bookstore-world.git
 [submodule "topic_streamer"]
 	path = topic_streamer
 	url = git@github.com:FastSense/topic_streamer.git
