@@ -7,7 +7,6 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 import numpy as np
-import scipy
 from filterpy.common import Q_discrete_white_noise
 from scipy.spatial.transform import Rotation as R
 
@@ -121,23 +120,20 @@ class StateEstimation2D(Node):
                                 [0, 0.1]])
         self.R_imu = np.array([[0.1, 0],
                                [0, 0.1]])
-        Q_rot = np.array([
-            [0.333 * self.dt**3, 0.5 * self.dt**2],
-            [ 0.5 * self.dt**2,           self.dt],
-        ]) * 0.1
-        Q_vel = np.array([self.dt]) * 0.1
-        self.Q = scipy.linalg.block_diag(
-            np.zeros((2,2)),
-            Q_vel,
-            Q_rot,
+        
+        self.filter = Filter2D(
+            x_init=np.zeros(5), 
+            P_init=np.eye(5) * 0.01,                          
+            dt=self.dt,
+            v_var=0.1,
+            w_var=0.1,
         )
-        self.filter = Filter2D(x_init = np.zeros(5), 
-                               P_init = np.eye(5) * 0.01,                          
-                               Q = self.Q)
         self.ate = ErrorEstimator()
         # Timer for update function
-        self.predict_timer = self.create_timer(self.dt,
-                                               self.step_filter)
+        self.predict_timer = self.create_timer(
+            self.dt,
+            self.step_filter
+        )
     
     def control_callback(self, msg):
         """
