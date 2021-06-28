@@ -6,6 +6,24 @@ import math
 from state_estimation_2d.model import *
 from state_estimation_2d.measurement import *
 
+"""
+State vector:
+0. x
+1. y
+2. V_parallel       (velocity along the robot direction)
+3. yaw
+4. yaw_vel
+
+Measurements:
+Odometry:
+0. V_parallel
+1. yaw_vel
+
+IMU:
+0. a_normal         (acceleration orthogonal to the robot direction)
+1. yaw_vel
+"""
+
 class Filter2D:
     """
     Class with Extended Kalman Filter implementation
