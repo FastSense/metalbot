@@ -1,5 +1,11 @@
 ros2_cartpole
 .idea
+build/*
+log/*
+install/*
+*/*/log
+*/*/install
+*/*/build
 cmake-build*
 *.orig
 *.pyc
