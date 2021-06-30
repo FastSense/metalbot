@@ -23,3 +23,7 @@ rm -f packages.microsoft.gpg
 sudo apt install -y libasound2 apt-transport-https
 sudo apt update
 sudo apt install -y code
+# Extensions
+code --install-extension ms-python.python
+code --install-extension ms-python.vscode-pylance
+code --install-extension ms-toolsai.jupyter
