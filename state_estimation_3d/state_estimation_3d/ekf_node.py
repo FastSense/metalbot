@@ -89,6 +89,9 @@ class EKFNode(Node):
         self.publish_pose()
 
     def update_imu(self, msg):
+        '''
+        Update filter state using IMU message
+        '''
         # Make KF-compatible measurements
         rot_vel = np.empty(3)
         rot_vel[0] = msg.angular_velocity.x
@@ -110,6 +113,9 @@ class EKFNode(Node):
         self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic_gyro)
 
     def update_odom(self, msg):
+        '''
+        Update filter state using odometry message
+        '''
         # Make KF-compatible measurements
         odom = np.array([
             msg.twist.twist.angular.x,
@@ -128,6 +134,14 @@ class EKFNode(Node):
         self.tracker.update_odometry(odom, R, delta_t=1, extrinsic=extrinsic)
 
     def get_extrinsic(self, frame1, frame2):
+        '''
+        Parameters:
+        frame1 (str): tf frame
+        frame2 (str): tf frame
+
+        Returns:
+        np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
+        '''
         trans = self.tf_buffer.lookup_transform(frame1, frame2, self.get_clock().now())
         tr = np.array([
             [trans.transform.translation.x],
