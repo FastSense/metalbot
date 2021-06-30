@@ -205,6 +205,8 @@ RUN apt-get update && \
         ranger \
         wget \
         neovim \
+        nano \
+        htop \
         iputils-ping && \
         rm -rf /var/lib/apt/lists/*
 # <<<<<<<<<<<< Utils
