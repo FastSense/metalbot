@@ -27,6 +27,8 @@ setup(
             'control_gen = rosbot_controller.control_generator:main',
             'spawn_rosbot = rosbot_controller.spawn_rosbot:main',
             'rosbot_teleop = rosbot_controller.rosbot_teleop:main',
+            'path_publisher = rosbot_controller.path_publisher:main',
+            'path_follower = rosbot_controller.path_follower:main',
         ],
     },
 )
