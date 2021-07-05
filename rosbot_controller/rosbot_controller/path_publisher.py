@@ -9,17 +9,30 @@ import time
 
 class TrajPublish():
     """
+    TrajPublish creates a message of a type Path(), and publish it in path_topic
+
+    Args:
+        node_name: name of node
+    Args of a command line:
+        traj_type:   type of a trajectory (default = 1.0sin1.0; 1.0spiral, polygon, from_file)
+        move_plan:   path to a file which stores a path (default = "")
+        num_of_subs: number of subcribers to the path_topic which is necessary
+                     to start publishing a message (default = 1)
+        path_topic:  name of the path topic (default = /path)
 
     """
 
-    def __init__(self, node_name) -> None:
+    def __init__(self, node_name):
         self.node_name = node_name
         rclpy.init(args=None)
         self.node = rclpy.create_node(self.node_name)
         self.node.declare_parameter('traj_type')
         self.node.declare_parameter('move_plan')
         self.node.declare_parameter('num_of_subs', 1)
+        self.node.declare_parameter('path_topic', '/path')
 
+        self.path_topic = self.node.get_parameter(
+            'path_topic').get_parameter_value().string_value
         self.traj_type = self.node.get_parameter(
             'traj_type').get_parameter_value().string_value
         self.move_plan = self.node.get_parameter(
@@ -38,11 +51,9 @@ class TrajPublish():
 
     def generate_message(self):
         """
-        Generating the message to publish
+        Generating a message depending on its type
+
         """
-
-        print("Parse ", self.traj_type)
-
         if "sin" in self.traj_type:
             amplitude, freq, reverse = self.parse_sin_traj()
             self.SinTrajGenerator(amplitude, freq, reverse)
@@ -55,20 +66,24 @@ class TrajPublish():
             print(f"file_name = {self.move_plan}")
             self.FromFileTrajGenerator()
 
-    def run(self) -> None:
+    def run(self):
         """
-        Runner
+        Main function. Check the correctness of a type_traj, generate message
+        and publish it in topic
+
         """
         if not self.IsValidTrajType():
             self.node.get_logger().info("Not valid type of trajectory")
             return 1
 
-        self.path_pub = self.node.create_publisher(Path, "/path", 5)
+        # self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
+        self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
+        print("Parse ", self.traj_type)
         self.generate_message()
 
         # waiting for subs on our channel
         while self.path_pub.get_subscription_count() < self.num_of_subs:
-            time.sleep(0.5)
+            time.sleep(0.1)
         time.sleep(0.1)
 
         self.path_pub.publish(self.msg)
@@ -78,11 +93,19 @@ class TrajPublish():
         rclpy.shutdown()
 
     def IsValidTrajType(self):
-        return 'sin' in self.traj_type or self.traj_type in ('from_file', 'polygon') or 'spiral' in self.traj_type
+        """
+        Checking the validity of a trajectory type
 
-    def parse_plan(self) -> list:
+        """
+        return 'sin' in self.traj_type or self.traj_type in ('from_file', 'polygon')\
+            or 'spiral' in self.traj_type
+
+    def parse_plan(self):
         """
         Parse path from file
+        Return:
+            edges: list of (x, y) - points of trajectory
+
         """
         edges = list()
         if self.file_name == '':
@@ -97,9 +120,14 @@ class TrajPublish():
 
         return edges
 
-    def edges_to_points(self, edges) -> list:
+    def edges_to_points(self, edges):
         """
-        
+        Creates array of points between the edges
+        Args:
+            edges: list of (x, y) - points of trajectory
+        Return:
+            points: big array of points - splitting edges into small edges
+
         """
         points = list()
         p1 = (0.0, 0.0)
@@ -131,6 +159,10 @@ class TrajPublish():
         return points
 
     def FromFileTrajGenerator(self):
+        """
+        Generating a trajectory from file
+
+        """
         if self.move_plan is None:
             print("Move plan was not specified")
             return 1
@@ -148,6 +180,10 @@ class TrajPublish():
 
     def SinTrajGenerator(self, a=1.0, f=1.0, reverse=False):
         """
+        Generating a sinus trajectory (a*sin(f*t))
+        Args:
+            a: amplitude of a sinus
+            f: phase of a sinus
 
         """
         K = -1 if reverse == True else 1
@@ -166,8 +202,9 @@ class TrajPublish():
                 yaw=math.atan(yaw_arr[i]), roll=0, pitch=0)
             self.msg.poses.append(ps)
 
-    def PolygonTrajGenerator(self) -> None:
+    def PolygonTrajGenerator(self):
         """
+        Generating a trajectory of the square
 
         """
         p_edges = [(2.0, -0.1), (2.1, 1.9),  (0.1, 2.0), (0, 0)]  # square
@@ -184,9 +221,12 @@ class TrajPublish():
                 yaw=math.atan2(p[1], p[0]), roll=0, pitch=0)
             self.msg.poses.append(ps)
 
-    def SpiralTrajGenerator(self, amplitude) -> None:
+    def SpiralTrajGenerator(self, amplitude):
         """
-        Generate spiral trajectory
+        Generating a spiral trajectory
+        Args:
+            amplitude: amplitude of spiral
+
         """
         key_points = []
         if amplitude > 0:
@@ -215,7 +255,8 @@ class TrajPublish():
 
     def parse_sin_traj(self):
         """
-        Parsing sinus
+        Parsing sinus trajectory
+        
         """
         traj_type = self.traj_type.strip().split('sin')  # []
         period = float(traj_type[-1])
@@ -225,7 +266,8 @@ class TrajPublish():
 
     def parse_spiral_traj(self):
         """
-        Parsing spiral
+        Parsing spiral trajectory
+
         """
         coef = self.traj_type.split('spiral')
         amp = coef[0] if coef[0] != '' or coef[0] is None else 1.0
@@ -240,6 +282,7 @@ def euler_to_quaternion(yaw, pitch, roll):
         roll: roll angle
     Return:
         quaternion [qx, qy, qz, qw]
+
     """
     qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(roll / 2) * np.sin(
         pitch / 2) * np.sin(yaw / 2)
