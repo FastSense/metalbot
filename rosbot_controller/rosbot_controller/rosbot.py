@@ -17,7 +17,7 @@ class RobotState():
 class RobotControl:
 
     def __init__(self, v=0.0, w=0.0):
-        self.v = v  # управление по linear.x
+        self.v = v  # управление по linear.x 
         self.w = w  # управление по angular.z
 
     def to_str(self):
@@ -77,8 +77,6 @@ class Rosbot:
 
     def goal_reached(self, goal):
         dist = np.hypot(goal.x - self.state.x, goal.y - self.state.y)
-
-        # print('>>> goal dist: %f -- %s' % (dist, 'REACHED' if dist < 0.2 else 'NOT REACHED'))
 
         return dist < 0.2
 
