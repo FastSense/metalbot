@@ -122,7 +122,7 @@ class TrajFollower():
         """
         Calculate and publish control 
         """
-
+    
         # если путь ещё не получен, то не выполняем
         if not self.got_path:
             if not self.start_receive_path:
