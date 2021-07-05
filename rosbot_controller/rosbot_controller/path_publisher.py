@@ -9,16 +9,17 @@ import time
 
 class TrajPublish():
     """
-    TrajPublish creates a message of a type Path(), and publish it in path_topic
+    TrajPublish creates a message of a type Path(), and publish it in path_topic.
+    If path stores in path, it should be defines as array of (x, y).
 
     Args:
-        node_name: name of node
+        node_name: name of node.
     Args of a command line:
-        traj_type:   type of a trajectory (default = 1.0sin1.0; 1.0spiral, polygon, from_file)
-        move_plan:   path to a file which stores a path (default = "")
+        traj_type:   type of a trajectory (default = 1.0sin1.0; 1.0spiral, polygon, from_file).
+        move_plan:   path to a file which stores a path (default = "").
         num_of_subs: number of subcribers to the path_topic which is necessary
-                     to start publishing a message (default = 1)
-        path_topic:  name of the path topic (default = /path)
+                     to start publishing a message (default = 1).
+        path_topic:  name of the path topic (default = /path).
 
     """
 
@@ -47,7 +48,7 @@ class TrajPublish():
         self.msg = Path()
         self.msg.header.frame_id = "odom"
         self.msg.poses = []
-        self.step = 0.1
+        self.step = 0.1  # step for generating the trajectory of sinus and spiral
 
     def generate_message(self):
         """
@@ -256,7 +257,7 @@ class TrajPublish():
     def parse_sin_traj(self):
         """
         Parsing sinus trajectory
-        
+
         """
         traj_type = self.traj_type.strip().split('sin')  # []
         period = float(traj_type[-1])
