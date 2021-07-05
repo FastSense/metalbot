@@ -13,7 +13,7 @@ class TrajPublish():
     If path stores in the file, it should be defines as array of (x, y).
 
     Args:
-        node_name: name of node.
+        node_name: name of the node.
     Args of a command line:
         traj_type:   type of a trajectory (default = 1.0sin1.0; 1.0spiral, polygon, from_file).
         move_plan:   path to a file which stores a path (default = "").
