@@ -10,7 +10,7 @@ import time
 class TrajPublish():
     """
     TrajPublish creates a message of a type Path(), and publish it in path_topic.
-    If path stores in path, it should be defines as array of (x, y).
+    If path stores in the file, it should be defines as array of (x, y).
 
     Args:
         node_name: name of node.
