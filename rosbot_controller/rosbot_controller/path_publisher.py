@@ -109,10 +109,10 @@ class TrajPublish():
 
         """
         edges = list()
-        if self.file_name == '':
+        if self.move_plan == '':
             print("Error file_name")
             return 1
-        with (pathlib.Path(self.file_name)).open() as f:
+        with (pathlib.Path(self.move_plan)).open() as f:
             for line in f:
                 p = line.replace('\n', '')
                 if p:
