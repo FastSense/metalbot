@@ -70,4 +70,6 @@ cd scripts
 ```
 ros2 launch rosbot_controller simple_controller.launch.py traj_type:=@param1 move_plan:=@param2
 ```
-(@param1 = 2.0sin2.0, @param1 = 4.0spiral, @param1 = polygon, @param1 = from_file, @param2 = "путь к файлу")
+Aргументы:
+* traj_type --- тип траектории (2.0sin2.0, 4.0spiral, polygon, from_file)
+* move_plan --- путь к файлу, если traj_type=from_file
