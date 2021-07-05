@@ -1,4 +1,4 @@
-# rosbot_controlle package
+# rosbot_controller package
 Пакет содержащий ноды для управления росботом, а также скрипты для сбора автоматиированного сбора данных.
 
 ## control_generator node
@@ -63,3 +63,11 @@ cd scripts
 ./collect_data.zsh
 ```
 
+## simple_controller
+Данный лаунчер запускает два лаунчера (path_publisher и path_follower): path_publisher публикуют заданный путь в топик /path, path_follower читает этот путь из /path, затем публикует управление росботом по этому пути.
+
+Пример запуска:
+```
+ros2 launch rosbot_controller simple_controller.launch.py traj_type:=@param1 move_plan:=@param2
+```
+(@param1 = 2.0sin2.0, @param1 = 4.0spiral, @param1 = polygon, @param1 = from_file, @param2 = "путь к файлу")
