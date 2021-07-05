@@ -37,17 +37,17 @@ class Goal:
 
 class Params:
 
-    def __init__(self):
-        self.v_max = 2.0
-        self.w_max = 1.5
+    def __init__(self, v_max=2.0, w_max=1.5):
+        self.v_max = v_max
+        self.w_max = w_max
         self.xy_margin_squared = 0.05
 
 
 class Rosbot:
 
-    def __init__(self):
+    def __init__(self, v_max=2.0, w_max=1.5):
         self.state = RobotState()
-        self.params = Params()
+        self.params = Params(v_max, w_max)
         self.eps_w = 0.001
         self.eps_r = 0.001
         self.v = 0.0

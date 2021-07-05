@@ -21,9 +21,18 @@ class TrajFollower():
         rclpy.init(args=None)
         self.node = rclpy.create_node(node_name)
         self.odom_frame = "odom"
-        self.robot_frame = "base_link"
 
-        self.robot = Rosbot()
+        self.node.declare_parameter('control_topic', '/cmd_vel')
+        self.node.declare_parameter('v_max', 2.5)
+        self.node.declare_parameter('w_max', 2.5)
+        self.cmd_topic = self.node.get_parameter(
+            'control_topic').get_parameter_value().string_value
+        self.v_max = self.node.get_parameter(
+            'v_max').get_parameter_value().double_value
+        self.w_max = self.node.get_parameter(
+            'w_max').get_parameter_value().double_value
+
+        self.robot = Rosbot(self.v_max, self.w_max)
         self.robot_state = RobotState()  # обновляемое положение робота
         self.current_goal = Goal()
 
@@ -33,6 +42,7 @@ class TrajFollower():
         self.goal_queue = []
         self.path = []
 
+        self.path_deviation = 0.0
         self.path_index = 0
         self.got_path = False
 
@@ -47,7 +57,7 @@ class TrajFollower():
         """
         # паблишер для управления роботом
         self.cmd_pub = self.node.create_publisher(
-            Twist, '/cmd_vel', 1)
+            Twist, self.cmd_topic, 1)
         # подписчик для получения траектории
         self.path_sub = self.node.create_subscription(
             Path, '/path', self.path_callback, 10)
@@ -132,10 +142,11 @@ class TrajFollower():
             else:
                 # конец пути, тормозим
                 self.publish_control(RobotControl())
-                print("We got it")
+                print(f"Trajectory finished")
                 rclpy.shutdown()
                 return
 
+        # self.path_deviation += self.get_min_dist_to_path()
         control = self.robot.calculate_contol(self.current_goal)
         self.publish_control(control)
         return

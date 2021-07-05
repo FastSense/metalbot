@@ -183,8 +183,10 @@ def main():
     rclpy.init(args=None)
     node = rclpy.create_node("path_pub")
     node.get_logger().info("path_pub init")
+
     node.declare_parameter('traj_type')
     node.declare_parameter('move_plan')
+    node.declare_parameter('num_of_subs', 1)
 
     traj_type = node.get_parameter(
         'traj_type').get_parameter_value().string_value
@@ -193,7 +195,7 @@ def main():
     if not IsValidTrajType(traj_type):
         node.get_logger().info("Not valid type of trajectory")
         return 1
-    
+
     path_pub = node.create_publisher(Path, "/path", 5)
     msg = Path()
     msg.header.frame_id = "odom"
@@ -212,7 +214,10 @@ def main():
         print(f"file_name = {move_plan}")
         msg = FromFileTrajGenerator(msg, move_plan)
 
-    while path_pub.get_subscription_count() < 1:
+    
+    num_of_subs = node.get_parameter(
+        'num_of_subs').get_parameter_value().double_value
+    while path_pub.get_subscription_count() < num_of_subs:
         time.sleep(0.5)
     time.sleep(0.1)
 
