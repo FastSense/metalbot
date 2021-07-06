@@ -1,7 +1,8 @@
 import rclpy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path
-from rosbot_controller.rosbot import Rosbot, RobotState, RobotControl, Goal
+from rosbot_controller.rosbot_2D import Rosbot, RobotState, RobotControl, Goal
+
 from scipy.spatial.transform import Rotation
 from nav_msgs.msg import Odometry
 import numpy as np
@@ -24,12 +25,13 @@ class TrajFollower():
         self.node_name = node_name
         rclpy.init(args=None)
         self.node = rclpy.create_node(node_name)
-        self.odom_frame = "odom"
-
+        self.node.declare_parameter('parent_topic', '/odom')
         self.node.declare_parameter('control_topic', '/cmd_vel')
         self.node.declare_parameter('v_max', 2.5)
         self.node.declare_parameter('w_max', 2.5)
 
+        self.parent_topic = self.node.get_parameter(
+            'parent_topic').get_parameter_value().string_value
         self.cmd_topic = self.node.get_parameter(
             'control_topic').get_parameter_value().string_value
         self.v_max = self.node.get_parameter(
@@ -72,7 +74,7 @@ class TrajFollower():
 
         # subscriber for the robot position
         self.odom_sub = self.node.create_subscription(
-            Odometry, '/odom', self.odom_callback, 10)
+            Odometry, self.parent_topic, self.odom_callback, 10)
 
         self.path_sub
         self.odom_sub

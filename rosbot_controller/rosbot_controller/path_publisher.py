@@ -73,7 +73,7 @@ class TrajPublish():
         and publish it in topic
 
         """
-        if not self.IsValidTrajType():
+        if not self.is_valid_traj_type():
             self.node.get_logger().info("Not valid type of trajectory")
             return 1
 
@@ -91,7 +91,7 @@ class TrajPublish():
         self.node.destroy_node()
         rclpy.shutdown()
 
-    def IsValidTrajType(self):
+    def is_valid_traj_type(self):
         """
         Checking the validity of a trajectory type
 
@@ -197,13 +197,13 @@ class TrajPublish():
             ps.pose.position.x = x_ar[i]
             ps.pose.position.y = y_ar[i]
             ps.pose.position.z = 0.0
-            zz = list(Rotation.from_euler(
+            goal_quaternion = list(Rotation.from_euler(
                 'z', math.atan(yaw_arr[i]), degrees=False
             ).as_quat())
-            ps.pose.orientation.x = zz[0]
-            ps.pose.orientation.y = zz[1]
-            ps.pose.orientation.z = zz[2]
-            ps.pose.orientation.w = zz[3]
+            ps.pose.orientation.x = goal_quaternion[0]
+            ps.pose.orientation.y = goal_quaternion[1]
+            ps.pose.orientation.z = goal_quaternion[2]
+            ps.pose.orientation.w = goal_quaternion[3]
             self.msg.poses.append(ps)
 
     def PolygonTrajGenerator(self):
@@ -221,13 +221,13 @@ class TrajPublish():
             ps.pose.position.x = p[0]
             ps.pose.position.y = p[1]
             ps.pose.position.z = 0.0
-            zz= list(Rotation.from_euler(
+            goal_quaternion = list(Rotation.from_euler(
                 'z', math.atan2(p[1], p[0]), degrees=False
             ).as_quat())
-            ps.pose.orientation.x = zz[0]
-            ps.pose.orientation.y = zz[1]
-            ps.pose.orientation.z = zz[2]
-            ps.pose.orientation.w = zz[3]
+            ps.pose.orientation.x = goal_quaternion[0]
+            ps.pose.orientation.y = goal_quaternion[1]
+            ps.pose.orientation.z = goal_quaternion[2]
+            ps.pose.orientation.w = goal_quaternion[3]
             self.msg.poses.append(ps)
 
     def SpiralTrajGenerator(self, amplitude):
