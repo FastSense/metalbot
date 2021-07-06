@@ -4,7 +4,10 @@ import time
 
 
 class RobotState():
-
+    """
+    Describes the robot state as (x, y, yaw)
+    
+    """
     def __init__(self, x=0.0, y=0.0, yaw=0.0, vx=0.0, vy=0.0, w=0.0):
         self.x = x
         self.y = y
@@ -15,17 +18,23 @@ class RobotState():
 
 
 class RobotControl:
+    """
+    Describes the current control velocity
 
+    """
     def __init__(self, v=0.0, w=0.0):
-        self.v = v  # управление по linear.x 
-        self.w = w  # управление по angular.z
+        self.v = v  # control by linear.x 
+        self.w = w  # control by angular.z
 
     def to_str(self):
         return "v -> {:.2f}, w -> {:.2f}".format(self.v, self.w)
 
 
 class Goal:
+    """
+    Describes the goal to be achieved
 
+    """
     def __init__(self, x=0.0, y=0.0, yaw=0.0):
         self.x = x
         self.y = y
@@ -36,7 +45,10 @@ class Goal:
 
 
 class Params:
+    """
+    Restriction of a linear and angular velocities
 
+    """
     def __init__(self, v_max=2.0, w_max=1.5):
         self.v_max = v_max
         self.w_max = w_max
@@ -44,7 +56,10 @@ class Params:
 
 
 class Rosbot:
+    """
+    Defines state of a rosbot
 
+    """
     def __init__(self, v_max=2.0, w_max=1.5):
         self.state = RobotState()
         self.params = Params(v_max, w_max)
@@ -72,6 +87,7 @@ class Rosbot:
     def dist_to_goal_L2(self, goal):
         """
         param goal - Goal Class object
+
         """
         return (goal.x - self.state.x) ** 2 + (goal.y - self.state.y) ** 2
 
@@ -83,6 +99,7 @@ class Rosbot:
     def calculate_contol(self, goal):
         """
         Given state calculate control towards goal
+
         """
         r = self.dist_to_goal_L2(goal)
 
@@ -106,6 +123,7 @@ class Rosbot:
         Updates robot state assuming that control has been active for dt seconds
         c : control vector of RobotControl type
         dt : time period in seconds
+
         """
         v = control_vector.v
         w = control_vector.w
@@ -134,6 +152,7 @@ class Rosbot:
         """
         c : control vector of RobotControl type
         dt : time period in seconds
+
         """
         control_vector.v
         control_vector.w

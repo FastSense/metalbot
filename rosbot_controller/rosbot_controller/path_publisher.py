@@ -5,6 +5,7 @@ import numpy as np
 import rclpy
 import math
 import time
+from scipy.spatial.transform import Rotation
 
 
 class TrajPublish():
@@ -76,7 +77,6 @@ class TrajPublish():
             self.node.get_logger().info("Not valid type of trajectory")
             return 1
 
-        # self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
         self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
         self.generate_message()
 
@@ -197,8 +197,13 @@ class TrajPublish():
             ps.pose.position.x = x_ar[i]
             ps.pose.position.y = y_ar[i]
             ps.pose.position.z = 0.0
-            ps.pose.orientation = euler_to_quaternion(
-                yaw=math.atan(yaw_arr[i]), roll=0, pitch=0)
+            zz = list(Rotation.from_euler(
+                'z', math.atan(yaw_arr[i]), degrees=False
+            ).as_quat())
+            ps.pose.orientation.x = zz[0]
+            ps.pose.orientation.y = zz[1]
+            ps.pose.orientation.z = zz[2]
+            ps.pose.orientation.w = zz[3]
             self.msg.poses.append(ps)
 
     def PolygonTrajGenerator(self):
@@ -216,8 +221,13 @@ class TrajPublish():
             ps.pose.position.x = p[0]
             ps.pose.position.y = p[1]
             ps.pose.position.z = 0.0
-            ps.pose.orientation = euler_to_quaternion(
-                yaw=math.atan2(p[1], p[0]), roll=0, pitch=0)
+            zz= list(Rotation.from_euler(
+                'z', math.atan2(p[1], p[0]), degrees=False
+            ).as_quat())
+            ps.pose.orientation.x = zz[0]
+            ps.pose.orientation.y = zz[1]
+            ps.pose.orientation.z = zz[2]
+            ps.pose.orientation.w = zz[3]
             self.msg.poses.append(ps)
 
     def SpiralTrajGenerator(self, amplitude):
@@ -271,28 +281,6 @@ class TrajPublish():
         coef = self.traj_type.split('spiral')
         amp = coef[0] if coef[0] != '' or coef[0] is None else 1.0
         return float(amp)
-
-
-def euler_to_quaternion(yaw, pitch, roll):
-    """
-    Args:
-        yaw: yaw angle
-        pitch: pitch angle
-        roll: roll angle
-    Return:
-        quaternion [qx, qy, qz, qw]
-
-    """
-    qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(roll / 2) * np.sin(
-        pitch / 2) * np.sin(yaw / 2)
-    qy = np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2) + np.sin(roll / 2) * np.cos(
-        pitch / 2) * np.sin(yaw / 2)
-    qz = np.cos(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2) - np.sin(roll / 2) * np.sin(
-        pitch / 2) * np.cos(yaw / 2)
-    qw = np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) + np.sin(roll / 2) * np.sin(
-        pitch / 2) * np.sin(yaw / 2)
-
-    return Quaternion(x=qx, y=qy, z=qz, w=qw)
 
 
 def main():
