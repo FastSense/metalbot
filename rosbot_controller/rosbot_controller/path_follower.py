@@ -25,26 +25,12 @@ class TrajFollower():
         self.node_name = node_name
         rclpy.init(args=None)
         self.node = rclpy.create_node(node_name)
-        self.node.declare_parameter('parent_topic', '/odom')
-        self.node.declare_parameter('control_topic', '/cmd_vel')
-        self.node.declare_parameter('v_max', 2.5)
-        self.node.declare_parameter('w_max', 2.5)
-
-        self.parent_topic = self.node.get_parameter(
-            'parent_topic').get_parameter_value().string_value
-        self.cmd_topic = self.node.get_parameter(
-            'control_topic').get_parameter_value().string_value
-        self.v_max = self.node.get_parameter(
-            'v_max').get_parameter_value().double_value
-        self.w_max = self.node.get_parameter(
-            'w_max').get_parameter_value().double_value
-
+        self.declare_and_get_parametrs()
         self.robot = Rosbot(self.v_max, self.w_max)
         # state of the Robot that updated
         self.robot_state = RobotState()
         self.current_goal = Goal()
 
-        self.cmd_freq = 30.0
         self.dt = 1.0 / self.cmd_freq
 
         self.goal_queue = []
@@ -58,6 +44,28 @@ class TrajFollower():
 
         self.init_subs_pubs()
         rclpy.get_default_context().on_shutdown(self.on_shutdown)
+
+    def declare_and_get_parametrs(self):
+        """
+        Initializing of the parameters from a command line
+
+        """
+        self.node.declare_parameter('parent_topic', '/odom')
+        self.node.declare_parameter('control_topic', '/cmd_vel')
+        self.node.declare_parameter('v_max', 2.5)
+        self.node.declare_parameter('w_max', 2.5)
+        self.node.declare_parameter('cmd_freq', 30.0)
+
+        self.parent_topic = self.node.get_parameter(
+            'parent_topic').get_parameter_value().string_value
+        self.cmd_topic = self.node.get_parameter(
+            'control_topic').get_parameter_value().string_value
+        self.v_max = self.node.get_parameter(
+            'v_max').get_parameter_value().double_value
+        self.w_max = self.node.get_parameter(
+            'w_max').get_parameter_value().double_value
+        self.cmd_freq = self.node.get_parameter(
+            'cmd_freq').get_parameter_value().double_value
 
     def init_subs_pubs(self):
         """
