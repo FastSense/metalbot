@@ -60,6 +60,13 @@ def generate_launch_description():
     )
 
     # decalre default parameters for logger
+    """
+    I can't use get_package_share_directory, cause it will return
+    'ros2_ws/install/logger/share/logger', BUT when using 'ros2 launch' 
+    ROS launches from its workspace so I can easy get desired directory
+    
+    * I checked it works well when launch from any directory *
+    """
     output_dir = os.path.join(os.getcwd(), 'src/logger/output_data/') 
     output_path = launch.substitutions.LaunchConfiguration(
         'output_path',
