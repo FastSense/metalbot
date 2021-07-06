@@ -7,16 +7,15 @@ from launch.actions import DeclareLaunchArgument
 def generate_launch_description():
 
     defaut_control_topic = "/cmd_vel"
-    default_parent_topic = "/odom"
+    default_odom_topic = "/odom"
     defaut_v_max = "2.5"
     defaut_w_max = "2.5"
     default_cmd_freq = "30.0"
 
     control_topic = LaunchConfiguration(
         "control_topic", default=defaut_control_topic)
-    parent_topic = LaunchConfiguration(
-        "parent_topic", default=default_parent_topic)
-
+    odom_topic = LaunchConfiguration(
+        "odom_topic", default=default_odom_topic)
     v_max = LaunchConfiguration('v_max', default=defaut_v_max)
     w_max = LaunchConfiguration('w_max', default=defaut_w_max)
     cmd_freq = LaunchConfiguration('cmd_freq', default=default_cmd_freq)
@@ -27,8 +26,8 @@ def generate_launch_description():
                               default_value=defaut_control_topic,
                               description='Topic in which we publish a control information'
                               ),
-        DeclareLaunchArgument('parent_topic',
-                              default_value=default_parent_topic,
+        DeclareLaunchArgument('odom_topic',
+                              default_value=default_odom_topic,
                               description="Topic in which information about the current position is published"
                               ),
         DeclareLaunchArgument('v_max',
@@ -54,7 +53,7 @@ def generate_launch_description():
             emulate_tty=True,
             parameters=[
                 {"control_topic": control_topic},
-                {"parent_topic": parent_topic},
+                {"odom_topic": odom_topic},
                 {"v_max": v_max},
                 {"w_max": w_max},
                 {"cmd_freq": cmd_freq},

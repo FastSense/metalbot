@@ -50,14 +50,14 @@ class TrajFollower():
         Initializing of the parameters from a command line
 
         """
-        self.node.declare_parameter('parent_topic', '/odom')
+        self.node.declare_parameter('odom_topic', '/odom')
         self.node.declare_parameter('control_topic', '/cmd_vel')
         self.node.declare_parameter('v_max', 2.5)
         self.node.declare_parameter('w_max', 2.5)
         self.node.declare_parameter('cmd_freq', 30.0)
 
-        self.parent_topic = self.node.get_parameter(
-            'parent_topic').get_parameter_value().string_value
+        self.odom_topic = self.node.get_parameter(
+            'odom_topic').get_parameter_value().string_value
         self.cmd_topic = self.node.get_parameter(
             'control_topic').get_parameter_value().string_value
         self.v_max = self.node.get_parameter(
@@ -82,7 +82,7 @@ class TrajFollower():
 
         # subscriber for the robot position
         self.odom_sub = self.node.create_subscription(
-            Odometry, self.parent_topic, self.odom_callback, 10)
+            Odometry, self.odom_topic, self.odom_callback, 10)
 
         self.path_sub
         self.odom_sub
