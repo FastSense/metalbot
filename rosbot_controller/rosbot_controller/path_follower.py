@@ -1,7 +1,7 @@
 import rclpy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path
-from rosbot_controller.rosbot_2D import Rosbot, RobotState, RobotControl, Goal
+from rosbot_controller.rosbot_2D import Goal, Rosbot, RobotState, RobotControl, Goal
 
 from scipy.spatial.transform import Rotation
 from nav_msgs.msg import Odometry
@@ -108,6 +108,22 @@ class TrajFollower():
 
         self.got_path = True
 
+    def get_min_dist_to_path(self):
+
+        lookback_index_dist = 10
+        if self.path_index >= lookback_index_dist:
+            path_slice = self.path[self.path_index -
+                                   lookback_index_dist: self.path_index]
+        else:
+            path_slice = self.path[0: self.path_index]
+
+        min_dist = 100
+        for p in path_slice:
+            dist = self.robot.dist_to_goal_L2(Goal(p[0], p[1]))
+            if dist < min_dist:
+                min_dist = dist
+        return min_dist
+
     def publish_control(self, control: RobotControl):
         """
         Args:
@@ -133,7 +149,6 @@ class TrajFollower():
             self.dt, self.calculate_publish_control)
         rclpy.spin(self.node)
 
-
     def calculate_publish_control(self):
         """
         Calculate and publish control until the robot reaches the goal
@@ -142,7 +157,6 @@ class TrajFollower():
         # if the path has not yet been received, then we do not execute
         if not self.got_path:
             return
-
 
         self.robot.set_state(self.robot_state)
 
@@ -153,10 +167,12 @@ class TrajFollower():
             else:
                 # end of the path, slow down
                 self.publish_control(RobotControl())
-                print(f"Trajectory finished")
+                print(
+                    f"Trajectory finished. Path deviation = {self.path_deviation}")
                 rclpy.shutdown()
                 return
 
+        self.path_deviation += self.get_min_dist_to_path()
         control = self.robot.calculate_contol(self.current_goal)
         self.publish_control(control)
         return

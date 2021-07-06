@@ -52,7 +52,7 @@ class Params:
     def __init__(self, v_max=2.0, w_max=1.5):
         self.v_max = v_max
         self.w_max = w_max
-        self.xy_margin_squared = 0.05
+        self.xy_margin_squared = 0.2
 
 
 class Rosbot:
@@ -94,7 +94,7 @@ class Rosbot:
     def goal_reached(self, goal):
         dist = np.hypot(goal.x - self.state.x, goal.y - self.state.y)
 
-        return dist < 0.2
+        return dist < self.params.xy_margin_squared
 
     def calculate_contol(self, goal):
         """
