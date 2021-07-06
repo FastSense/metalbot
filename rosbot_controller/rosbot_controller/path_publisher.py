@@ -64,7 +64,6 @@ class TrajPublish():
         elif self.traj_type == "polygon":
             self.PolygonTrajGenerator()
         elif self.traj_type == "from_file":
-            print(f"file_name = {self.move_plan}")
             self.FromFileTrajGenerator()
 
     def run(self):
@@ -79,7 +78,6 @@ class TrajPublish():
 
         # self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
         self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
-        print("Parse ", self.traj_type)
         self.generate_message()
 
         # waiting for subs on our channel

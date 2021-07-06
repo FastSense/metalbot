@@ -53,7 +53,6 @@ class TrajFollower():
         self.got_path = False
 
         # singal that we begin to wait for the trajectory
-        self.start_receive_path = False
 
         self.init_subs_pubs()
         rclpy.get_default_context().on_shutdown(self.on_shutdown)
@@ -130,9 +129,8 @@ class TrajFollower():
         """
         self.timer = self.node.create_timer(
             self.dt, self.calculate_publish_control)
-        print("start spin")
         rclpy.spin(self.node)
-        print("end spin")
+
 
     def calculate_publish_control(self):
         """
@@ -141,12 +139,8 @@ class TrajFollower():
         """
         # if the path has not yet been received, then we do not execute
         if not self.got_path:
-            if not self.start_receive_path:
-                print("Waiting for coordinates of path")
-                self.start_receive_path = True
             return
 
-        print("My state: " + self.robot_state.to_str())
 
         self.robot.set_state(self.robot_state)
 
