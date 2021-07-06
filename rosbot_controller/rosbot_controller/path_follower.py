@@ -1,7 +1,7 @@
 import rclpy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path
-from rosbot_controller.rosbot_2D import Goal, Rosbot, RobotState, RobotControl, Goal
+from rosbot_controller.rosbot_2D import Goal, Rosbot, RobotState, RobotControl
 
 from scipy.spatial.transform import Rotation
 from nav_msgs.msg import Odometry
