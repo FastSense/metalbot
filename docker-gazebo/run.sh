@@ -1,6 +1,6 @@
 #!/bin/bash
 
-image_name=rosbot2-image
+image_name=rosbot2-image:latest
 container_name=rosbot2
 
 docker run -it -d --privileged --net=host \
