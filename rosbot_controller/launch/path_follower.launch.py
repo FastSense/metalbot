@@ -1,6 +1,7 @@
 from launch.substitutions import LaunchConfiguration
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument
 
 
 def generate_launch_description():
@@ -16,6 +17,19 @@ def generate_launch_description():
 
     return LaunchDescription([
 
+        DeclareLaunchArgument('control_topic',
+                              default_value=defaut_control_topic,
+                              description=''
+                              ),
+        DeclareLaunchArgument('v_max',
+                              default_value=defaut_v_max,
+                              description='Maximum forward speed'
+                              ),
+
+        DeclareLaunchArgument('w_max',
+                              default_value=defaut_w_max,
+                              description='Maximum value of a rotation speed around axe z'
+                              ),
 
         Node(
             package='rosbot_controller',
