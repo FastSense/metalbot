@@ -1,3 +1,11 @@
+
+# **Запуск симулятора с rosbot**
+
+```bash
+ros2 launch rosbot_controller rosbot_sim.launch.py
+```
+
+
 # **state_estimation_2d**
 ROS2 нода для оценки состояния колесной платформы. 
 
@@ -17,17 +25,16 @@ export ROS_DOMAIN_ID='уникальный id'
 
 1. Установить питоновские библиотеки:
 ```
-pip install filterpy
 sudo pip uninstall onnxruntime-gpu
 pip install onnxruntime
 ```
 
 2. Перейти в папку ros2_ws и сбилдить.
-    ```
-    cd ros2_ws/
-    colcon build
-    ```
-3.    ```source install/setup.zsh ```
+```
+cd ros2_ws/
+colcon build
+```
+3. ```source install/setup.zsh ```
 
 ### **Запуск**
 ```ros2 launch state_estimation_2d state_estimation.launch.py```
