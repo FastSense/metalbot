@@ -11,6 +11,7 @@ def generate_launch_description():
     defaut_v_max = "2.5"
     defaut_w_max = "2.5"
     default_cmd_freq = "30.0"
+    default_kill_follower = "True"
 
     control_topic = LaunchConfiguration(
         "control_topic", default=defaut_control_topic)
@@ -19,7 +20,7 @@ def generate_launch_description():
     v_max = LaunchConfiguration('v_max', default=defaut_v_max)
     w_max = LaunchConfiguration('w_max', default=defaut_w_max)
     cmd_freq = LaunchConfiguration('cmd_freq', default=default_cmd_freq)
-
+    kill_follower = LaunchConfiguration('kill_follower', default=default_kill_follower)
     return LaunchDescription([
 
         DeclareLaunchArgument('control_topic',
@@ -44,6 +45,10 @@ def generate_launch_description():
                               default_value=default_cmd_freq,
                               description='Frequency of publishing control of a rosbot'
                               ),
+        DeclareLaunchArgument('kill_follower',
+                              default_value=default_kill_follower,
+                              description='Signal, that we have to kill the follower process'
+                              ),
 
         Node(
             package='rosbot_controller',
@@ -57,6 +62,7 @@ def generate_launch_description():
                 {"v_max": v_max},
                 {"w_max": w_max},
                 {"cmd_freq": cmd_freq},
+                {"kill_follower":kill_follower},
             ]
         ),
 

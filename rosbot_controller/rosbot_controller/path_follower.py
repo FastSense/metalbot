@@ -52,7 +52,7 @@ class TrajFollower():
         self.node.declare_parameter('control_topic', '/cmd_vel')
         self.node.declare_parameter('v_max', 2.5)
         self.node.declare_parameter('w_max', 2.5)
-        self.node.declare_parameter('kill_follower', 'True')
+        self.node.declare_parameter('kill_follower', True)
         self.node.declare_parameter('cmd_freq', 30.0)
 
         self.odom_topic = self.node.get_parameter(
@@ -166,7 +166,6 @@ class TrajFollower():
         # if the path has not yet been received, then we do not execute
         if not self.got_path:
             return
-
         self.robot.set_state(self.robot_state)
 
         if self.robot.goal_reached(self.current_goal):
@@ -178,7 +177,6 @@ class TrajFollower():
                 self.publish_control(RobotControl())
                 print(
                     f"Trajectory finished. Path deviation = {self.path_deviation}")
-                #rclpy.shutdown()
                 if self.kill_follower:
                     rclpy.try_shutdown()
                 return
