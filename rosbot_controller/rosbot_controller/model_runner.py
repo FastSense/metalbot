@@ -63,15 +63,13 @@ class ModelRunner(Node):
 
     def broadcast_model_tf(self, state: RobotState):
         """
-        Broadcast our predicted position
+        Broadcast our predicted position in tf frame
 
         """
         pose = Vector3()
         pose.x, pose.y, pose.z = state.x, state.y, 0.0
         goal_quat = Rotation.from_euler(
-            'z', state.yaw, degrees=False
-        ).as_quat()
-
+            'z', state.yaw, degrees=False).as_quat()
         quat = Quaternion()
         quat.x, quat.y, quat.z, quat.w = goal_quat[0], goal_quat[1], goal_quat[2], goal_quat[3]
 
@@ -101,7 +99,6 @@ class ModelRunner(Node):
         self.model_state = self.robot.update_state_by_nn_model(
             self.nn_model, self.control_vector, self.dt
         )
-
         self.broadcast_model_tf(self.model_state)
 
     def run(self):
@@ -112,9 +109,8 @@ class ModelRunner(Node):
         if self.model_type == "kinematic":
             self.get_logger().info("Start kinematic model")
             self.child_frame_id = "kinematic_model_link"
-
             self.create_timer(self.dt, self._kinematic_model)
-            rclpy.spin(self)
+
         elif self.model_type == "nn":
             if self.nn_model_path is None or self.nn_model_path == "":
                 self.get_logger().error("Wrong path to neural network model")
@@ -125,9 +121,8 @@ class ModelRunner(Node):
             #  load NN model (.onnx) from given path, using nnio module
             self.nn_model = nnio.ONNXModel(self.nn_model_path)
             self.create_timer(self.dt, self._nn_model)
-            rclpy.spin(self)
         else:
-            self.get_logger().error("Error type")
+            self.get_logger().error("Error model type")
             return
 
         rclpy.spin(self)

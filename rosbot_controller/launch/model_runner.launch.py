@@ -21,11 +21,11 @@ def generate_launch_description():
 
         DeclareLaunchArgument('control_topic',
                               default_value=default_control_topic,
-                              description='Topic in which we publish a control information'
+                              description='Topic from which we read a control information'
                               ),
         DeclareLaunchArgument('parent_frame',
                               default_value=default_parent_frame,
-                              description=''
+                              description='Parent frame (default = odom)'
                               ),
         DeclareLaunchArgument('model_type',
                               default_value=default_model_type,
@@ -34,7 +34,7 @@ def generate_launch_description():
 
         DeclareLaunchArgument('cmd_freq',
                               default_value=default_cmd_freq,
-                              description='Frequency of publishing control of a rosbot'
+                              description='Frequency of an updating state of a control of a rosbot'
                               ),
         DeclareLaunchArgument('nn_model_path',
                               default_value=default_nn_model_path,
