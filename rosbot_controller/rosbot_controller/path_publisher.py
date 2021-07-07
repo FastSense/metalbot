@@ -1,4 +1,4 @@
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 import pathlib
 import numpy as np

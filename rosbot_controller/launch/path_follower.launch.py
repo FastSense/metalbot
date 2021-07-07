@@ -6,7 +6,7 @@ from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
 
-    defaut_control_topic = "/cmd_vel"
+    default_control_topic = "/cmd_vel"
     default_odom_topic = "/odom"
     defaut_v_max = "2.5"
     defaut_w_max = "2.5"
@@ -14,7 +14,7 @@ def generate_launch_description():
     default_kill_follower = "True"
 
     control_topic = LaunchConfiguration(
-        "control_topic", default=defaut_control_topic)
+        "control_topic", default=default_control_topic)
     odom_topic = LaunchConfiguration(
         "odom_topic", default=default_odom_topic)
     v_max = LaunchConfiguration('v_max', default=defaut_v_max)
@@ -24,7 +24,7 @@ def generate_launch_description():
     return LaunchDescription([
 
         DeclareLaunchArgument('control_topic',
-                              default_value=defaut_control_topic,
+                              default_value=default_control_topic,
                               description='Topic in which we publish a control information'
                               ),
         DeclareLaunchArgument('odom_topic',
