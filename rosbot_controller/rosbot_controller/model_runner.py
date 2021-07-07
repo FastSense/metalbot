@@ -18,7 +18,7 @@ class ModelRunner(Node):
 
     def __init__(self):
         rclpy.init()
-        super().__init__("runner")
+        super().__init__("model runner")
         self.declare_and_get_parametrs()
         # Node name = model_type
 
@@ -128,7 +128,6 @@ class ModelRunner(Node):
             if self.nn_model_path is None or self.nn_model_path == "":
                 self.get_logger().error("Wrong path to neural network model")
                 return
-            print(self.nn_model_path)
             self.get_logger().info("Start neural network  model")
             self.child_frame_id = "nn_model_link"
 
