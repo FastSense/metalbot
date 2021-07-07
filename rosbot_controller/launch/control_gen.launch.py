@@ -12,7 +12,7 @@ def generate_launch_description():
     defaut_num_of_subs = "1"
     defaut_control_topic = "/cmd_vel"
     defaut_pub_rate = "30"
-    defaut_Tmax = "10"
+    defaut_max_time = "10" # control generator running time
     defaut_period_lin = "5"
     defaut_period_ang = "5"
     defaut_v_min = "0.0"
@@ -27,7 +27,7 @@ def generate_launch_description():
     num_of_subs = LaunchConfiguration('num_of_subs', default=defaut_num_of_subs)
     control_topic = LaunchConfiguration('control_topic', default=defaut_control_topic)
     pub_rate = LaunchConfiguration('pub_rate', default=defaut_pub_rate)
-    Tmax = LaunchConfiguration('Tmax', default=defaut_Tmax)
+    max_time = LaunchConfiguration('Tmax', default=defaut_max_time) # control generator running time
     period_lin = LaunchConfiguration('period_lin', default=defaut_period_lin)
     period_ang = LaunchConfiguration('period_ang', default=defaut_period_ang)
     v_min = LaunchConfiguration('v_min', default=defaut_v_min)
@@ -66,7 +66,7 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'Tmax',
-            default_value=defaut_Tmax,
+            default_value=defaut_max_time,
             description='control generator running time'
         ),
 
@@ -136,7 +136,7 @@ def generate_launch_description():
                 {"num_of_subs":num_of_subs},
                 {"control_topic":control_topic},
                 {"pub_rate":pub_rate},
-                {"Tmax": Tmax},
+                {"Tmax": max_time},
                 {"period_lin":period_lin},
                 {"period_ang":period_ang},
                 {"v_min":v_min},

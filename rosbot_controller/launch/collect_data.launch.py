@@ -8,7 +8,7 @@ def generate_launch_description():
 
     # declare default parameters for control_generator
     defaut_pub_rate = "30"
-    defaut_Tmax = "10"
+    defaut_max_time = "10"
     defaut_period_lin = "5"
     defaut_period_ang = "5"
     defaut_v_min = "0.0"
@@ -22,9 +22,10 @@ def generate_launch_description():
         'pub_rate',
         default=defaut_pub_rate
     )
-    Tmax = launch.substitutions.LaunchConfiguration(
+    # control generator running time
+    max_time = launch.substitutions.LaunchConfiguration(
         'Tmax',
-        default=defaut_Tmax
+        default=defaut_max_time
     )
     period_lin = launch.substitutions.LaunchConfiguration(
         'period_lin',
@@ -90,7 +91,7 @@ def generate_launch_description():
             ),
             launch_arguments = {
                 'pub_rate': pub_rate, 
-                "Tmax":Tmax,
+                "Tmax":max_time,
                 "period_lin": period_lin,
                 "period_ang": period_ang,
                 "v_min": v_min,
@@ -135,7 +136,7 @@ def generate_launch_description():
 
         launch.actions.DeclareLaunchArgument(
             'Tmax',
-            default_value=defaut_Tmax,
+            default_value=defaut_max_time,
             description='control generator running time'
         ),
 
