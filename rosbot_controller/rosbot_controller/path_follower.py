@@ -40,8 +40,6 @@ class TrajFollower():
         self.path_index = 0
         self.got_path = False
 
-        # singal that we begin to wait for the trajectory
-
         self.init_subs_pubs()
         rclpy.get_default_context().on_shutdown(self.on_shutdown)
 
@@ -54,6 +52,7 @@ class TrajFollower():
         self.node.declare_parameter('control_topic', '/cmd_vel')
         self.node.declare_parameter('v_max', 2.5)
         self.node.declare_parameter('w_max', 2.5)
+        self.node.declare_parameter('kill_follower', 'True')
         self.node.declare_parameter('cmd_freq', 30.0)
 
         self.odom_topic = self.node.get_parameter(
@@ -66,6 +65,8 @@ class TrajFollower():
             'w_max').get_parameter_value().double_value
         self.cmd_freq = self.node.get_parameter(
             'cmd_freq').get_parameter_value().double_value
+        self.kill_follower = self.node.get_parameter(
+            'kill_follower').get_parameter_value().bool_value
 
     def init_subs_pubs(self):
         """
@@ -177,7 +178,9 @@ class TrajFollower():
                 self.publish_control(RobotControl())
                 print(
                     f"Trajectory finished. Path deviation = {self.path_deviation}")
-                rclpy.shutdown()
+                #rclpy.shutdown()
+                if self.kill_follower:
+                    rclpy.try_shutdown()
                 return
 
         self.path_deviation += self.get_min_dist_to_path()
