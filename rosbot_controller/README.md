@@ -73,3 +73,24 @@ ros2 launch rosbot_controller simple_controller.launch.py traj_type:=@param1 mov
 Aргументы:
 * traj_type --- тип траектории (2.0sin2.0, 4.0spiral, polygon, from_file)
 * move_plan --- путь к файлу, если traj_type=from_file
+
+
+## model_runner
+Данный лаунчер запускает на выбора две модели: кинематическую и нейросетевую.
+Визуализация нейросетевой:
+```
+ros2 launch rosbot_controller model_runner.launch.py model_type:=nn nn_model_path:=@param
+```
+(tf - nn_model_link)
+
+Визуализация кинематической:
+```
+ros2 launch rosbot_controller model_runner.launch.py model_type:=kinematic
+```
+(tf - kinematic_model_link)
+Аргументы:
+* model_type - тип модели: а) Кинематическая (kinematic), б) Нейросетевая (nn)
+* nn_model_path - путь к весам нейронной сети (.onnx)
+* cmd_freq - частота публикации информации о положении (default = 60)
+* parent_frame - фрейм, из которого формируется сообщение в tf (default="odom")
+* control_topic - топик, из которого читаются скорости

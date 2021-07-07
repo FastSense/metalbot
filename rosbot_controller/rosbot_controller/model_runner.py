@@ -3,29 +3,20 @@ import rclpy
 from geometry_msgs.msg import Twist, TransformStamped, Vector3, Quaternion
 import nnio
 from tf2_ros import TransformBroadcaster
-from tf2_msgs.msg import TFMessage
 from rclpy.node import Node
 from rosbot_controller.rosbot_2D import Rosbot, RobotState, RobotControl
 
 
 class ModelRunner(Node):
     """
-    Predict state of a kinematic or NN model.
-
-    Принимать type из командной строки
+    Predict state of a kinematic or NN model by a known velocities
 
     """
 
     def __init__(self):
         rclpy.init()
-        super().__init__("model runner")
+        super().__init__("model_runner")
         self.declare_and_get_parametrs()
-        # Node name = model_type
-
-        # self.model_type = type
-        # self.control_topic = '/cmd_vel'
-        # self.parent_frame = "odom"
-        # self.cmd_freq = 60.0  # Hz
 
         self.child_frame_id = None
         self.robot = Rosbot()
@@ -65,7 +56,7 @@ class ModelRunner(Node):
 
     def command_callback(self, msg: Twist):
         """
-        Save msg to contro_vector (new current control).
+        Save msg to control_vector (new current control).
 
         """
         self.control_vector = RobotControl(msg.linear.x, msg.angular.z)
@@ -115,7 +106,7 @@ class ModelRunner(Node):
 
     def run(self):
         """
-        Main method.
+        Main method which run needed regime of a rosbot
 
         """
         if self.model_type == "kinematic":
