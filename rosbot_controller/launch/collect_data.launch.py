@@ -3,6 +3,10 @@ import launch
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
 
@@ -18,77 +22,28 @@ def generate_launch_description():
     defaut_a_lin = "0.25"
     defaut_a_ang = "0.25"
 
-    pub_rate = launch.substitutions.LaunchConfiguration(
-        'pub_rate',
-        default=defaut_pub_rate
-    )
-    # control generator running time
-    max_time = launch.substitutions.LaunchConfiguration(
-        'Tmax',
-        default=defaut_max_time
-    )
-    period_lin = launch.substitutions.LaunchConfiguration(
-        'period_lin',
-        default=defaut_period_lin
-    ) 
-    period_ang = launch.substitutions.LaunchConfiguration(
-        'period_ang',
-        default=defaut_period_ang
-    )
-    v_min = launch.substitutions.LaunchConfiguration(
-        'v_min',
-        default=defaut_v_min
-    )
-    v_max = launch.substitutions.LaunchConfiguration(
-        'v_max',
-        default=defaut_v_max
-    )
-    w_min = launch.substitutions.LaunchConfiguration(
-        'w_min',
-        default=defaut_w_min
-    )
-    w_max = launch.substitutions.LaunchConfiguration(
-        'w_max',
-        default=defaut_w_max
-    )
-    a_lin = launch.substitutions.LaunchConfiguration(
-        'a_lin',
-        default=defaut_a_lin
-    )
-    a_ang = launch.substitutions.LaunchConfiguration(
-        'a_ang',
-        default=defaut_a_ang
-    )
-
-    # decalre default parameters for logger
-    """
-    I can't use get_package_share_directory, cause it will return
-    'ros2_ws/install/logger/share/logger', BUT when using 'ros2 launch' 
-    ROS launches from its workspace so I can easy get desired directory
-    
-    * I checked it works well when launch from any directory *
-    """
-    output_dir = os.path.join(os.getcwd(), 'src/logger/output_data/') 
-    output_path = launch.substitutions.LaunchConfiguration(
-        'output_path',
-        default=output_dir
-    )
+    pub_rate = LaunchConfiguration('pub_rate', default=defaut_pub_rate)
+    max_time = LaunchConfiguration('Tmax', default=defaut_max_time)
+    period_lin = LaunchConfiguration('period_lin', default=defaut_period_lin) 
+    period_ang = LaunchConfiguration('period_ang', default=defaut_period_ang)
+    v_min = LaunchConfiguration('v_min', default=defaut_v_min)
+    v_max = LaunchConfiguration('v_max', default=defaut_v_max)
+    w_min = LaunchConfiguration('w_min', default=defaut_w_min)
+    w_max = LaunchConfiguration('w_max', default=defaut_w_max)
+    a_lin = LaunchConfiguration('a_lin', default=defaut_a_lin)
+    a_ang = LaunchConfiguration('a_ang', default=defaut_a_ang)
 
     # Include rosbot gazebo sim
     rosbot_description_dir = get_package_share_directory('rosbot_description')  
-    rosbot_sim_launch = launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                    rosbot_description_dir + '/launch/rosbot_sim.launch.py'
-            ),
+    rosbot_sim_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(rosbot_description_dir + '/launch/rosbot_sim.launch.py'),
             launch_arguments = {'gui': 'true'}.items()
     )
 
     # Include control generator
     rosbot_controller_dir = get_package_share_directory('rosbot_controller')  
-    control_gen_launch = launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                    rosbot_controller_dir + '/control_gen.launch.py'
-            ),
+    control_gen_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(rosbot_controller_dir + '/control_gen.launch.py'),
             launch_arguments = {
                 'pub_rate': pub_rate, 
                 "Tmax":max_time,
@@ -103,91 +58,37 @@ def generate_launch_description():
             }.items()
     )
 
+    # decalre default parameters for logger
+    """
+    I can't use get_package_share_directory, cause it will return
+    'ros2_ws/install/logger/share/logger', BUT when using 'ros2 launch' 
+    ROS launches from its workspace so I can easy get desired directory
+    
+    * I checked it works well when launch from any directory *
+    """
+    output_dir = os.path.join(os.getcwd(), 'src/logger/output_data/') 
+    output_path = launch.substitutions.LaunchConfiguration('output_path', default=output_dir)
+
     # Include logger
     logger_dir = get_package_share_directory('logger')
-    logger_launch = launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                    logger_dir + '/logger.launch.py'
-            ),
+    logger_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(logger_dir + '/logger.launch.py'),
             launch_arguments = {'output_path': output_path}.items()
     )
 
-    # launch Rviz2
-    # Node(
-    #     package='rviz2',
-    #     executable='rviz2',
-    #     name='rviz2',
-    #     output='log',
-    # ),
-
     return LaunchDescription([
 
-        launch.actions.DeclareLaunchArgument(
-            'output_path',
-            default_value=output_dir,
-            description='Logger node output dir'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'pub_rate',
-            default_value=defaut_pub_rate,
-            description='Control publication frequency'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'Tmax',
-            default_value=defaut_max_time,
-            description='control generator running time'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'period_lin',
-            default_value=defaut_period_lin,
-            description='Linear velocity change period'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'period_ang',
-            default_value=defaut_period_ang,
-            description='Angular velocity change period'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'v_min',
-            default_value=defaut_v_min,
-            description='Minimum linear speed'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'v_max',
-            default_value=defaut_v_max,
-            description='Maximum linear speed'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'w_min',
-            default_value=defaut_w_min,
-            description='Minimum angular speed'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'w_max',
-            default_value=defaut_w_max,
-            description='Maximum angular speed'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'a_lin',
-            default_value=defaut_a_lin,
-            description='Linear acceleration'
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            'a_ang',
-            default_value=defaut_a_ang,
-            description='Angular acceleration'
-        ),
-
+        DeclareLaunchArgument('output_path', default_value=output_dir, description='Logger node output dir'),
+        DeclareLaunchArgument('pub_rate', default_value=defaut_pub_rate, description='Control publication frequency'),
+        DeclareLaunchArgument('Tmax', default_value=defaut_max_time, description='control generator running time'),
+        DeclareLaunchArgument('period_lin', default_value=defaut_period_lin, description='Linear velocity change period'),
+        DeclareLaunchArgument('period_ang', default_value=defaut_period_ang, description='Angular velocity change period'),
+        DeclareLaunchArgument('v_min', default_value=defaut_v_min, description='Minimum linear speed'),
+        DeclareLaunchArgument('v_max', default_value=defaut_v_max, description='Maximum linear speed'),
+        DeclareLaunchArgument('w_min', default_value=defaut_w_min, description='Minimum angular speed'),
+        DeclareLaunchArgument('w_max', default_value=defaut_w_max, description='Maximum angular speed'),
+        DeclareLaunchArgument('a_lin', default_value=defaut_a_lin, description='Linear acceleration'),
+        DeclareLaunchArgument('a_ang', default_value=defaut_a_ang, description='Angular acceleration'),
 
         # rosbot_sim_launch,
         control_gen_launch,

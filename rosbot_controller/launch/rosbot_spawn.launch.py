@@ -3,11 +3,12 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
 
     default_update_rate = '10'
-    new_update_rate = launch.substitutions.LaunchConfiguration(
+    new_update_rate = LaunchConfiguration(
         'rosbot_update_rate',
         default=default_update_rate
     )
@@ -91,8 +92,6 @@ def generate_launch_description():
             executable='spawn_rosbot',
             name='spawn_rosbot',
             output='screen',
-            parameters=[
-                {"rosbot_update_rate":new_update_rate},
-            ],
+            parameters=[{"rosbot_update_rate":new_update_rate},],
         ),
     ])
