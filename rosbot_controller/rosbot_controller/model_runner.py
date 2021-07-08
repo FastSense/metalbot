@@ -111,7 +111,7 @@ class ModelRunner(Node):
             self.child_frame_id = "kinematic_model_link"
             self.create_timer(self.dt, self._kinematic_model)
 
-        elif self.model_type == "nn":
+        elif self.model_type == "nn_model":
             if self.nn_model_path is None or self.nn_model_path == "":
                 self.get_logger().error("Wrong path to neural network model")
                 return

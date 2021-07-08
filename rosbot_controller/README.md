@@ -79,7 +79,7 @@ Aргументы:
 Данный лаунчер запускает на выбора две модели: кинематическую и нейросетевую.
 Визуализация нейросетевой:
 ```
-ros2 launch rosbot_controller model_runner.launch.py model_type:=nn nn_model_path:=@PARAM
+ros2 launch rosbot_controller model_runner.launch.py model_type:=nn_model nn_model_path:=@PARAM
 ```
 (tf - nn_model_link)
 
@@ -90,7 +90,7 @@ ros2 launch rosbot_controller model_runner.launch.py model_type:=kinematic
 (tf - kinematic_model_link)
 
 Аргументы:
-* model_type - тип модели: а) Кинематическая (kinematic), б) Нейросетевая (nn)
+* model_type - тип модели: а) Кинематическая (kinematic), б) Нейросетевая (nn_model)
 * nn_model_path - путь к весам нейронной сети (.onnx)
 * cmd_freq - частота публикации информации о положении (default = 60)
 * parent_frame - фрейм, из которого формируется сообщение в tf (default="odom")

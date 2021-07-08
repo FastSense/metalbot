@@ -29,7 +29,7 @@ def generate_launch_description():
                               ),
         DeclareLaunchArgument('model_type',
                               default_value=default_model_type,
-                              description='Type of model: kinematic / nn'
+                              description='Type of model: kinematic / nn_model'
                               ),
 
         DeclareLaunchArgument('cmd_freq',
