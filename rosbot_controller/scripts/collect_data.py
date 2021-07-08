@@ -13,7 +13,7 @@ UPDATE_RATE = np.random.uniform(1/DT_MIN, 1/DT_MAX) # sample rosbot update_rate
 
 import subprocess
 
-subprocess.Popen("ros2 launch rosbot_description rosbot_sim.launch.py world:=/home/user/empty gui:=false rosbot_update_rate:={}".format(int(UPDATE_RATE)), shell=True)
+subprocess.Popen("ros2 launch rosbot_controller rosbot_sim.launch.py world:=/home/user/empty gui:=false rosbot_update_rate:={}".format(int(UPDATE_RATE)), shell=True)
 # os.popen("ros2 launch rosbot_description rosbot_sim.launch.py world:=/home/user/empty gui:=true rosbot_update_rate:={}".format(UPDATE_RATE))
 
 

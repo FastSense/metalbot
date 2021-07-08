@@ -12,7 +12,7 @@ def generate_launch_description():
     defaut_num_of_subs = "1"
     defaut_control_topic = "/cmd_vel"
     defaut_pub_rate = "30"
-    defaut_Tmax = "10"
+    defaut_max_time = "10"
     defaut_period_lin = "5"
     defaut_period_ang = "5"
     defaut_v_min = "0.0"
@@ -27,7 +27,7 @@ def generate_launch_description():
     num_of_subs = LaunchConfiguration('num_of_subs', default=defaut_num_of_subs)
     control_topic = LaunchConfiguration('control_topic', default=defaut_control_topic)
     pub_rate = LaunchConfiguration('pub_rate', default=defaut_pub_rate)
-    Tmax = LaunchConfiguration('Tmax', default=defaut_Tmax)
+    max_time = LaunchConfiguration('Tmax', default=defaut_max_time)
     period_lin = LaunchConfiguration('period_lin', default=defaut_period_lin)
     period_ang = LaunchConfiguration('period_ang', default=defaut_period_ang)
     v_min = LaunchConfiguration('v_min', default=defaut_v_min)
@@ -41,88 +41,20 @@ def generate_launch_description():
 
     return LaunchDescription([
 
-        DeclareLaunchArgument('mode',
-            default_value=defaut_mode,
-            description='periodic / from_file'
-        ),
-
-        DeclareLaunchArgument(
-            'num_of_subs',
-            default_value=defaut_num_of_subs,
-            description='Number of desired subscribers'
-        ),
-
-        DeclareLaunchArgument(
-            'control_topic',
-            default_value=defaut_control_topic,
-            description='Control topic name'
-        ),
-
-        DeclareLaunchArgument(
-            'pub_rate',
-            default_value=defaut_pub_rate,
-            description='Control publication frequency'
-        ),
-
-        DeclareLaunchArgument(
-            'Tmax',
-            default_value=defaut_Tmax,
-            description='control generator running time'
-        ),
-
-        DeclareLaunchArgument(
-            'period_lin',
-            default_value=defaut_period_lin,
-            description='Linear velocity change period'
-        ),
-
-        DeclareLaunchArgument(
-            'period_ang',
-            default_value=defaut_period_ang,
-            description='Angular velocity change period'
-        ),
-
-        DeclareLaunchArgument(
-            'v_min',
-            default_value=defaut_v_min,
-            description='Minimum linear speed'
-        ),
-
-        DeclareLaunchArgument(
-            'v_max',
-            default_value=defaut_v_max,
-            description='Maximum linear speed'
-        ),
-
-        DeclareLaunchArgument(
-            'w_min',
-            default_value=defaut_w_min,
-            description='Minimum angular speed'
-        ),
-
-        DeclareLaunchArgument(
-            'w_max',
-            default_value=defaut_w_max,
-            description='Maximum angular speed'
-        ),
-
-        DeclareLaunchArgument(
-            'a_lin',
-            default_value=defaut_a_lin,
-            description='Linear acceleration'
-        ),
-
-        DeclareLaunchArgument(
-            'a_ang',
-            default_value=defaut_a_ang,
-            description='Angular acceleration'
-        ),
-
-        DeclareLaunchArgument(
-            'file_path',
-            default_value=defaut_file_path,
-            description='Path to file with control'
-        ),
+        DeclareLaunchArgument('mode', default_value=defaut_mode, description='periodic / from_file'),
+        DeclareLaunchArgument('num_of_subs', default_value=defaut_num_of_subs, description='Number of desired subscribers'),
+        DeclareLaunchArgument('control_topic', default_value=defaut_control_topic, description='Control topic name'),
+        DeclareLaunchArgument('pub_rate', default_value=defaut_pub_rate, description='Control publication frequency'),
+        DeclareLaunchArgument('Tmax', default_value=defaut_max_time, description='control generator running time'),
+        DeclareLaunchArgument('period_lin', default_value=defaut_period_lin, description='Linear velocity change period'),
+        DeclareLaunchArgument('period_ang', default_value=defaut_period_ang, description='Angular velocity change period'),
+        DeclareLaunchArgument('v_min', default_value=defaut_v_min, description='Minimum linear speed'),
+        DeclareLaunchArgument('v_max', default_value=defaut_v_max, description='Maximum linear speed'),
+        DeclareLaunchArgument('w_min', default_value=defaut_w_min, description='Minimum angular speed'),
+        DeclareLaunchArgument('w_max', default_value=defaut_w_max, description='Maximum angular speed'),
+        DeclareLaunchArgument('a_lin', default_value=defaut_a_lin, description='Linear acceleration'),
+        DeclareLaunchArgument('a_ang', default_value=defaut_a_ang, description='Angular acceleration'),
+        DeclareLaunchArgument('file_path', default_value=defaut_file_path, description='Path to file with control'),
 
         # launh Logger node
         Node(
@@ -136,7 +68,7 @@ def generate_launch_description():
                 {"num_of_subs":num_of_subs},
                 {"control_topic":control_topic},
                 {"pub_rate":pub_rate},
-                {"Tmax": Tmax},
+                {"Tmax": max_time},
                 {"period_lin":period_lin},
                 {"period_ang":period_ang},
                 {"v_min":v_min},
