@@ -13,42 +13,21 @@ def generate_launch_description():
     default_cmd_freq = "30.0"
     default_kill_follower = "True"
 
-    control_topic = LaunchConfiguration(
-        "control_topic", default=default_control_topic)
-    odom_topic = LaunchConfiguration(
-        "odom_topic", default=default_odom_topic)
+    control_topic = LaunchConfiguration("control_topic", default=default_control_topic)
+    odom_topic = LaunchConfiguration("odom_topic", default=default_odom_topic)
     v_max = LaunchConfiguration('v_max', default=defaut_v_max)
     w_max = LaunchConfiguration('w_max', default=defaut_w_max)
     cmd_freq = LaunchConfiguration('cmd_freq', default=default_cmd_freq)
     kill_follower = LaunchConfiguration('kill_follower', default=default_kill_follower)
+
     return LaunchDescription([
 
-        DeclareLaunchArgument('control_topic',
-                              default_value=default_control_topic,
-                              description='Topic in which we publish a control information'
-                              ),
-        DeclareLaunchArgument('odom_topic',
-                              default_value=default_odom_topic,
-                              description="Topic in which information about the current position is published"
-                              ),
-        DeclareLaunchArgument('v_max',
-                              default_value=defaut_v_max,
-                              description='Maximum forward speed'
-                              ),
-
-        DeclareLaunchArgument('w_max',
-                              default_value=defaut_w_max,
-                              description='Maximum value of a rotation speed around axe z'
-                              ),
-
-        DeclareLaunchArgument('cmd_freq',
-                              default_value=default_cmd_freq,
-                              description='Frequency of publishing control of a rosbot'
-                              ),
-        DeclareLaunchArgument('kill_follower',
-                              default_value=default_kill_follower,
-                              description='Signal, that we have to kill the follower process'
-                              ),
+        DeclareLaunchArgument('control_topic', default_value=default_control_topic, description='Topic in which we publish a control information'),
+        DeclareLaunchArgument('odom_topic', default_value=default_odom_topic, description="Topic in which information about the current position is published"),
+        DeclareLaunchArgument('v_max', default_value=defaut_v_max, description='Maximum forward speed'),
+        DeclareLaunchArgument('w_max', default_value=defaut_w_max, description='Maximum value of a rotation speed around axe z'),
+        DeclareLaunchArgument('cmd_freq', default_value=default_cmd_freq, description='Frequency of publishing control of a rosbot'),
+        DeclareLaunchArgument('kill_follower', default_value=default_kill_follower, description='Signal, that we have to kill the follower process'),
 
         Node(
             package='rosbot_controller',

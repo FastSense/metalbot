@@ -13,31 +13,15 @@ def generate_launch_description():
 
     traj_type = LaunchConfiguration('traj_type', default=default_traj_type)
     move_plan = LaunchConfiguration('move_plan', default=default_move_plan)
-    num_of_subs = LaunchConfiguration(
-        'num_of_subs', default=default_num_of_subs)
+    num_of_subs = LaunchConfiguration('num_of_subs', default=default_num_of_subs)
     path_topic = LaunchConfiguration('path_topic', default=default_path_topic)
 
     return LaunchDescription([
 
-        DeclareLaunchArgument('traj_type',
-                              default_value=default_traj_type,
-                              description='1.0sin2.0 / 2.0spiral / polygon / from_file'
-                              ),
-
-        DeclareLaunchArgument('move_plan',
-                              default_value=default_move_plan,
-                              description="Path to file with a plan of movement"
-                              ),
-        
-        DeclareLaunchArgument('num_of_subs',
-                              default_value=default_num_of_subs,
-                              description="Number of subcribers to the path_topic which is necessary to start publishing a message"  
-                              ),
-
-        DeclareLaunchArgument('path_topic',
-                              default_value=default_path_topic,
-                              description="Name of the path topic"
-                              ),
+        DeclareLaunchArgument('traj_type', default_value=default_traj_type, description='1.0sin2.0 / 2.0spiral / polygon / from_file'),
+        DeclareLaunchArgument('move_plan', default_value=default_move_plan, description="Path to file with a plan of movement"),
+        DeclareLaunchArgument('num_of_subs', default_value=default_num_of_subs, description="Number of subcribers to the path_topic which is necessary to start publishing a message"),
+        DeclareLaunchArgument('path_topic', default_value=default_path_topic, description="Name of the path topic"),
 
         Node(
             package='rosbot_controller',

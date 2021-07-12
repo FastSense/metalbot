@@ -9,7 +9,7 @@ def generate_launch_description():
     default_parent_frame = "odom"
     default_model_type = "kinematic"
     default_cmd_freq = "60.0"
-    default_nn_model_path = ""
+    default_nn_model_path = "http://192.168.194.51:8345/ml-control/gz-rosbot/rosbot_sim_gazebo11.onnx"
 
     control_topic = LaunchConfiguration("control_topic", default=default_control_topic)
     parent_frame = LaunchConfiguration("parent_frame", default=default_parent_frame)
@@ -19,27 +19,11 @@ def generate_launch_description():
     
     return LaunchDescription([
 
-        DeclareLaunchArgument('control_topic',
-                              default_value=default_control_topic,
-                              description='Topic from which we read a control information'
-                              ),
-        DeclareLaunchArgument('parent_frame',
-                              default_value=default_parent_frame,
-                              description='Parent frame (default = odom)'
-                              ),
-        DeclareLaunchArgument('model_type',
-                              default_value=default_model_type,
-                              description='Type of model: kinematic / nn_model'
-                              ),
-
-        DeclareLaunchArgument('cmd_freq',
-                              default_value=default_cmd_freq,
-                              description='Frequency of an updating state of a control of a rosbot'
-                              ),
-        DeclareLaunchArgument('nn_model_path',
-                              default_value=default_nn_model_path,
-                              description='Path to a weights of neural network'
-                              ),
+        DeclareLaunchArgument('control_topic', default_value=default_control_topic, description='Topic from which we read a control information'),
+        DeclareLaunchArgument('parent_frame', default_value=default_parent_frame,description='Parent frame'),
+        DeclareLaunchArgument('model_type', default_value=default_model_type, description='Type of model: kinematic / nn_model'),
+        DeclareLaunchArgument('cmd_freq', default_value=default_cmd_freq, description='Frequency of an updating state of a control of a rosbot'),
+        DeclareLaunchArgument('nn_model_path', default_value=default_nn_model_path, description='Path to a weights of neural network'),
         
         Node(
             package='rosbot_controller',
