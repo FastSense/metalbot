@@ -39,7 +39,6 @@ class TrajPublish():
             'traj_type').get_parameter_value().string_value
         self.move_plan = self.node.get_parameter(
             'move_plan').get_parameter_value().string_value
-
         self.num_of_subs = self.node.get_parameter(
             'num_of_subs').get_parameter_value().double_value
 

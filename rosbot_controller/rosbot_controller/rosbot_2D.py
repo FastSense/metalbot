@@ -92,6 +92,11 @@ class Rosbot:
         return (goal.x - self.state.x) ** 2 + (goal.y - self.state.y) ** 2
 
     def goal_reached(self, goal):
+        """
+        function that checks if the goal is reached
+        Args:
+            :goal: Goal - desired goal
+        """
         dist = np.hypot(goal.x - self.state.x, goal.y - self.state.y)
 
         return dist < self.params.xy_margin_squared
@@ -99,7 +104,8 @@ class Rosbot:
     def calculate_contol(self, goal):
         """
         Given state calculate control towards goal
-
+        Args:
+            :goal: Goal - desired goal
         """
         r = self.dist_to_goal_L2(goal)
 
@@ -121,8 +127,9 @@ class Rosbot:
     def update_state_by_model(self, control_vector, dt):
         """
         Updates robot state assuming that control has been active for dt seconds
-        c : control vector of RobotControl type
-        dt : time period in seconds
+        Args:
+            :control_vector: - control vector of RobotControl type
+            :dt: - time period in seconds
 
         """
         v = control_vector.v
@@ -150,8 +157,11 @@ class Rosbot:
 
     def update_state_by_nn_model(self, model, control_vector, dt):
         """
-        c : control vector of RobotControl type
-        dt : time period in seconds
+        Using a neural network model of a robot, it receives the next state
+        Args:
+            :model: - (nnio.ONNXModel) robot NN model
+            :control_vector: control vector of RobotControl type
+            :dt: time period in seconds
 
         """
         control_vector.v

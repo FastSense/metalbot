@@ -40,36 +40,29 @@ class ModelRunner(Node):
         self.declare_parameter('control_topic', '/cmd_vel')
         self.declare_parameter("parent_frame", "odom")
         self.declare_parameter("model_type", "kinematic")
-        self.declare_parameter("cmd_freq", 60.0)
+        self.declare_parameter("cmd_freq", 10.0)
         self.declare_parameter("nn_model_path", "")
 
-        self.nn_model_path = self.get_parameter(
-            'nn_model_path').get_parameter_value().string_value
-        self.model_type = self.get_parameter(
-            'model_type').get_parameter_value().string_value
-        self.control_topic = self.get_parameter(
-            'control_topic').get_parameter_value().string_value
-        self.cmd_freq = self.get_parameter(
-            'cmd_freq').get_parameter_value().double_value
-        self.parent_frame = self.get_parameter(
-            'parent_frame').get_parameter_value().string_value
+        self.nn_model_path = self.get_parameter('nn_model_path').get_parameter_value().string_value
+        self.model_type = self.get_parameter('model_type').get_parameter_value().string_value
+        self.control_topic = self.get_parameter('control_topic').get_parameter_value().string_value
+        self.cmd_freq = self.get_parameter('cmd_freq').get_parameter_value().double_value
+        self.parent_frame = self.get_parameter('parent_frame').get_parameter_value().string_value
 
     def command_callback(self, msg: Twist):
         """
         Save msg to control_vector (new current control).
-
         """
         self.control_vector = RobotControl(msg.linear.x, msg.angular.z)
 
     def broadcast_model_tf(self, state: RobotState):
         """
         Broadcast our predicted position in tf frame
-
         """
+        
         pose = Vector3()
         pose.x, pose.y, pose.z = state.x, state.y, 0.0
-        goal_quat = Rotation.from_euler(
-            'z', state.yaw, degrees=False).as_quat()
+        goal_quat = Rotation.from_euler('z', state.yaw, degrees=False).as_quat()
         quat = Quaternion()
         quat.x, quat.y, quat.z, quat.w = goal_quat[0], goal_quat[1], goal_quat[2], goal_quat[3]
 
@@ -84,28 +77,24 @@ class ModelRunner(Node):
     def _kinematic_model(self):
         """
         Kinematic model runner
-
         """
-        self.model_state = self.robot.update_state_by_model(
-            self.control_vector, self.dt)
+        self.model_state = self.robot.update_state_by_model(self.control_vector, self.dt)
 
         self.broadcast_model_tf(self.model_state)
 
     def _nn_model(self):
         """
         Neural network model runner.
-
         """
         self.model_state = self.robot.update_state_by_nn_model(
-            self.nn_model, self.control_vector, self.dt
-        )
+            self.nn_model, self.control_vector, self.dt)
         self.broadcast_model_tf(self.model_state)
 
     def run(self):
         """
         Main method which run needed regime of a rosbot
-
         """
+
         if self.model_type == "kinematic":
             self.get_logger().info("Start kinematic model")
             self.child_frame_id = "kinematic_model_link"
@@ -113,6 +102,7 @@ class ModelRunner(Node):
 
         elif self.model_type == "nn_model":
             if self.nn_model_path is None or self.nn_model_path == "":
+                print(self.nn_model_path)
                 self.get_logger().error("Wrong path to neural network model")
                 return
             self.get_logger().info("Start neural network  model")
