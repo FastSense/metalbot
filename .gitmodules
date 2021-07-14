@@ -1,5 +1,5 @@
 [submodule "rosbot_description"]
-	path = rosbot_description
+	path = rosbot/rosbot_description
 	branch = foxy
 	url = https://github.com/husarion/rosbot_description.git
 
