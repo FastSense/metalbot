@@ -28,8 +28,8 @@ def generate_launch_description():
         DeclareLaunchArgument('state', default_value='true', description='Set "false" not to load "libgazebo_ros_state.so"'),
         DeclareLaunchArgument('rosbot_update_rate', default_value='10', description='rosbot update_rate'),
 
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_server_launch), condition=IfCondition(use_gui)),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_client_launch)),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_server_launch)),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_client_launch), condition=IfCondition(use_gui)),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(spawn_launch))
     ])
 
