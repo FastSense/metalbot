@@ -33,13 +33,6 @@ def generate_launch_description():
     a_lin = LaunchConfiguration('a_lin', default=defaut_a_lin)
     a_ang = LaunchConfiguration('a_ang', default=defaut_a_ang)
 
-    # Include rosbot gazebo sim
-    rosbot_description_dir = get_package_share_directory('rosbot_description')  
-    rosbot_sim_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(rosbot_description_dir + '/launch/rosbot_sim.launch.py'),
-            launch_arguments = {'gui': 'true'}.items()
-    )
-
     # Include control generator
     rosbot_controller_dir = get_package_share_directory('rosbot_controller')  
     control_gen_launch = IncludeLaunchDescription(
@@ -90,7 +83,6 @@ def generate_launch_description():
         DeclareLaunchArgument('a_lin', default_value=defaut_a_lin, description='Linear acceleration'),
         DeclareLaunchArgument('a_ang', default_value=defaut_a_ang, description='Angular acceleration'),
 
-        # rosbot_sim_launch,
         control_gen_launch,
         logger_launch
 

@@ -4,9 +4,7 @@ spawn_rosbot.py
 Script used to spawn a rosbot
 """
 import os
-import sys
 import rclpy
-import time
 from ament_index_python.packages import get_package_share_directory
 from gazebo_msgs.srv import SpawnEntity
 import xml.etree.ElementTree as ET
@@ -22,6 +20,7 @@ class RosbotSpawner(Node):
     :Attributes:
         :update_rate: (int) - odometry publishing frequence
     """
+
     def __init__(self):
         """
         """
@@ -35,12 +34,12 @@ class RosbotSpawner(Node):
         """
         self.declare_parameter('rosbot_update_rate', "10")
 
-
     def get_node_parametes(self):
         """
         Gets node parameters
         """
-        self.update_rate = self.get_parameter('rosbot_update_rate').get_parameter_value().integer_value
+        self.update_rate = self.get_parameter(
+            'rosbot_update_rate').get_parameter_value().integer_value
 
     def run(self):
         """
@@ -48,7 +47,7 @@ class RosbotSpawner(Node):
         rosbot_description_dir = get_package_share_directory('rosbot_description')
         # Original RosBot model
         original_model = os.path.join(
-            rosbot_description_dir, 
+            rosbot_description_dir,
             "models",
             "rosbot.sdf"
         )
@@ -61,11 +60,10 @@ class RosbotSpawner(Node):
         # parse original rosbot model
         tree = ET.parse(original_model)
         rosbot_update_rate_value = tree.getroot().find('model/plugin/update_rate')
-        # change 
+        # change
         rosbot_update_rate_value.text = str(self.update_rate)
         tree.write(new_model)
 
-        
         self.get_logger().info('Creating Service client to connect to `/spawn_entity`')
         client = self.create_client(SpawnEntity, "/spawn_entity")
         self.get_logger().info("Connecting to `/spawn_entity` service...")
@@ -74,10 +72,9 @@ class RosbotSpawner(Node):
             client.wait_for_service()
             self.get_logger().info("...connected!")
 
-
         request = SpawnEntity.Request()
         request.name = "rosbot"
-        request.xml = open(new_model, 'r').read()        
+        request.xml = open(new_model, 'r').read()
         request.robot_namespace = ""
         request.initial_pose.position.x = float(0)
         request.initial_pose.position.y = float(0)
@@ -96,6 +93,7 @@ class RosbotSpawner(Node):
         self.get_logger().info("Done! Shutting down node.")
         self.destroy_node()
         rclpy.shutdown()
+
 
 def main():
     """
