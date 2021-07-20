@@ -19,7 +19,7 @@ class TestNode2(Node):
         # t = self.get_clock().now()
         t = Namespace(seconds=0.0, nanoseconds=0.0)
 
-        trans = self.tf_buffer.lookup_transform('oakd', 'oakd_left', t, rclpy.duration.Duration(seconds=1))
+        trans = self.tf_buffer.lookup_transform(u'oakd', u'oakd_left', t, rclpy.duration.Duration(seconds=1))
 
         return trans
 

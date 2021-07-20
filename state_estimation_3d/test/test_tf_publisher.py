@@ -14,3 +14,8 @@ tf = tf2_ros.TransformStamped()
 tf.header.frame_id = 'oakd'
 tf.child_frame_id = 'oakd_left'
 tf2_ros.StaticTransformBroadcaster(node).sendTransform(tf)
+
+
+rclpy.spin(node)
+node.destroy_node()
+rclpy.shutdown()
