@@ -11,6 +11,6 @@ node = Node('test_node')
 
 
 tf = tf2_ros.TransformStamped()
-tf.header.frame_id = 'test_head'
-tf.child_frame_id = 'test_body'
+tf.header.frame_id = 'oakd'
+tf.child_frame_id = 'oakd_left'
 tf2_ros.StaticTransformBroadcaster(node).sendTransform(tf)
