@@ -4,6 +4,7 @@ from sensor_msgs.msg import Image, Imu
 from cv_bridge import CvBridge
 import tf2_ros
 
+from argparse import Namespace
 
 
 class TestNode2(Node):
@@ -15,7 +16,11 @@ class TestNode2(Node):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
     def get_trans(self):
-        trans = self.tf_buffer.lookup_transform('oakd', 'oakd_left', self.get_clock().now(), rclpy.duration.Duration(seconds=10))
+        # t = self.get_clock().now()
+        t = Namespace(seconds=0.0, nanoseconds=0.0)
+
+        trans = self.tf_buffer.lookup_transform('oakd', 'oakd_left', t, rclpy.duration.Duration(seconds=1))
+
         return trans
 
 
