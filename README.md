@@ -11,6 +11,7 @@
 * [Запуск ROSbot](#Запуск-rosbot)
     * [BringUp](#bringup)
     * [Navigation2](#navigation2)
+    * [RViz](#rviz)
     * [Slam](#slam)
 
 <!-- vim-markdown-toc -->
@@ -50,8 +51,15 @@ bringup.launch.py + модуль Navigation2
 ros2 launch rosbot[_gazebo] nav2.launch.py
 ```
 
+### RViz
+Модуль визуализации 
+```bash
+ros2 launch rosbot rviz.launch.py
+```
+
 ### Slam
-nav2.launch.py + модуль SlamToolBox
+nav2.launch.py + модуль SlamToolBox + RViz[optional] 
 ```bash
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
+
