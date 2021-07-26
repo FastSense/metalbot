@@ -46,19 +46,17 @@ ros2 launch rosbot[_gazebo] bringup.launch.py
 ```
 
 ### Navigation2
-bringup.launch.py + модуль Navigation2
 ```bash
 ros2 launch rosbot[_gazebo] nav2.launch.py
 ```
 
 ### RViz
-Модуль визуализации 
 ```bash
 ros2 launch rosbot rviz.launch.py
 ```
 
 ### Slam
-nav2.launch.py + модуль SlamToolBox + RViz[optional] 
+BringUp + Navigation2 + SlamToolBox + RViz[optional] 
 ```bash
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
