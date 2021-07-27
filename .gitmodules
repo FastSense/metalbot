@@ -22,3 +22,6 @@
 	path = rosbot/rosbot_description
 	url = git@github.com:husarion/rosbot_description.git
 	branch = foxy
+[submodule "Groot"]
+	path = Groot
+	url = git@github.com:BehaviorTree/Groot.git
