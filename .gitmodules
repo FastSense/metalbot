@@ -25,3 +25,6 @@
 [submodule "Groot"]
 	path = utils/Groot
 	url = git@github.com:BehaviorTree/Groot.git
+[submodule "algorithms/local_planners"]
+	path = algorithms/local_planners
+	url = https://github.com/FastSense/local_planners.git
