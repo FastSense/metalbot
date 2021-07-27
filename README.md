@@ -6,13 +6,14 @@
 <!-- vim-markdown-toc GitLab -->
 
 * [Docker](#docker)
-    * [Сборка Docker Image и создание контейнера](#Сборка-docker-image-и-создание-контейнера)
-    * [Использование Docker контейнера](#Использование-docker-контейнера)
+  * [Сборка Docker Image и создание контейнера](#Сборка-docker-image-и-создание-контейнера)
+  * [Использование Docker контейнера](#Использование-docker-контейнера)
 * [Запуск ROSbot](#Запуск-rosbot)
-    * [BringUp](#bringup)
-    * [Navigation2](#navigation2)
-    * [RViz](#rviz)
-    * [Slam](#slam)
+  * [BringUp](#bringup)
+  * [Navigation2](#navigation2)
+  * [RViz](#rviz)
+  * [Groot](#groot)
+  * [Slam](#slam)
 
 <!-- vim-markdown-toc -->
 
@@ -53,6 +54,11 @@ ros2 launch rosbot[_gazebo] nav2.launch.py
 ### RViz
 ```bash
 ros2 launch rosbot rviz.launch.py
+```
+
+### Groot
+```bash
+ros2 run groot Groot
 ```
 
 ### Slam
