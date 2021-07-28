@@ -61,7 +61,7 @@ controller_server:
       stateful: True
     # DWB parameters
     FollowPath:
-      plugin: "ultra::mppi::Controller"
+      plugin: "ultra::mppi::Controller<float>"
       debug_trajectory_details: True
       time_steps: 10
       model_dt: 0.1
