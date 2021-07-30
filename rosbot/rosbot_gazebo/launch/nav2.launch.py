@@ -16,7 +16,7 @@ def generate_launch_description():
     params = PathJoinSubstitution([params_pkg, 'config', 'odom_test_sim.yaml'])
 
     default_bt_pkg = FindPackageShare('rosbot')
-    defautl_bt = PathJoinSubstitution([default_bt_pkg, 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'])
+    defautl_bt = PathJoinSubstitution([default_bt_pkg, 'behavior_trees/description', 'navigate_w_replanning_and_battery.xml'])
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
