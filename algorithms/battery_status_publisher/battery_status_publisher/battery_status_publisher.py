@@ -23,7 +23,7 @@ class BatteryStatusPublisher(Node):
         self.battery_state.voltage -= self.charge_loss
 
     def publish_voltage(self):
-        # self.discharge_battery()
+        self.discharge_battery()
         print(self.battery_state.voltage)
         self.battery_state_pub.publish(self.battery_state)
     
