@@ -1,5 +1,9 @@
 # 2d State Estiamtion
 
+Оценка состояния росбота на плоскости с использованием Extended Kalman Filter.
+
+https://homes.cs.washington.edu/~todorov/courses/cseP590/readings/tutorialEKF.pdf
+
 ## Пример запуска
 
 launch файл: `launch/state_estimation.launch.py`
