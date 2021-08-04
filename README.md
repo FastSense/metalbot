@@ -6,65 +6,81 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-* [Docker](#docker)
-  * [Сборка Docker Image и создание контейнера](#Сборка-docker-image-и-создание-контейнера)
-  * [Использование Docker контейнера](#Использование-docker-контейнера)
-* [Запуск ROSbot](#Запуск-rosbot)
-  * [BringUp](#bringup)
-  * [Navigation2](#navigation2)
-  * [RViz](#rviz)
-  * [Groot](#groot)
-  * [Slam](#slam)
+* [User Guide](#user-guide)
+  * [Docker Guide](#docker-guide)
+  * [Настройка окружения](#Настройка-окружения)
+  * [Запуск основных модулей](#Запуск-основных-модулей)
 
 <!-- vim-markdown-toc -->
 
-## Docker 
-Рекомендуется работать через Docker. 
+## User Guide
 
-### Сборка Docker Image и создание контейнера
+Для начала необходимо создать воркспейс и склонировать репозиторий
 
 ```
-./docker-gazebo/dependencies.sh		        # установка зависимостей на локальную машину
-./docker-gazebo/build.sh			# Build image 
-./docker-gazebo/run.sh				# Create & Run container
+mkdir rosbot_ws
+cd rosbot_ws
+git clone --recurse-submodules -j4 https://github.com/FastSense/rosbot-ros2/ src
 ```
 
-### Использование Docker контейнера
+Далее рекомендуется использовать Docker для того чтобы не устанавливать все необходимые зависимости вручную
+
+### Docker Guide
+
+Комманды необходимые для установки зависимостей и сборки Docker образа и контейнера:
+```
+cd src/docker_gazebo
+./dependencies.sh		        # Установка зависимостей на локальную машину
+./build.sh			        # Установка Docker образа 
+./run.sh				# Создать Docker контейнер
+```
+
+Для начала работы с созданным контейнером небходимо стартовать контейнер и подсоеденится к нему:
 ```
 docker start rosbot2 
 docker attach rosbot2 
 ```
 
-## Запуск ROSbot
-Для запуска основных модулей робота существует набор launch фаилов.  
+### Настройка окружения 
+
+Внутри конейнера нужно собрать рабочее пространство ROS
+```
+cd ros2_ws
+colcon build --symlink-install
+. install/setup.zsh
+```
+
+### Запуск основных модулей
+
+Для запуска модулей ROSbot существует набор launch фаилов.  
 Набор модулей для симуляции представлены в пакете rosbot_gazebo. 
-Общие для симуляции и реального робота модули представлены в пакете rosbot.
+Модули для реального робота, а так же общие модули представлены в пакете rosbot.
 
-### BringUp 
-Данный лаунч запускае основные ноды для работы с роботом (в симуляции спаунит робота)
-
+- BringUp. 
 ```bash
+# Запуск основных нод для работы с роботом (в симуляции спаунит робота)
 ros2 launch rosbot[_gazebo] bringup.launch.py
 ```
 
-### Navigation2
+- Navigation2
 ```bash
 ros2 launch rosbot[_gazebo] nav2.launch.py
 ```
 
-### RViz
+- RViz
 ```bash
 ros2 launch rosbot rviz.launch.py
 ```
 
-### Groot
+- Groot
 ```bash
+# Запуск программы для визуализации Behavior Tree
 ros2 run groot Groot
 ```
 
-### Slam
-BringUp + Navigation2 + SlamToolBox + RViz[optional] 
+- Slam
 ```bash
+# BringUp + Navigation2 + SlamToolBox + RViz[optional] 
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
 
