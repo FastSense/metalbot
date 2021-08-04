@@ -24,9 +24,9 @@
 ### Сборка Docker Image и создание контейнера
 
 ```
-./docker_gazebo/dependencies.sh		        # установка зависимостей на локальную машину
-./docker_gazebo/build.sh			# Build image 
-./docker_gazebo/run.sh				# Create & Run container
+./docker-gazebo/dependencies.sh		        # установка зависимостей на локальную машину
+./docker-gazebo/build.sh			# Build image 
+./docker-gazebo/run.sh				# Create & Run container
 ```
 
 ### Использование Docker контейнера
