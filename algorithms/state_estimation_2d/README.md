@@ -1,4 +1,4 @@
-# 2d State Estiamtion
+# 2d State Estimation
 
 Оценка состояния росбота на плоскости с использованием Extended Kalman Filter для комплексирования данных с колесной одометрии и imu.
 
