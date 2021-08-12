@@ -94,6 +94,11 @@ class Filter2D:
         self.v, self.w = float(model_output[0][0]), float(model_output[0][1])
         self.predict()
 
+    def predict_by_naive_model(self, control):
+        self.v = control[0]
+        self.w = control[1]
+        self.predict()
+
     def predict(self):
         """
         Kalman filter predict step equations using dynamic model
