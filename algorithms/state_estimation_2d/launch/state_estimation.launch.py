@@ -18,7 +18,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 # ROSBOT
-    world_file_name =  'willow_garage.world'
+    world_file_name =  'rplidar.dae'
 
     urdf_file_name = 'urdf/rosbot.urdf'
     urdf = os.path.join(

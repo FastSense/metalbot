@@ -40,4 +40,3 @@ class ErrorEstimator():
         self.ate_distance += np.sqrt(dst_sqr)
         self.ate_distance_sqr += dst_sqr
         self.num_points += 1
-        print(self.ate_distance)
