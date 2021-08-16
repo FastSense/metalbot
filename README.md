@@ -84,3 +84,8 @@ ros2 run groot Groot
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
 
+- Teleop
+```bash
+# Запуск ноды телеуправления с клавиатуры (wasd) 
+ros2 launch rosbot_controller rosbot_sim_keyboard_teleop.launch.py
+```
