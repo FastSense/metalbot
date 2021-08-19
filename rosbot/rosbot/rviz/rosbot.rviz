@@ -192,7 +192,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
+      Color: 0; 0; 255
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -246,13 +246,13 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 255; 170; 0
+      Color: 0; 170; 0
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
+      Line Style: Billboards
+      Line Width: 0.019999999552965164
       Name: Path
       Offset:
         X: 0
@@ -340,7 +340,7 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        {}
+        MarkerNS: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -392,25 +392,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 6.1180596351623535
+      Distance: 4.193081378936768
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.18740764260292053
-        Y: 0.1552097499370575
-        Z: 0.279655784368515
+        X: 0.7612645030021667
+        Y: 0.5684873461723328
+        Z: 0.2790014445781708
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0554070472717285
+      Pitch: 1.2247964143753052
       Target Frame: base_link
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.0504069328308105
+      Yaw: 0.5399447083473206
     Saved: ~
 Window Geometry:
   Displays:
