@@ -75,12 +75,12 @@ controller_server:
       goal_cost_power: 1.0
       goal_cost_weight: 20.0
       goal_angle_cost_power: 1.0
-      goal_angle_cost_weight: 5.0
+      goal_angle_cost_weight: 15.0
       obstacle_cost_power: 2
       obstacle_cost_weight: 10
       inflation_cost_scaling_factor: 3
       inflation_radius: 0.75
-      threshold_to_consider_goal_angle: 0.25
+      threshold_to_consider_goal_angle: 0.30
       approx_reference_cost: false
 
 controller_server_rclcpp_node:
