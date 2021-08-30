@@ -75,8 +75,8 @@ controller_server:
       reference_cost_weight: 5
       goal_cost_power: 1.0
       goal_cost_weight: 20.0
-      goal_angle_cost_power_: 1.0
-      goal_angle_cost_weight_: 5.0
+      goal_angle_cost_power: 1.0
+      goal_angle_cost_weight: 5.0
       obstacle_cost_power: 2
       obstacle_cost_weight: 10
       inflation_cost_scaling_factor: 3
