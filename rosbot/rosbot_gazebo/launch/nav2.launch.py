@@ -13,7 +13,7 @@ def generate_launch_description():
     default_bt_xml = LaunchConfiguration('default_bt_xml_filename')
 
     params_pkg = FindPackageShare('rosbot_gazebo')
-    params = PathJoinSubstitution([params_pkg, 'config', 'odom_test_sim.yaml'])
+    params = PathJoinSubstitution([params_pkg, 'config', 'local_planner_test_sim.yaml'])
 
     default_bt_pkg = FindPackageShare('rosbot')
     defautl_bt = PathJoinSubstitution([default_bt_pkg, 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'])
