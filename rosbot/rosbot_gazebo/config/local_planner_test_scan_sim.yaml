@@ -56,14 +56,14 @@ controller_server:
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.55
       stateful: True
 
     FollowPath:
       plugin: "mppi::Controller<float>"
-      time_steps: 20
+      time_steps: 15
       model_dt: 0.1
-      batch_size: 300
+      batch_size: 200
       v_std: 0.1
       w_std: 0.3
       v_limit: 0.5
@@ -75,7 +75,7 @@ controller_server:
       goal_cost_power: 1.0
       goal_cost_weight: 20.0
       goal_angle_cost_power: 1.0
-      goal_angle_cost_weight: 15.0
+      goal_angle_cost_weight: 10.0
       obstacle_cost_power: 2
       obstacle_cost_weight: 10
       inflation_cost_scaling_factor: 3
