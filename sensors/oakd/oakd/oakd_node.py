@@ -116,9 +116,9 @@ class OAKDNode(Node):
         self.initialize_device(device_id)
 
         # Covariance matrix
-        std_accel = 0.1
+        std_accel = 0.01
         self.covariance_accel = list((np.eye(3) * std_accel**2).flatten())
-        std_rotvel = 0.1
+        std_rotvel = 0.01
         self.covariance_rotvel = list((np.eye(3) * std_rotvel**2).flatten())
 
     def timer_callback_left(self):

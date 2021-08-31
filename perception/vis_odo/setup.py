@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'vis_odo_node = vis_odo.vis_odo_node:main'
+            'vis_odo_node = vis_odo.vis_odo_node:main',
         ],
     },
 )

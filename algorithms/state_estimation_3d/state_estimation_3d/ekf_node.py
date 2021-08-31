@@ -22,8 +22,8 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.03)
-        self.declare_parameter('vel_std', 0.1)
+        self.declare_parameter('period', 0.1)
+        self.declare_parameter('vel_std', 1.0)
         self.declare_parameter('rot_vel_std', 1.0)
 
         # Kalman filter parameters
@@ -61,6 +61,7 @@ class EKFNode(Node):
 
         # Buffers for measurements
         self.imu_buffer = None
+        self.imu_count = 0
         self.odom_buffer = None
 
         # TF listener
@@ -71,7 +72,13 @@ class EKFNode(Node):
         self.odom_buffer = msg
 
     def imu_callback(self, msg):
-        self.imu_buffer = msg
+        if self.imu_buffer is not None:
+            self.imu_buffer = msg
+            self.imu_count = 1
+        else:
+            self.imu_buffer.angular_velocity += msg.angular_velocity
+            self.imu_buffer.linear_acceleration += msg.linear_acceleration
+            self.imu_count += 1
 
     def step(self):
         '''
@@ -96,14 +103,14 @@ class EKFNode(Node):
         '''
         # Make KF-compatible measurements
         rot_vel = np.empty(3)
-        rot_vel[0] = msg.angular_velocity.x
-        rot_vel[1] = msg.angular_velocity.y
-        rot_vel[2] = msg.angular_velocity.z
+        rot_vel[0] = msg.angular_velocity.x / self.imu_count
+        rot_vel[1] = msg.angular_velocity.y / self.imu_count
+        rot_vel[2] = msg.angular_velocity.z / self.imu_count
         rot_vel_R = np.array(msg.angular_velocity_covariance).reshape([3, 3])
         acc = np.empty(3)
-        acc[0] = msg.linear_acceleration.x
-        acc[1] = msg.linear_acceleration.y
-        acc[2] = msg.linear_acceleration.z
+        acc[0] = msg.linear_acceleration.x / self.imu_count
+        acc[1] = msg.linear_acceleration.y / self.imu_count
+        acc[2] = msg.linear_acceleration.z / self.imu_count
         acc_R = np.array(msg.linear_acceleration_covariance).reshape([3, 3])
 
         # Get extrinsics from tf
