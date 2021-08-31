@@ -2,6 +2,7 @@ import cv2
 import nnio
 import numpy as np
 from scipy.spatial.transform import Rotation
+from argparse import Namespace
 
 import rclpy
 from rclpy.node import Node
@@ -46,7 +47,7 @@ class EKFNode(Node):
         # Publisher
         self.pose_publisher = self.create_publisher(
             Odometry,
-            'pose',
+            'pose_ekf',
             10,
         )
 
@@ -63,7 +64,7 @@ class EKFNode(Node):
         self.odom_buffer = None
 
         # TF listener
-        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_buffer = tf2_ros.Buffer(rclpy.duration.Duration(seconds=1))
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
     def odometry_callback(self, msg):
@@ -79,6 +80,7 @@ class EKFNode(Node):
         # Predict
         self.tracker.predict()
         # Update
+        # rclpy.spin_once(self)
         if self.imu_buffer is not None:
             self.update_imu(self.imu_buffer)
             self.imu_buffer = None
@@ -142,7 +144,9 @@ class EKFNode(Node):
         Returns:
         np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
         '''
-        trans = self.tf_buffer.lookup_transform(frame1, frame2, self.get_clock().now())
+        # t = self.get_clock().now()
+        t = Namespace(seconds=0, nanoseconds=0)
+        trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
         tr = np.array([
             [trans.transform.translation.x],
             [trans.transform.translation.y],

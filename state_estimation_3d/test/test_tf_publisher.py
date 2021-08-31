@@ -13,6 +13,7 @@ node = Node('test_node')
 tf = tf2_ros.TransformStamped()
 tf.header.frame_id = 'oakd'
 tf.child_frame_id = 'oakd_left'
+tf.header.stamp = node.get_clock().now().to_msg()
 tf2_ros.StaticTransformBroadcaster(node).sendTransform(tf)
 
 

@@ -66,25 +66,25 @@ def odometry12(vel, rot_vel, q_center, delta_t, extrinsic=None):
 
     # Extrinsic transform
     if extrinsic is not None:
-        rot_extrinsic = np.ascontiguousarray(extrinsic[:3,:3])
+        rot_extrinsic = np.ascontiguousarray(extrinsic[:3, :3])
         z_prior[:3] = rot_extrinsic @ np.ascontiguousarray(z_prior[:3])
         z_prior[3:] = rot_extrinsic @ np.ascontiguousarray(z_prior[3:])
         rot_extrinsic_dt = rot_extrinsic * delta_t
 
     # Compose H
     H = np.zeros((6, 12))
-    # delta h_trans / delta vel
+    # Compute (delta h_trans / delta vel)
     if extrinsic is None:
         H[3:, 1:6:2] = rot_matrix_inv * delta_t
     else:
         H[3:, 1:6:2] = rot_matrix_inv @ rot_extrinsic_dt
-    # delta h_trans / delta epsilon
+    # Compute (delta h_trans / delta epsilon)
     vel_cross = geometry.vector_to_pseudo_matrix(z_prior[3:])
     if extrinsic is None:
         H[3:, 6::2] = vel_cross * delta_t
     else:
         H[3:, 6::2] = vel_cross @ rot_extrinsic_dt
-    # delta h_angle / delta omega
+    # Compute (delta h_angle / delta omega)
     if extrinsic is None:
         H[0, 7] = delta_t
         H[1, 9] = delta_t
