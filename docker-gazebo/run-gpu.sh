@@ -3,7 +3,7 @@
 image_name=rosbot2-image
 container_name=rosbot2
 
-docker run -it -d --privileged --net=host \
+docker run -it --privileged --net=host \
     --name $container_name \
     --runtime=nvidia \
     -v /dev/bus/usb:/dev/bus/usb \

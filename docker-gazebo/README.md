@@ -31,5 +31,5 @@ tmux
 cd ros2_ws
 colcon build
 source ~/ros2_ws/install/setup.zsh
-ros2 launch rosbot_description rosbot_sim.launch.py
+ros2 launch rosbot_controller rosbot_sim.launch.py
 ```

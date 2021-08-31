@@ -1,21 +1,19 @@
-import os
 import launch
 import launch_ros
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
+
 
 def generate_launch_description():
 
     default_update_rate = '20'
-    update_rate = launch.substitutions.LaunchConfiguration(
-        'update_rate',
-        default=default_update_rate
-    )
+    update_rate = LaunchConfiguration('update_rate', default=default_update_rate)
 
     return LaunchDescription([
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'update_rate',
             default_value=default_update_rate,
             description='update rate'

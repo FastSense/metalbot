@@ -1,23 +1,30 @@
-[submodule "rosbot_description"]
-	path = rosbot_description
-	branch = foxy
-	url = https://github.com/husarion/rosbot_description.git
-
 [submodule "rplidar_ros"]
-	path = rplidar_ros
+	path = sensors/rplidar_ros
 	branch = ros2
 	url = https://github.com/lukaszmitka/rplidar_ros.git
 	
 [submodule "teleop"]
-	path = teleop
+	path = control/teleop
 	branch = master
 	url = https://github.com/FastSense/teleop
 
 [submodule "topic_streamer"]
-	path = topic_streamer
+	path = control/topic_streamer
+	branch = ros2_master
 	url = git@github.com:FastSense/topic_streamer.git
 
 [submodule "webrtc_teleop"]
-	path = webrtc_teleop
-	branch = ros2
+	path = control/webrtc_teleop
+	branch = ros2_master
 	url = git@github.com:FastSense/webrtc-teleop.git
+
+[submodule "rosbot/rosbot_description"]
+	path = rosbot/rosbot_description
+	url = git@github.com:husarion/rosbot_description.git
+	branch = foxy
+[submodule "Groot"]
+	path = utils/Groot
+	url = git@github.com:BehaviorTree/Groot.git
+[submodule "algorithms/local_planners"]
+	path = algorithms/local_planners
+	url = https://github.com/FastSense/local_planners.git
