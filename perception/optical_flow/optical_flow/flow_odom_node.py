@@ -14,6 +14,11 @@ from .stereo_camera import StereoCamera
 
 
 class FlowOdomNode(Node):
+    """
+    This node subscribes to stereo camera images and depth and publishes optical flow measurement for Kalman Filter.
+    Currently works only with OAK-D camera.
+    Measurement is defined in perception_msgs.msg.OdoFlow
+    """
     def __init__(self):
         super().__init__('flow_odom')
 
