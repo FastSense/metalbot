@@ -65,7 +65,7 @@ controller_server:
       model_dt: 0.1
       batch_size: 200
       v_std: 0.1
-      w_std: 0.30
+      w_std: 0.3
       v_limit: 0.5
       w_limit: 1.3
       iteration_count: 2
@@ -75,12 +75,12 @@ controller_server:
       goal_cost_power: 1.0
       goal_cost_weight: 20.0
       goal_angle_cost_power: 1.0
-      goal_angle_cost_weight: 5.0
+      goal_angle_cost_weight: 10.0
       obstacle_cost_power: 2
-      obstacle_cost_weight: 10 
+      obstacle_cost_weight: 10
       inflation_cost_scaling_factor: 3
       inflation_radius: 0.75
-      threshold_to_consider_goal_angle: 0.20
+      threshold_to_consider_goal_angle: 0.30
       approx_reference_cost: false
 
 controller_server_rclcpp_node:
@@ -116,7 +116,7 @@ local_costmap:
         z_voxels: 16
         max_obstacle_height: 2.0
         mark_threshold: 0
-        observation_sources: point_cloud
+        observation_sources: point_cloud scan
         point_cloud:
           topic: /camera/points
           max_obstacle_height: 2.0
@@ -128,7 +128,18 @@ local_costmap:
           obstacle_max_range: 1.5
           obstacle_min_range: 0.0
           min_obstacle_height: 0.1
-
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+      static_layer:
+              map_subscribe_transient_local: True
 
       always_send_full_costmap: True
   local_costmap_client:
@@ -152,7 +163,7 @@ global_costmap:
       resolution: 0.05
       track_unknown_space: true
 
-      plugins: ["voxel_layer", "inflation_layer"]
+      plugins: ["static_layer", "voxel_layer", "inflation_layer"]
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -162,7 +173,7 @@ global_costmap:
         z_voxels: 16
         max_obstacle_height: 2.0
         mark_threshold: 0
-        observation_sources: point_cloud
+        observation_sources: point_cloud scan
         point_cloud:
           topic: /camera/points
           max_obstacle_height: 2.0
@@ -174,7 +185,19 @@ global_costmap:
           obstacle_max_range: 1.5
           obstacle_min_range: 0.0
           min_obstacle_height: 0.2
-
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0

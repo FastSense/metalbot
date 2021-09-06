@@ -121,6 +121,7 @@ RUN pip3 install --upgrade pip && \
         opencv-contrib-python \
         msgpack_numpy \
         jinja2 \
+        conan \
         filterpy
 
 # <<<<<<<<<<<<< Python packages
@@ -130,6 +131,7 @@ RUN pip3 install --upgrade pip && \
 # Install Gazebo
 RUN curl -sSL http://get.gazebosim.org | sh
 # <<<<<<<<<<<< Gazebo
+
 
 # >>>>>>>>>>>> ROS2_packages
 RUN apt-get update -y
@@ -142,6 +144,10 @@ RUN apt install -y ros-foxy-turtlebot3
 RUN apt install -y ros-foxy-geometry2
 # <<<<<<<<<<<< ROS2_packages
 
+
+# >>>>>>>>>>>> Packages dependencies
+RUN apt install -y qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev
+# <<<<<<<<<<<< Packages dependencies
 
 # >>>>>>>>>>>> OAK-D camera utils
 # Usb driver
@@ -181,10 +187,6 @@ RUN apt-get update && \
         iputils-ping && \
         rm -rf /var/lib/apt/lists/*
 # <<<<<<<<<<<< Utils
-
-
-
-
 
 
 # >>>>>>>>>>>> Create User

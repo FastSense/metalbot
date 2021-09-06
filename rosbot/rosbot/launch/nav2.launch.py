@@ -7,14 +7,14 @@ from launch_ros.actions import Node
 from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
-    use_sim_time   = LaunchConfiguration('use_sim_time', default = 'true')
+    use_sim_time   = LaunchConfiguration('use_sim_time', default = 'false')
     autostart      = LaunchConfiguration('autostart')
     params_file    = LaunchConfiguration('params')
     default_bt_xml = LaunchConfiguration('default_bt_xml_filename')
 
-    params_pkg = FindPackageShare('rosbot_gazebo')
-    params = PathJoinSubstitution([params_pkg, 'config', 'local_planner_test_scan_sim.yaml'])
-                                                          
+    params_pkg = FindPackageShare('rosbot')
+    params = PathJoinSubstitution([params_pkg, 'config', 'local_planner_test_scan.yaml'])
+
     default_bt_pkg = FindPackageShare('rosbot')
     defautl_bt = PathJoinSubstitution([default_bt_pkg, 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'])
 
