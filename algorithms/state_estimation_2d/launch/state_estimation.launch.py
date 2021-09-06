@@ -18,7 +18,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 # ROSBOT
-    world_file_name =  'rplidar.dae'
+    world_file_name =  'willow_garage.world'
 
     urdf_file_name = 'urdf/rosbot.urdf'
     urdf = os.path.join(
@@ -103,14 +103,21 @@ def generate_launch_description():
             emulate_tty=True
         ),
         Node(
-            package="state_estimation_2d",
-            executable="state_estimation_2d",
+            package="state_estimation_25d",
+            executable="state_estimation_25d",
             output='screen',
-            emulate_tty=True
+            emulate_tty=True,
+            parameters=[{"use_sim_time": True}],
         ),
         Node(
             package="path_visualizer",
             executable="path_visualizer"
+        ),
+        Node(
+            package="metric_calculator",
+            executable="metric_calculator",
+            output='screen',
+            emulate_tty=True
         ),
         # launh Teleop node
         Node(
@@ -130,6 +137,15 @@ def generate_launch_description():
                 {'lin_a': "0.1"},
                 {'ang_a': "0.25"},
             ]
+        ),
+        Node(
+            package="robot_localization",
+            executable='ekf_node',
+            name='ekf_filter_node',
+            output='screen',
+            emulate_tty=True,
+            parameters=[{os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')},
+                        {"use_sim_time": True}],
         ),
 
         # launh listener node
