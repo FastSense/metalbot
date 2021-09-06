@@ -6,12 +6,14 @@ from argparse import Namespace
 
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image, Imu
+from sensor_msgs.msg import Image, Imu, CameraInfo
 from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 import tf2_ros
 
 from .spacekf import SpaceKF12
+from perception_msgs.msg import OdoFlow
+from optical_flow.stereo_camera import StereoCamera
 
 class EKFNode(Node):
     def __init__(self):
@@ -30,10 +32,19 @@ class EKFNode(Node):
         vel_std = self.get_parameter('vel_std').get_parameter_value().double_value
         rot_vel_std = self.get_parameter('rot_vel_std').get_parameter_value().double_value
 
+        # Get camera parameters
+        self.stereo = None
+
         # Subscribe to sensor topics
+        # self.create_subscription(
+        #     Odometry,
+        #     'vis_odo',
+        #     self.odometry_callback,
+        #     10,
+        # )
         self.create_subscription(
-            Odometry,
-            'vis_odo',
+            OdoFlow,
+            'odom_flow',
             self.odometry_callback,
             10,
         )
@@ -41,6 +52,12 @@ class EKFNode(Node):
             Imu,
             'imu',
             self.imu_callback,
+            10,
+        )
+        self.create_subscription(
+            CameraInfo,
+            'rectified_camera_info',
+            self.calibration_callback,
             10,
         )
 
@@ -57,6 +74,8 @@ class EKFNode(Node):
 
         # Create Kalman filter
         self.tracker = SpaceKF12(dt=self.period, velocity_std=vel_std, rot_vel_std=rot_vel_std)
+        # theta = 45 * np.pi / 180
+        # self.tracker.q = np.array([np.cos(theta / 2), 0, 0, np.sin(theta / 2)])
         self.tracker.P = self.tracker.P * 0.01
 
         # Buffers for measurements
@@ -72,12 +91,16 @@ class EKFNode(Node):
         self.odom_buffer = msg
 
     def imu_callback(self, msg):
-        if self.imu_buffer is not None:
+        if self.imu_buffer is None:
             self.imu_buffer = msg
             self.imu_count = 1
         else:
-            self.imu_buffer.angular_velocity += msg.angular_velocity
-            self.imu_buffer.linear_acceleration += msg.linear_acceleration
+            self.imu_buffer.angular_velocity.x += msg.angular_velocity.x
+            self.imu_buffer.angular_velocity.y += msg.angular_velocity.y
+            self.imu_buffer.angular_velocity.z += msg.angular_velocity.z
+            self.imu_buffer.linear_acceleration.x += msg.linear_acceleration.x
+            self.imu_buffer.linear_acceleration.y += msg.linear_acceleration.y
+            self.imu_buffer.linear_acceleration.z += msg.linear_acceleration.z
             self.imu_count += 1
 
     def step(self):
@@ -92,7 +115,7 @@ class EKFNode(Node):
             self.update_imu(self.imu_buffer)
             self.imu_buffer = None
         if self.odom_buffer is not None:
-            self.update_odom(self.odom_buffer)
+            self.update_odom_flow(self.odom_buffer)
             self.odom_buffer = None
         # Publish
         self.publish_pose()
@@ -121,6 +144,34 @@ class EKFNode(Node):
         self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic_acc)
         self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic_gyro)
 
+    def update_odom_flow(self, msg):
+        '''
+        Update filter state using flow odometry message
+        '''
+        if self.stereo is None:
+            print('waiting for camera parameters...')
+            return
+
+        z = np.vstack([msg.flow_x, msg.flow_y, msg.delta_depth]).transpose() # [N, 3]
+        pixels = np.vstack([msg.x, msg.y]).transpose() # [N, 2]
+        R = np.diag(msg.covariance_diag)
+
+        # Get extrinsics from tf
+        extrinsic = self.get_extrinsic('oakd_left', 'base_link')
+        # extrinsic = self.get_extrinsic('base_link', 'oakd_left')
+        # print(extrinsic)
+
+        self.tracker.update_flow(
+            z,
+            self.period,
+            msg.depth,
+            pixels,
+            R,
+            self.stereo.M1,
+            self.stereo.M1_inv,
+            extrinsic=extrinsic,
+        )
+    
     def update_odom(self, msg):
         '''
         Update filter state using odometry message
@@ -151,9 +202,16 @@ class EKFNode(Node):
         Returns:
         np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
         '''
-        # t = self.get_clock().now()
-        t = Namespace(seconds=0, nanoseconds=0)
-        trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
+        while True:
+            try:
+                # t = self.get_clock().now()
+                t = Namespace(seconds=0, nanoseconds=0)
+                trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
+                # print(f"Got transform! {frame1} -> {frame2}")
+                break
+            except tf2_ros.LookupException:
+                print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
+
         tr = np.array([
             [trans.transform.translation.x],
             [trans.transform.translation.y],
@@ -211,6 +269,18 @@ class EKFNode(Node):
         t.transform.rotation.y = self.tracker.q[2]
         t.transform.rotation.z = self.tracker.q[3]
         self.tf2_broadcaster.sendTransform(t)
+
+    def calibration_callback(self, msg):
+        if self.stereo is None:
+            M1 = np.array(msg.k).reshape([3, 3])
+            M2 = M1
+            T = [msg.p[3] / msg.k[0], msg.p[7] / msg.k[0], msg.p[11] / msg.k[0]]
+            R = np.array(msg.r).reshape([3, 3])
+            print('T', T)
+            self.stereo = StereoCamera(
+                M1=M1, M2=M2, R=R, T=T, image_h=msg.height, image_w=msg.width
+            )
+            self.stereo.change_dimensions_(128, 128)
 
 
 def main(args=None):
