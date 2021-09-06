@@ -17,6 +17,9 @@ def quat_inv(q):
 
 @njit
 def chart_inv(epsilon, q0=None):
+    '''
+    Inverse of the phi function.
+    '''
     delta = np.empty(4)
     e_norm_squared = (epsilon**2).sum()
     scale = 1 / np.sqrt(4. + e_norm_squared)
@@ -38,6 +41,23 @@ def rotate_vector(p, q):
     q_inv = quat_inv(q)
     res2 = quat_product(res1, q_inv)
     return res2[1:]
+
+@njit
+def quat_as_matrix(q):
+    '''
+    Transforms a quaternion to a rotation matrix
+    '''
+    mat = np.empty(shape=(3,3))
+    mat[0, 0] = 1 - 2 * q[2]*q[2] - 2 * q[3] * q[3]
+    mat[0, 1] = 2 * (q[1] * q[2] - q[3] * q[0])
+    mat[0, 2] = 2 * (q[1] * q[3] + q[2] * q[0])
+    mat[1, 0] = 2 * (q[1] * q[2] + q[3] * q[0])
+    mat[1, 1] = 1 - 2 * q[1]*q[1] - 2 * q[3] * q[3]
+    mat[1, 2] = 2 * (q[2] * q[3] - q[1] * q[0])
+    mat[2, 0] = 2 * (q[1] * q[3] - q[2] * q[0])
+    mat[2, 1] = 2 * (q[2] * q[3] + q[1] * q[0])
+    mat[2, 2] = 1 - 2 * q[1]*q[1] - 2 * q[2] * q[2]
+    return mat
 
 @njit
 def reset_manifold(epsilon, q_center):
