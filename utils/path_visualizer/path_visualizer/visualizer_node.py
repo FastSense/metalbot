@@ -65,6 +65,7 @@ class Visualizer(Node):
         self.odom_filtered_sub = self.create_subscription(
             Odometry,
             'odom_filtered',
+            # '/odometry/filtered',
             self.odom_filtered_callback, 
             15)
         self.path_ground_truth_pub = self.create_publisher(
