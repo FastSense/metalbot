@@ -11,5 +11,6 @@ docker run -it --privileged --net=host \
     -v $(pwd)/..:/home/user/ros2_ws/src:rw \
     -v /home/${USER}/data:/home/user/data:ro \
     -e DISPLAY=$DISPLAY \
-    -e ROS_DOMAIN_ID=30 \
-    -e QT_X11_NO_MITSHM=1 $image_name zsh
+    -e ROS_HOSTNAME="localhost" \
+    -e ROS_MASTER_URI="http://localhost:11311" \
+    -e QT_X11_NO_MITSHM=1 fastsense/robot_ros2 zsh
