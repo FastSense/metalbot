@@ -1,6 +1,6 @@
 #!/bin/bash
 
-image_name=rosbot2-image:latest
+image_name=fastsense/robot_ros2:latest
 container_name=rosbot2
 
 docker run -it --privileged --net=host \

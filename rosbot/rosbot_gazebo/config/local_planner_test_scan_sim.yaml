@@ -68,6 +68,7 @@ controller_server:
       w_std: 0.3
       v_limit: 0.5
       w_limit: 1.3
+      lookahead_dist: 1.0
       iteration_count: 2
       temperature: 0.25
       reference_cost_power: 1
