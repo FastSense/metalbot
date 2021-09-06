@@ -8,7 +8,7 @@ from . import physics, geometry, measurement
 
 class Filter:
     '''
-    12-dimensional Extended Kalman Filter
+    10-dimensional Extended Kalman Filter
 
     State of this filter is called `x` and consists of:
     0. x
