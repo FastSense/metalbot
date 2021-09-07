@@ -11,5 +11,5 @@ docker run -it --privileged --net=host \
     -v $(pwd)/..:/home/user/ros2_ws/src:rw \
     -v /home/${USER}/data:/home/user/data:ro \
     -e DISPLAY=$DISPLAY \
-    -e ROS_DOMAIN_ID=30 \
+    -e ROS_DOMAIN_ID=0 \
     -e QT_X11_NO_MITSHM=1 $image_name zsh
