@@ -17,8 +17,8 @@ class OdometryNode(Node):
         self.bridge = CvBridge()
 
         # Declare parameters
-        self.declare_parameter('network_path', 'http://192.168.194.51:8345/odometry/2021.06.01_odometry/odometry_op11.onnx')
-        self.declare_parameter('period', 0.1)
+        self.declare_parameter('network_path', 'http://192.168.194.51:8345/odometry/oakd/2021.07.20_odometry/odometry_op11.onnx')
+        self.declare_parameter('period', 0.03)
 
         # Subscribe to camera topics
         self.create_subscription(
@@ -63,9 +63,14 @@ class OdometryNode(Node):
         self.create_timer(self.period, self.publish_odometry)
 
         # Covariance matrix
-        std_linear = 0.1
-        std_angular = 0.1
-        covariance = np.diag([std_angular**2 / self.period] * 3 + [std_linear**2 / self.period] * 3)
+        std_linear = 1.0
+        std_angular = 1.0
+        covariance = np.diag([std_angular**2 * self.period] * 3 + [std_linear**2 * self.period] * 3)
+        # vw_covar = -0.5 * std_angular * std_linear * self.period
+        # covariance[3, 1] = vw_covar # vx, wy
+        # covariance[1, 3] = vw_covar # wy, vx
+        # covariance[4, 0] = vw_covar # vy, wx
+        # covariance[0, 4] = vw_covar # wx, vy
         self.covariance = list(covariance.flatten())
 
     def left_rect_callback(self, msg):

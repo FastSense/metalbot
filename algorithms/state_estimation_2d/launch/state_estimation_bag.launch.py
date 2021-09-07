@@ -18,7 +18,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 # ROSBOT
-    world_file_name =  'willow_garage.world'
+    world_file_name =  'rplidar.dae'
 
     urdf_file_name = 'urdf/rosbot.urdf'
     urdf = os.path.join(
@@ -103,55 +103,39 @@ def generate_launch_description():
             emulate_tty=True
         ),
         Node(
-            package="state_estimation_25d",
-            executable="state_estimation_25d",
+            package="state_estimation_2d",
+            executable="state_estimation_2d",
             output='screen',
-            emulate_tty=True,
-            parameters=[{"use_sim_time": True}],
+            emulate_tty=True
         ),
         Node(
             package="path_visualizer",
             executable="path_visualizer"
         ),
-        Node(
-            package="metric_calculator",
-            executable="metric_calculator",
-            output='screen',
-            emulate_tty=True
-        ),
         # launh Teleop node
-        Node(
-            package='rosbot_controller',
-            executable='rosbot_teleop',
-            name='rosbot_teleop',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {"update_rate": update_rate},
-                {'keyboard_topic': "/keyboard"},
-                {'control_topic': "/cmd_vel"},
-                {'joystick_topic': "/joy"},
-                {'movable_camera': "False"},
-                {'v_limit': "0.5"},
-                {'w_limit': "2.5"},
-                {'lin_a': "0.1"},
-                {'ang_a': "0.25"},
-            ]
-        ),
-        Node(
-            package="robot_localization",
-            executable='ekf_node',
-            name='ekf_filter_node',
-            output='screen',
-            emulate_tty=True,
-            parameters=[{os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')},
-                        {"use_sim_time": True}],
-        ),
+        # Node(
+        #     package='rosbot_controller',
+        #     executable='rosbot_teleop',
+        #     name='rosbot_teleop',
+        #     output='screen',
+        #     emulate_tty=True,
+        #     parameters=[
+        #         {"update_rate": update_rate},
+        #         {'keyboard_topic': "/keyboard"},
+        #         {'control_topic': "/cmd_vel"},
+        #         {'joystick_topic': "/joy"},
+        #         {'movable_camera': "False"},
+        #         {'v_limit': "0.5"},
+        #         {'w_limit': "2.5"},
+        #         {'lin_a': "0.1"},
+        #         {'ang_a': "0.25"},
+        #     ]
+        # ),
 
         # launh listener node
         gazebo_server,
         gazebo_client,
-        spawn_rosbot,
-        keyboard_listener_launch
+        # spawn_rosbot,
+        # keyboard_listener_launch
 
     ])

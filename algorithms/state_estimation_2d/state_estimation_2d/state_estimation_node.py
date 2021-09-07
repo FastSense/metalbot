@@ -125,9 +125,13 @@ class StateEstimation2D(Node):
             x_init=np.zeros(5), 
             P_init=np.eye(5) * 0.01,                          
             dt=self.dt,
-            v_var=0.1,
-            w_var=0.1,
+            v_var=0.25,
+            w_var=0.01,
         )
+        self.distance = 0
+        self.x_prev = 0
+        self.y_prev = 0
+        self.odom_gt_prev = Odometry()
         self.ate = ErrorEstimator()
         # Timer for update function
         self.predict_timer = self.create_timer(
@@ -172,6 +176,9 @@ class StateEstimation2D(Node):
         msg: Odometry
         """
         self.odom_gt = msg
+        x, y = self.odom_gt.pose.pose.position.x, self.odom_gt.pose.pose.position.y
+        self.distance += np.sqrt((x - self.x_prev)**2 + (y - self.y_prev)**2)
+        self.x_prev, self.y_prev = x, y
     
     def imu_callback(self, msg):
         """
@@ -196,7 +203,8 @@ class StateEstimation2D(Node):
         """
         if self.got_measurements:
             # Predict step
-            self.filter.predict_by_nn_model(self.model, self.control)
+            # self.filter.predict_by_nn_model(self.model, self.control)
+            self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
             self.filter.update_imu(self.z_imu, self.R_imu)
@@ -283,6 +291,8 @@ def main():
     except KeyboardInterrupt:
         ate, std = state_estimator.ate.evaluate_ate()
         print('ATE:', ate)
+        print("Distance:", state_estimator.distance)
+        print("ATE / distance:", float(ate)/state_estimator.distance)
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
