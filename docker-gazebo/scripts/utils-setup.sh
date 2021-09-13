@@ -27,3 +27,6 @@ sudo apt install -y code
 code --install-extension ms-python.python
 code --install-extension ms-python.vscode-pylance
 code --install-extension ms-toolsai.jupyter
+
+# VSCODE server
+curl -fsSL https://code-server.dev/install.sh | sh

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-image_name=rosbot2-image
+image_name=fastsense/robot_ros2:latest
 container_name=rosbot2
 
-docker run -it -d --privileged --net=host \
+docker run -it --privileged --net=host \
     --name $container_name \
     --runtime=nvidia \
     -v /dev/bus/usb:/dev/bus/usb \
@@ -15,6 +15,5 @@ docker run -it -d --privileged --net=host \
     -e DISPLAY=$DISPLAY \
     -e NVIDIA_VISIBLE_DEVICES="all" \
     -e NVIDIA_DRIVER_CAPABILITIES="all" \
-    -e ROS_HOSTNAME="localhost" \
-    -e ROS_MASTER_URI="http://localhost:11311" \
+    -e ROS_DOMAIN_ID=0 \
     -e QT_X11_NO_MITSHM=1 $image_name zsh

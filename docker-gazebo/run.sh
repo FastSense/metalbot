@@ -1,9 +1,9 @@
 #!/bin/bash
 
-image_name=rosbot2-image:latest
+image_name=fastsense/robot_ros2:latest
 container_name=rosbot2
 
-docker run -it -d --privileged --net=host \
+docker run -it --privileged --net=host \
     -v /dev/bus/usb:/dev/bus/usb \
     --device-cgroup-rule='c 189:* rmw' \
     --name $container_name \
@@ -11,6 +11,5 @@ docker run -it -d --privileged --net=host \
     -v $(pwd)/..:/home/user/ros2_ws/src:rw \
     -v /home/${USER}/data:/home/user/data:ro \
     -e DISPLAY=$DISPLAY \
-    -e ROS_HOSTNAME="localhost" \
-    -e ROS_MASTER_URI="http://localhost:11311" \
+    -e ROS_DOMAIN_ID=0 \
     -e QT_X11_NO_MITSHM=1 $image_name zsh
