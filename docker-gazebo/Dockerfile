@@ -193,7 +193,7 @@ RUN apt-get update && \
 ENV ROSUSER="user"
 
 RUN adduser --home /home/${ROSUSER} --shell /bin/zsh --gecos '' --disabled-password ${ROSUSER} && \
-    usermod -a -G root,sudo,video ${ROSUSER} && \
+    usermod -a -G root,sudo,video,tty,dialout ${ROSUSER} && \
     echo "${ROSUSER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${ROSUSER}
 user $ROSUSER
 # <<<<<<<<<<<< Create User
