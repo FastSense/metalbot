@@ -68,7 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 ##################################################################
-# ------------------------------ END -------------------------- #
+# --------------------------CUDA  END -------------------------- #
 ##################################################################
 
 
@@ -199,20 +199,21 @@ user $ROSUSER
 # <<<<<<<<<<<< Create User
 
 
-# >>>>>>>>>>>> OpenCV
-COPY scripts/build_opencv.sh .
-RUN ./build_opencv.sh
-# <<<<<<<<<<<< OpenCV
-
 # >>>>>>>>>>>> Scripts
 RUN mkdir -p /home/$ROSUSER/scripts
 WORKDIR /home/$ROSUSER/scripts
 
-COPY scripts/utils-setup.sh .
-RUN ./utils-setup.sh
+COPY ./scripts/install/opencv-gstreamer.sh .
+RUN ./opencv-gstreamer.sh
 
-COPY scripts/ros-setup.sh .
-RUN ./ros-setup.sh
+COPY ./scripts/install/zsh.sh .
+RUN ./zsh.sh
+
+COPY ./scripts/configure/ros.sh .
+RUN ./ros.sh
+
+COPY ./scripts/configure/tmux.sh .
+RUN ./tmux.sh
 
 
 WORKDIR /home/$ROSUSER
