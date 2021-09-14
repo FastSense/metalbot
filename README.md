@@ -86,6 +86,27 @@ ros2 launch rosbot[_gazebo] slam.launch.py
 
 - Teleop
 ```bash
-# Запуск ноды телеуправления с клавиатуры (wasd) 
+# Запуск ноды телеуправления с клавиатуры (wasd)  (Запускается на хост машине)
 ros2 launch rosbot_controller rosbot_sim_keyboard_teleop.launch.py
+
+# Альтернативно можно воспользоваться встроенным телеопом
+sudo apt update
+sudo apt install ros-foxy-teleop-tools
+ros2 run teleop_twist_keyboard teleop_twist_keyboard   
+```
+
+- Oakd Camera
+```bash
+# Запуск камеры Oakd
+ros2 run oakd oakd_node
+
+# (В случае ошибки связанной с не найденным устройством посмотреть в интерпретаторе питона возможные id камеры и поменять в ноде oakd_node - device_id)
+python3
+import depthai as dai
+dev = dai.Device()
+dev.getAllAvailableDevices()[0].getMxId()
+dev.getAllAvailableDevices()[1].getMxId()
+dev.getAllAvailableDevices()[2].getMxId()
+
+Один из айди должен подойти.
 ```
