@@ -1,4 +1,4 @@
-# rosbot_controlle package
+# rosbot_controller package
 Пакет содержащий ноды для управления росботом, а также скрипты для сбора автоматиированного сбора данных.
 
 ## control_generator node
@@ -63,3 +63,35 @@ cd scripts
 ./collect_data.zsh
 ```
 
+## simple_controller
+Данный лаунчер запускает два лаунчера (path_publisher и path_follower): path_publisher публикуют заданный путь в топик /path, path_follower читает этот путь из /path, затем публикует управление росботом по этому пути.
+
+Пример запуска:
+```
+ros2 launch rosbot_controller simple_controller.launch.py traj_type:=@param1 move_plan:=@param2
+```
+Aргументы:
+* traj_type --- тип траектории (2.0sin2.0, 4.0spiral, polygon, from_file)
+* move_plan --- путь к файлу, если traj_type=from_file
+
+
+## model_runner
+Данный лаунчер запускает на выбора две модели: кинематическую и нейросетевую.
+Визуализация нейросетевой:
+```
+ros2 launch rosbot_controller model_runner.launch.py model_type:=nn_model nn_model_path:=@PARAM
+```
+(tf - nn_model_link)
+
+Визуализация кинематической:
+```
+ros2 launch rosbot_controller model_runner.launch.py model_type:=kinematic
+```
+(tf - kinematic_model_link)
+
+Аргументы:
+* model_type - тип модели: а) Кинематическая (kinematic), б) Нейросетевая (nn_model)
+* nn_model_path - путь к весам нейронной сети (.onnx)
+* cmd_freq - частота публикации информации о положении (default = 60)
+* parent_frame - фрейм, из которого формируется сообщение в tf (default="odom")
+* control_topic - топик, из которого читаются скорости
