@@ -164,7 +164,7 @@ class StateEstimation(Node):
         self.publish_pose()
 
     def get_imu_extrinsic(self):
-        self.imu_acc_extrinsic = self.get_extrinsic('base_link', 'base_link')
+        self.imu_acc_extrinsic = self.get_extrinsic('oakd_accel', 'base_link')
 
     def set_odometry_measurement(self):
         """
@@ -172,7 +172,7 @@ class StateEstimation(Node):
         """
         self.z_odom = np.array([
             self.odom.linear.x,
-            self.odom.angular.z * 1.57 / 90,
+            self.odom.angular.z,
         ])
         self.R_odom = np.array([
             [self.odom.twist.covariance[0], self.odom.twist.covariance[5]],
@@ -184,7 +184,7 @@ class StateEstimation(Node):
         Make imu measurement vector from Imu ros message
         """
         # Make KF-compatible measurements
-        self.z_rot_vel_imu = np.array([self.imu.angular_velocity.z])
+        self.z_rot_vel_imu = np.array([self.imu.angular_velocity.z * 1.57 / 90])
         self.z_acc_imu = np.array([
             self.imu.linear_acceleration.x,
             self.imu.linear_acceleration.y,
