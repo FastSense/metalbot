@@ -96,15 +96,15 @@ def generate_launch_description():
             output='screen',
             arguments=['-d'+str(rviz_path)]
         ),
+        # Node(
+        #     package="odom_noiser",
+        #     executable="odom_noiser",
+        #     output='screen',
+        #     emulate_tty=True
+        # ),
         Node(
-            package="odom_noiser",
-            executable="odom_noiser",
-            output='screen',
-            emulate_tty=True
-        ),
-        Node(
-            package="state_estimation_2d",
-            executable="state_estimation_2d",
+            package="state_estimation_25d",
+            executable="state_estimation_25d",
             output='screen',
             emulate_tty=True
         ),
