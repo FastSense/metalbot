@@ -171,8 +171,8 @@ class StateEstimation(Node):
         self.publish_pose()
 
     def get_imu_extrinsic(self):
-        self.imu_acc_extrinsic = self.get_extrinsic('oakd_accel', 'base_link')
-        self.imu_gyro_extrinsic = self.get_extrinsic('oakd_gyro', 'base_link')
+        self.imu_acc_extrinsic = self.get_extrinsic('oakd_imu', 'base_link')
+        self.imu_gyro_extrinsic = self.get_extrinsic('oakd_imu', 'base_link')
 
     def set_odometry_measurement(self):
         """
