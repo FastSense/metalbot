@@ -1,6 +1,8 @@
 mkdir -p ~/ros2_ws/src && \
-echo "source /opt/ros/foxy/setup.zsh" >> ~/.zshrc && \
+
+echo "alias n='source /opt/ros/noetic/setup.zsh'" >> ~/.zshrc && \
 echo "source ~/ros2_ws/install/setup.zsh" >> ~/.zshrc && \
+
 echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.zshrc && \
 echo "export TURTLEBOT3_MODEL=waffle" >> ~/.zshrc
 # echo "export ROS_LOCALHOST_ONLY=1" >> ~/.zshrc

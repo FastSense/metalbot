@@ -1,5 +1,13 @@
 FROM osrf/ros:foxy-desktop
 
+# >>>>>>>>>>>> Create User
+ENV ROSUSER="user"
+
+RUN adduser --home /home/${ROSUSER} --shell /bin/zsh --gecos '' --disabled-password ${ROSUSER} && \
+    usermod -a -G root,sudo,video,tty,dialout ${ROSUSER} && \
+    echo "${ROSUSER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${ROSUSER}
+# <<<<<<<<<<<< Create User
+
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
 
 ##################################################################
@@ -72,6 +80,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ##################################################################
 
 
+user $ROSUSER
+
+# >>>>>>>>>>>> OpenCV
+COPY scripts/opencv_gstreamer.sh .
+RUN ./opencv_gstreamer.sh
+# <<<<<<<<<<<< OpenCV
+
+user root 
+
 
 # >>>>>>>>>>> ROS2 dependencies
 RUN apt-get update && \
@@ -82,6 +99,31 @@ RUN apt-get update && \
     apt-get update 
 RUN RTI_NC_LICENSE_ACCEPTED=yes apt-get install rti-connext-dds-5.3.1
 # <<<<<<<<<<<< ROS2 dependencies
+
+
+# >>>>>>>>>>>> OAK-D camera utils
+# Usb driver
+RUN apt-get update && apt-get install -y wget build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
+RUN wget http://docs.luxonis.com/_static/install_dependencies.sh && chmod +x install_dependencies.sh && ./install_dependencies.sh
+RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.tar.bz2
+RUN tar xf libusb-1.0.24.tar.bz2
+RUN cd libusb-1.0.24 && \
+    ./configure --disable-udev && \
+    make -j4 && make install
+
+RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
+
+# depthai API
+RUN git clone https://github.com/luxonis/depthai-python /depthai-python
+RUN mkdir -p /depthai-python/build
+RUN cd /depthai-python && \
+    git clone https://github.com/luxonis/depthai-core && \
+    git submodule update --init --recursive && \
+    cd build && \
+    cmake .. && \
+    make -j4
+ENV PYTHONPATH=/depthai-python/build
+# <<<<<<<<<<<< OAK-D camera utils
 
 # >>>>>>>>>>>> Python packages
 RUN apt-get update && \
@@ -145,34 +187,29 @@ RUN apt install -y ros-foxy-geometry2
 # <<<<<<<<<<<< ROS2_packages
 
 
+# >>>>>>>>>>>> ROS1
+RUN echo "deb http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros1-latest.list
+
+# setup keys
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+ENV ROS1_DISTRO noetic
+ENV ROS2_DISTRO foxy
+
+
+# ROS 1 packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-noetic-ros-comm=1.15.11-1* \
+    ros-noetic-roscpp-tutorials=0.10.2-1* \
+    ros-noetic-rospy-tutorials=0.10.2-1* \
+    && rm -rf /var/lib/apt/lists/*
+
+# <<<<<<<<<<<< ROS1
+
 # >>>>>>>>>>>> Packages dependencies
-RUN apt install -y qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev
+RUN apt-get update && \
+    apt-get install -y \
+    qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev
 # <<<<<<<<<<<< Packages dependencies
-
-# >>>>>>>>>>>> OAK-D camera utils
-# Usb driver
-RUN apt-get update && apt-get install -y wget build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
-RUN wget http://docs.luxonis.com/_static/install_dependencies.sh && chmod +x install_dependencies.sh && ./install_dependencies.sh
-RUN wget https://github.com/libusb/libusb/releases/download/v1.0.24/libusb-1.0.24.tar.bz2
-RUN tar xf libusb-1.0.24.tar.bz2
-RUN cd libusb-1.0.24 && \
-    ./configure --disable-udev && \
-    make -j4 && make install
-
-RUN pip install --extra-index-url https://www.piwheels.org/simple/ opencv-python
-
-# depthai API
-RUN git clone https://github.com/luxonis/depthai-python /depthai-python
-RUN mkdir -p /depthai-python/build
-RUN cd /depthai-python && \
-    git clone https://github.com/luxonis/depthai-core && \
-    git submodule update --init --recursive && \
-    cd build && \
-    cmake .. && \
-    make -j4
-ENV PYTHONPATH=/depthai-python/build
-# <<<<<<<<<<<< OAK-D camera utils
-
 
 
 # >>>>>>>>>>>> Utils 
@@ -189,20 +226,7 @@ RUN apt-get update && \
 # <<<<<<<<<<<< Utils
 
 
-# >>>>>>>>>>>> Create User
-ENV ROSUSER="user"
-
-RUN adduser --home /home/${ROSUSER} --shell /bin/zsh --gecos '' --disabled-password ${ROSUSER} && \
-    usermod -a -G root,sudo,video,tty,dialout ${ROSUSER} && \
-    echo "${ROSUSER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${ROSUSER}
 user $ROSUSER
-# <<<<<<<<<<<< Create User
-
-
-# >>>>>>>>>>>> OpenCV
-COPY scripts/build_opencv.sh .
-RUN ./build_opencv.sh
-# <<<<<<<<<<<< OpenCV
 
 # >>>>>>>>>>>> Scripts
 RUN mkdir -p /home/$ROSUSER/scripts
@@ -218,7 +242,6 @@ RUN ./ros-setup.sh
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 # <<<<<<<<<<<< Scripts
-
 
 # >>>>>>>>>>>> OAK-D repo for testing
 RUN git clone https://github.com/luxonis/depthai
