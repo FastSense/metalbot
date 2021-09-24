@@ -9,6 +9,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 import tf2_ros
+import time
 
 from .filter import Filter
 from .geometry import *
@@ -71,7 +72,7 @@ class StateEstimation(Node):
 
         self.odom_sub = self.create_subscription(
             Odometry,
-            'velocity',
+            'odom_noised',
             self.odometry_callback,
             10,
         )
@@ -150,6 +151,7 @@ class StateEstimation(Node):
         """
         Kalman filter iteration
         """
+        time_start = time.time()
         # Predict step
         self.filter.predict_by_nn_model(self.model, self.control)
         if self.odom is not None:
@@ -158,9 +160,11 @@ class StateEstimation(Node):
         if self.imu is not None:
             # Update imu
             self.get_imu_extrinsic()
-            # self.filter.update_imu(self.z_acc_imu, self.R_acc_imu, self.imu_acc_extrinsic,
-                                #    self.z_rot_vel_imu, self.R_rot_vel_imu)
+            self.filter.update_imu(self.z_acc_imu, self.R_acc_imu, self.imu_acc_extrinsic,
+                                   self.z_rot_vel_imu, self.R_rot_vel_imu)
         # Publish filtered pose
+        time_end = time.time()
+        print(time_end - time_start)
         self.publish_pose()
 
     def get_imu_extrinsic(self):
@@ -171,8 +175,8 @@ class StateEstimation(Node):
         Make odometry measurement vector from Odometry ros message
         """
         self.z_odom = np.array([
-            self.odom.linear.x,
-            self.odom.angular.z,
+            self.odom.twist.twist.linear.x,
+            self.odom.twist.twist.angular.z,
         ])
         self.R_odom = np.array([
             [self.odom.twist.covariance[0], self.odom.twist.covariance[5]],

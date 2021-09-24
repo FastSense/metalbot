@@ -137,6 +137,48 @@ class Filter:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
+    def update_odom_flow(self, msg, stereo, extrinsic):
+        '''
+        Update filter state using flow odometry message
+        '''
+        if stereo is None:
+            print('waiting for camera parameters...')
+            return
+
+        z = np.vstack([msg.flow_x, msg.flow_y, msg.delta_depth]).transpose() # [N, 3]
+        pixels = np.vstack([msg.x, msg.y]).transpose() # [N, 2]
+        R = np.diag(msg.covariance_diag)
+
+        self.update_flow(
+            z,
+            self.dt,
+            msg.depth,
+            pixels,
+            R,
+            stereo.M1,
+            stereo.M1_inv,
+            extrinsic=extrinsic,
+        )
+
+    def update_flow(self, flows, delta_t, depths, pixels, R, camera_matrix, camera_matrix_inv, extrinsic=None):
+        '''
+        Update state by a visual odometry measurement coming from a neural network.
+
+        Parameters
+        ----------
+            flows (np.array of shape [N, 3]): Optical flow measurements at N given points
+            delta_t (float): time step
+            depths (np.array of shape [N]): Depth at N given points
+            pixels (np.array of shape [N, 2]): x and y coordinates of image points, in pixel scale
+            R (np.array of shape [3, 3]): error of measurements
+            camera_matrix (np.array of shape [3, 3]): camera intrinsic matrix
+            extrinsic (None or np.array of shape [3, 4]): optional. Camera pose relative to filter
+        '''
+        z = flows.flatten()
+        z_prior, H = measurement.flow_odom12(self.v, self.rot_vel, self.q, delta_t, depths, pixels, camera_matrix, camera_matrix_inv, extrinsic)
+        y = z - z_prior
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
+
     def update_imu(self, 
                    z_acc, R_acc, acc_extrinsic,
                    z_gyro, R_gyro):
