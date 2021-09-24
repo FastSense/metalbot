@@ -10,9 +10,10 @@ from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 import tf2_ros
 import time
+from argparse import Namespace
 
-from .filter import Filter
-from .geometry import *
+from .ekf import Filter
+from .ekf import geometry
 
 class StateEstimation(Node):
     """
@@ -72,7 +73,7 @@ class StateEstimation(Node):
 
         self.odom_sub = self.create_subscription(
             Odometry,
-            'odom_noised',
+            'velocity',
             self.odometry_callback,
             10,
         )
@@ -109,6 +110,7 @@ class StateEstimation(Node):
         self.z_acc_imu = None
         self.R_acc_imu = None
         self.imu_acc_extrinsic = None
+        self.imu_gyro_extrinsic = None
         self.control = np.zeros(2)
         self.dt = 0.1
         self.vel_std = 1.0
@@ -136,8 +138,9 @@ class StateEstimation(Node):
         @ parameters
         msg: Imu
         """
-        self.imu = msg
-        self.set_imu_measurement()
+        if msg.header.frame_id == 'oakd_imu':
+            self.imu = msg
+            self.set_imu_measurement()
     
     def control_callback(self, msg):
         """
@@ -161,26 +164,27 @@ class StateEstimation(Node):
             # Update imu
             self.get_imu_extrinsic()
             self.filter.update_imu(self.z_acc_imu, self.R_acc_imu, self.imu_acc_extrinsic,
-                                   self.z_rot_vel_imu, self.R_rot_vel_imu)
+                                   self.z_rot_vel_imu, self.R_rot_vel_imu, self.imu_gyro_extrinsic)
         # Publish filtered pose
         time_end = time.time()
-        print(time_end - time_start)
+        # print(time_end - time_start)
         self.publish_pose()
 
     def get_imu_extrinsic(self):
         self.imu_acc_extrinsic = self.get_extrinsic('oakd_accel', 'base_link')
+        self.imu_gyro_extrinsic = self.get_extrinsic('oakd_gyro', 'base_link')
 
     def set_odometry_measurement(self):
         """
         Make odometry measurement vector from Odometry ros message
         """
         self.z_odom = np.array([
-            self.odom.twist.twist.linear.x,
-            self.odom.twist.twist.angular.z,
+            self.odom.linear.x,
+            self.odom.angular.z,
         ])
         self.R_odom = np.array([
-            [self.odom.twist.covariance[0], self.odom.twist.covariance[5]],
-            [self.odom.twist.covariance[30], self.odom.twist.covariance[35]],
+            [0.01, 0],
+            [0, 0.001],
         ])
 
     def set_imu_measurement(self):
@@ -188,13 +192,15 @@ class StateEstimation(Node):
         Make imu measurement vector from Imu ros message
         """
         # Make KF-compatible measurements
-        self.z_rot_vel_imu = np.array([self.imu.angular_velocity.z * 1.57 / 90])
+        self.z_rot_vel_imu = np.array([self.imu.angular_velocity.x,
+                                       self.imu.angular_velocity.y,
+                                       self.imu.angular_velocity.z])
         self.z_acc_imu = np.array([
             self.imu.linear_acceleration.x,
             self.imu.linear_acceleration.y,
             self.imu.linear_acceleration.z,
         ])
-        self.R_rot_vel_imu = np.array([0.01**2])
+        self.R_rot_vel_imu = np.eye(3) * 0.01**2
         self.R_acc_imu = np.array([
             [0.1, 0, 0],
             [0, 0.1, 0],
@@ -210,7 +216,15 @@ class StateEstimation(Node):
         Returns:
         np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
         '''
-        trans = self.tf_buffer.lookup_transform(frame1, frame2, self.get_clock().now())
+        while True:
+            try:
+                t = Namespace(seconds=0, nanoseconds=0)
+                trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
+                print(f"Got transform! {frame1} -> {frame2}")
+                break
+            except tf2_ros.LookupException:
+                print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
+
         tr = np.array([
             [trans.transform.translation.x],
             [trans.transform.translation.y],
@@ -245,7 +259,7 @@ class StateEstimation(Node):
         msg.pose.covariance = self.filter.get_pose_covariance()
         # Velocity
         vel_local = np.array([self.filter.v, 0, 0])
-        rot_mat = quat_as_matrix(self.filter.q)
+        rot_mat = geometry.quat_as_matrix(self.filter.q)
         vel_global = rot_mat.T @ vel_local
         msg.twist.twist.linear.x = vel_global[0]
         msg.twist.twist.linear.y = vel_global[1]

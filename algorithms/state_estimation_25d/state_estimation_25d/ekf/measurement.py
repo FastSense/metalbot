@@ -34,16 +34,21 @@ def static_vec(q_center, vec, extrinsic=None):
     return z_prior, H
 
 @njit
-def rot_vel_local(w_yaw, extrinsic=None):
+def rot_vel_local(rot_vel, extrinsic=None):
     # Get rot_vel
-    z_prior = w_yaw
+    z_prior = rot_vel
     
     if extrinsic is not None:
         rot_extrinsic = np.ascontiguousarray(extrinsic[:3,:3])
         z_prior = rot_extrinsic @ np.ascontiguousarray(z_prior)
     # Compose H
-    H = np.zeros((1, 10))
-    H[0, 9] = 1
+    H = np.zeros((3, 10))
+    if extrinsic is None:
+        H[0, 5] = 1
+        H[1, 7] = 1
+        H[2, 9] = 1
+    else:
+        H[:, 5::2] = rot_extrinsic
     return z_prior, H
 
 @njit

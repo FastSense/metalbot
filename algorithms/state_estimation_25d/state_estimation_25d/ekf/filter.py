@@ -181,12 +181,13 @@ class Filter:
 
     def update_imu(self, 
                    z_acc, R_acc, acc_extrinsic,
-                   z_gyro, R_gyro):
+                   z_gyro, R_gyro, gyro_extrinsic):
         """
         Update state vector using odometry measurements
         """
+        print("IMU")
         self.update_acc(z_acc, R_acc, acc_extrinsic)
-        self.update_gyro(z_gyro, R_gyro)
+        self.update_gyro(z_gyro, R_gyro, gyro_extrinsic)
 
     def update_acc(self, z, R, extrinsic=None):
         '''
@@ -204,11 +205,11 @@ class Filter:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_gyro(self, z, R):
+    def update_gyro(self, z, R, extrinsic=None):
         '''
         Update state by a measurement coming from on-board gyroscope.
         '''
-        z_prior, H = measurement.rot_vel_local(self.w_yaw)
+        z_prior, H = measurement.rot_vel_local(self.rot_vel, extrinsic)
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
