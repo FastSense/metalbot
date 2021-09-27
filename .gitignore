@@ -26,3 +26,4 @@ tests/report.txt
 .ipynb_checkpoints
 logger/output_data
 *.cache
+bags

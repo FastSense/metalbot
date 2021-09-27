@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'oakd_node = oakd.oakd_node:main'
+            'oakd_node = oakd.oakd_node:main',
+            'only_camera_info = oakd.only_camera_info:main',
         ],
     },
 )
