@@ -172,7 +172,7 @@ class SpaceKF12:
 
     @property
     def euler(self):
-        return Rotation.from_quat(self.q[[1,2,3,0]]).as_euler('xyz', degrees=False)
+        return Rotation.from_quat(self.q).as_euler('xyz', degrees=False)
 
     @property
     def rot_matrix(self):
@@ -195,109 +195,6 @@ class SpaceKF12:
         indeces = [1, 3, 5, 7, 9, 11]
         mat = self.P[indeces][:, indeces]
         return list(mat.flatten())
-
-
-class SpaceKF15(SpaceKF12):
-    '''
-    15-dimensional Extended Kalman Filter
-    State of this filter is called `x` and consists of:
-    0. x
-    1. x_vel
-    2. x_acc
-    3. y
-    4. y_vel
-    5. y_acc
-    6. z
-    7. z_vel
-    8. z_acc
-    9. e_x
-    10. w_x
-    11. e_y
-    12. w_y
-    13. e_z
-    14. w_z
-
-    Here e_xyz is the Euclidian representation of the delta from the center quaternion.
-    w_xyz is the rotation speed.
-    Additionaly, this filter stores `q` - the center quaternion around which the neighborhood e is built.
-    More about this here: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6339217/
-    Normally, `e_xyz==0` after the predict step. This means that `q` gives us the current attitude.
-
-    You can get current state either directly from `x` and `q` attributes or by using these properties:
-    `pos`, `vel`, `acc`, `rot_vel`.
-    You can get yaw, pitch, roll by using property `euler`.
-    You can get rotation matrix by using property `rot_matrix`.
-    '''
-
-    DIM = 15
-
-    def __init__(
-        self,
-        dt,
-        velocity_std,
-        rot_vel_std,
-    ):
-        self.x = np.zeros(15)
-        self.P = np.eye(15)
-        # Idk why there are minuses , but it works:
-        Q_e_w = np.array([
-            [0.333 * dt**3, -0.5 * dt**2],
-            [ -0.5 * dt**2,           dt],
-        ]) * rot_vel_std**2
-        self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=3, dt=dt, var=velocity_std**2, block_size=3),
-            Q_e_w, Q_e_w, Q_e_w,
-        )
-        self.q = np.array([1., 0, 0, 0])
-        self.dt = dt
-        # Transition function
-        self.transition_function = physics.transition_function15
-        self.transition_jac = physics.transition_jac15
-
-    def update_acc(self, z, R, gravity=None, extrinsic=None):
-        '''
-        Update state by a measurement coming from on-board accelerometer.
-        '''
-        z_prior, H = measurent.acc_local15(self.x, self.q, gravity=gravity or GRAVITY, extrinsic=extrinsic)
-        y = z - z_prior
-        # q_mat = geometry.quat_as_matrix(self.q)
-        # R_glob = q_mat.T @ R @ q_mat
-        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
-
-    @property
-    def pos(self):
-        return self.x[0:7:3]
-    @pos.setter
-    def pos(self, value):
-        self.x[0:7:3] = value
-
-    @property
-    def vel(self):
-        return self.x[1:8:3]
-    @vel.setter
-    def vel(self, value):
-        self.x[1:8:3] = value
-
-    @property
-    def acc(self):
-        return self.x[2:9:3]
-    @acc.setter
-    def acc(self, value):
-        self.x[2:9:3] = value
-
-    @property
-    def _epsilon(self):
-        return self.x[9::2]
-    @_epsilon.setter
-    def _epsilon(self, value):
-        self.x[9::2] = value
-
-    @property
-    def rot_vel(self):
-        return self.x[10::2]
-    @rot_vel.setter
-    def rot_vel(self, value):
-        self.x[10::2] = value
 
 
 @njit

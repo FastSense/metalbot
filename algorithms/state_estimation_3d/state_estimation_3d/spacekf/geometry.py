@@ -36,12 +36,12 @@ def quat_as_matrix(q):
 @njit
 def rotate_vector(p, q):
     p_quat = np.empty(4)
+    p_quat[:3] = p
     p_quat[3] = 0
-    p_quat[1:] = p
     res1 = quat_product(q, p_quat)
     q_inv = quat_inv(q)
     res2 = quat_product(res1, q_inv)
-    return res2[1:]
+    return res2[:3]
 
 @njit
 def vector_to_pseudo_matrix(vec):
@@ -84,12 +84,12 @@ def chart_inv(epsilon, q0=None):
     e_norm_squared = (epsilon**2).sum()
     # RP:
     scale = 1 / np.sqrt(4. + e_norm_squared)
-    delta[0] = scale * 2
-    delta[1:] = scale * epsilon
+    delta[:3] = scale * epsilon
+    delta[3] = scale * 2
     # MRP:
     # scale = 1 / (16. + e_norm_squared)
-    # delta[0] = (16. - e_norm_squared) * scale
-    # delta[1:] = (8 * scale) * epsilon
+    # delta[:3] = (8 * scale) * epsilon
+    # delta[3] = (16. - e_norm_squared) * scale
     if q0 is not None:
         q = quat_product(q0, delta)
     else:

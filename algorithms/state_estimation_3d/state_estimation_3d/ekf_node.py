@@ -25,7 +25,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.3)
+        self.declare_parameter('period', 0.1)
         self.declare_parameter('vel_std', 1.0)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -166,7 +166,7 @@ class EKFNode(Node):
 
         self.tracker.update_flow(
             z,
-            self.period,
+            msg.delta_t,
             msg.depth,
             pixels,
             R,
@@ -243,10 +243,10 @@ class EKFNode(Node):
         msg.pose.pose.position.y = self.tracker.pos[1]
         msg.pose.pose.position.z = self.tracker.pos[2]
         # Angle
-        msg.pose.pose.orientation.w = self.tracker.q[0]
-        msg.pose.pose.orientation.x = self.tracker.q[1]
-        msg.pose.pose.orientation.y = self.tracker.q[2]
-        msg.pose.pose.orientation.z = self.tracker.q[3]
+        msg.pose.pose.orientation.x = self.tracker.q[0]
+        msg.pose.pose.orientation.y = self.tracker.q[1]
+        msg.pose.pose.orientation.z = self.tracker.q[2]
+        msg.pose.pose.orientation.w = self.tracker.q[3]
         # Pose & angle covariance
         msg.pose.covariance = self.tracker.get_pose_covariance()
         # Velocity
@@ -269,10 +269,10 @@ class EKFNode(Node):
         t.transform.translation.x = self.tracker.pos[0]
         t.transform.translation.y = self.tracker.pos[1]
         t.transform.translation.z = self.tracker.pos[2]
-        t.transform.rotation.w = self.tracker.q[0]
-        t.transform.rotation.x = self.tracker.q[1]
-        t.transform.rotation.y = self.tracker.q[2]
-        t.transform.rotation.z = self.tracker.q[3]
+        t.transform.rotation.x = self.tracker.q[0]
+        t.transform.rotation.y = self.tracker.q[1]
+        t.transform.rotation.z = self.tracker.q[2]
+        t.transform.rotation.w = self.tracker.q[3]
         self.tf2_broadcaster.sendTransform(t)
 
     def calibration_callback(self, msg):

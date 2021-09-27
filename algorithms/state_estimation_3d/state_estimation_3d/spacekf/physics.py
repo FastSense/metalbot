@@ -24,7 +24,7 @@ def transition_function12(
     next_vel = vel
 
     # Find the rotation quaternion from w
-    rot_q = rot_vel_to_q(rot_vel, delta_t)
+    rot_q = geometry.rot_vel_to_q(rot_vel, delta_t)
 
     # Rotate the current attitude
     next_q_center = geometry.quat_product(q_center, rot_q)
@@ -67,7 +67,7 @@ def transition_function15(
     next_acc = acc
 
     # Find the rotation quaternion from w
-    rot_q = rot_vel_to_q(rot_vel, delta_t)
+    rot_q = geometry.rot_vel_to_q(rot_vel, delta_t)
 
     # Rotate the current attitude
     next_q_center = geometry.quat_product(q_center, rot_q)
@@ -109,7 +109,7 @@ def transition_jac12(
     F[4, 5] = delta_t
 
     # Find the rotation matrix from w
-    rot_q = rot_vel_to_q(rot_vel, delta_t)
+    rot_q = geometry.rot_vel_to_q(rot_vel, delta_t)
     rot_mat_w = geometry.quat_as_matrix(rot_q)
 
     # Rotation derivatives
@@ -152,7 +152,7 @@ def transition_jac15(
     F[7, 8] = delta_t
 
     # Find the rotation matrix from w
-    rot_q = rot_vel_to_q(rot_vel, delta_t)
+    rot_q = geometry.rot_vel_to_q(rot_vel, delta_t)
     rot_mat_w = geometry.quat_as_matrix(rot_q)
 
     # Rotation derivatives
