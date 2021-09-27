@@ -25,8 +25,8 @@ class FlowOdomNode(Node):
         self.bridge = CvBridge()
 
         # Declare parameters
-        self.declare_parameter('network_path', 'http://192.168.194.51:8345/flow/2021.08.31_pwc_shufflenet/pwc_shufflenet_op12.onnx')
-        self.declare_parameter('period', 0.1)
+        self.declare_parameter('network_path', 'http://192.168.194.51:8345/flow/2021.09.07_flow_sv/flow_sv_op12.onnx')
+        self.declare_parameter('period', 0.3)
 
         # Get camera parameters
         self.stereo = None
@@ -121,8 +121,8 @@ class FlowOdomNode(Node):
         img_left = cv2.cvtColor(img_left, cv2.COLOR_GRAY2RGB)
         img_right = self.bridge.imgmsg_to_cv2(self.last_pair[1])
         img_right = cv2.cvtColor(img_right, cv2.COLOR_GRAY2RGB)
-        disparity = self.bridge.imgmsg_to_cv2(self.last_pair[2])
-        
+        depth = self.bridge.imgmsg_to_cv2(self.last_pair[2])
+
         # Get optical flow
         img_left = self.preprocess(img_left)
         if self.img_prev is None:
@@ -135,11 +135,10 @@ class FlowOdomNode(Node):
         flow = flow[0].transpose(1, 2, 0)
 
         # Get depth
-        disparity = cv2.resize(disparity, (128, 128))
-        mask = (disparity == 0)
-        disparity[mask] = 1
+        depth = cv2.resize(depth, (128, 128)) / 1000
+        mask = depth < 0.5
+        depth = depth.clip(0.5)
         baseline = np.linalg.norm(self.stereo.T)
-        depth = 430 * baseline / disparity
         depth_std = depth**2 / (430 * baseline**2)
         mask = mask * 100
         max_flow = np.sqrt((flow**2).sum(2)).max()
@@ -156,7 +155,7 @@ class FlowOdomNode(Node):
 
         # Shoot random points
         N = 300
-        K = 5
+        K = 30
         xs = np.random.randint(0, flow.shape[1], size=N)
         ys = np.random.randint(0, flow.shape[0], size=N)
         errors = depth_sum_err[ys, xs]
@@ -167,8 +166,8 @@ class FlowOdomNode(Node):
         # Compose measurement
         flows = flow[ys, xs] # [N, 2]
         depths = depth[ys, xs] # [N]
-        xs_source = xs + np.round(flows[:, 0]).astype(int)
-        ys_source = ys + np.round(flows[:, 1]).astype(int)
+        xs_source = (xs + np.round(flows[:, 0]).astype(int)).clip(0, flow.shape[1] - 1)
+        ys_source = (ys + np.round(flows[:, 1]).astype(int)).clip(0, flow.shape[0] - 1)
         delta_depth = self.depth_prev[ys_source, xs_source] - depths # [N]
 
         # Compose covariance
@@ -211,6 +210,8 @@ class FlowOdomNode(Node):
         msg.delta_depth = [float(dd) for dd in delta_depth]
         msg.covariance_diag = [float(v) for v in variance]
         self.odom_publisher.publish(msg)
+
+        print('Time:', self.last_pair[0].header.stamp)
 
         # Remember data
         self.img_prev = img_left
