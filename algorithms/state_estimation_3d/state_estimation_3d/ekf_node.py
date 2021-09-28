@@ -15,6 +15,7 @@ from .spacekf import SpaceKF12
 from perception_msgs.msg import OdoFlow
 from optical_flow.stereo_camera import StereoCamera
 
+
 class EKFNode(Node):
     def __init__(self):
         super().__init__('ekf_3d')
@@ -24,7 +25,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.1)
+        self.declare_parameter('period', 0.3)
         self.declare_parameter('vel_std', 1.0)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -91,6 +92,10 @@ class EKFNode(Node):
         self.odom_buffer = msg
 
     def imu_callback(self, msg):
+        if not 'oakd' in msg.header.frame_id:
+            # print('Wrong imu frame:', msg.header.frame_id)
+            return
+
         if self.imu_buffer is None:
             self.imu_buffer = msg
             self.imu_count = 1
@@ -124,6 +129,7 @@ class EKFNode(Node):
         '''
         Update filter state using IMU message
         '''
+
         # Make KF-compatible measurements
         rot_vel = np.empty(3)
         rot_vel[0] = msg.angular_velocity.x / self.imu_count
@@ -137,12 +143,11 @@ class EKFNode(Node):
         acc_R = np.array(msg.linear_acceleration_covariance).reshape([3, 3])
 
         # Get extrinsics from tf
-        extrinsic_acc = self.get_extrinsic('oakd_accel', 'base_link')
-        extrinsic_gyro = self.get_extrinsic('oakd_gyro', 'base_link')
+        extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
 
         # Update
-        self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic_acc)
-        self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic_gyro)
+        self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic)
+        self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
 
     def update_odom_flow(self, msg):
         '''
@@ -157,9 +162,7 @@ class EKFNode(Node):
         R = np.diag(msg.covariance_diag)
 
         # Get extrinsics from tf
-        extrinsic = self.get_extrinsic('oakd_left', 'base_link')
-        # extrinsic = self.get_extrinsic('base_link', 'oakd_left')
-        # print(extrinsic)
+        extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
 
         self.tracker.update_flow(
             z,
@@ -205,11 +208,13 @@ class EKFNode(Node):
         while True:
             try:
                 # t = self.get_clock().now()
+                # rclpy.spin_once(self)
                 t = Namespace(seconds=0, nanoseconds=0)
                 trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
                 # print(f"Got transform! {frame1} -> {frame2}")
                 break
             except tf2_ros.LookupException:
+                # rclpy.spin_once(self)
                 print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
 
         tr = np.array([

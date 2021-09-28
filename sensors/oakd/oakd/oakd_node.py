@@ -18,7 +18,7 @@ class OAKDNode(Node):
 
         # Declare parameters
         self.declare_parameter('device_id', '14442C1051BDC2D200') # rosbot camera by default
-        self.declare_parameter('fps', 10)
+        self.declare_parameter('fps', 30)
         self.declare_parameter('publish_left', False)
         self.declare_parameter('publish_right', False)
         self.declare_parameter('publish_rgb', False)
@@ -140,7 +140,7 @@ class OAKDNode(Node):
             # Left rectified image
             in_left_rect = self.q_left_rect.tryGet()
             if in_left_rect is not None:
-                frame = in_left_rect.getCvFrame()[:, ::-1]
+                frame = in_left_rect.getCvFrame()
                 msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
                 msg.header.frame_id = 'oakd_left'
                 ts = in_left_rect.getTimestamp()
@@ -158,7 +158,7 @@ class OAKDNode(Node):
             # Right rectified image
             in_right_rect = self.q_right_rect.tryGet()
             if in_right_rect is not None:
-                frame = in_right_rect.getCvFrame()[:, ::-1]
+                frame = in_right_rect.getCvFrame()
                 msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
                 msg.header.frame_id = 'oakd_right'
                 ts = in_right_rect.getTimestamp()
@@ -191,8 +191,8 @@ class OAKDNode(Node):
                     msg.angular_velocity.y = gyro_values.y
                     msg.angular_velocity.z = gyro_values.z
                     msg.angular_velocity_covariance = self.covariance_rotvel
-                    msg.linear_acceleration.x = accelero_values.x
-                    msg.linear_acceleration.y = accelero_values.y
+                    msg.linear_acceleration.x = -accelero_values.y
+                    msg.linear_acceleration.y = accelero_values.x
                     msg.linear_acceleration.z = accelero_values.z
                     msg.linear_acceleration_covariance = self.covariance_accel
                     self.imu_publisher.publish(msg)
@@ -208,8 +208,8 @@ class OAKDNode(Node):
             # Depth image
             in_depth = self.q_depth.tryGet()
             if in_depth is not None:
-                frame = in_depth.getCvFrame()[:,::-1]
-                msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+                frame = in_depth.getCvFrame()
+                msg = self.bridge.cv2_to_imgmsg(frame, 'mono16')
                 msg.header.frame_id = 'oakd_left'
                 ts = in_depth.getTimestamp()
                 msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
@@ -301,7 +301,7 @@ class OAKDNode(Node):
             depth.initialConfig.setConfidenceThreshold(200)
             # Options: MEDIAN_OFF, KERNEL_3x3, KERNEL_5x5, KERNEL_7x7 (default)
             depth.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
-            depth.setLeftRightCheck(False)
+            depth.setLeftRightCheck(True)
             depth.setExtendedDisparity(False)
             depth.setSubpixel(False)
             camLeft.out.link(depth.left)
@@ -319,7 +319,7 @@ class OAKDNode(Node):
             # Depth image
             xoutDepth = pipeline.createXLinkOut()
             xoutDepth.setStreamName('depth')
-            depth.disparity.link(xoutDepth.input)
+            depth.depth.link(xoutDepth.input)
 
         # IMU
         if self.publish_imu:
@@ -395,25 +395,10 @@ class OAKDNode(Node):
         tf.transform.rotation.z = 0.0
         tf.transform.rotation.w = float(np.cos(-camera_elevation / 2))
         tf2_ros.StaticTransformBroadcaster(self).sendTransform(tf)
-        # Camera body to accel
-        tf = tf2_ros.TransformStamped()
-        tf.header.frame_id = 'oakd'
-        tf.child_frame_id = 'oakd_accel'
-        rot_mat = np.array([
-            [0., 1., 0.],
-            [0., 0., 1.],
-            [1., 0., 0.],
-        ]).T
-        rot_q = Rotation.from_matrix(rot_mat).as_quat()
-        tf.transform.rotation.x = rot_q[0]
-        tf.transform.rotation.y = rot_q[1]
-        tf.transform.rotation.z = rot_q[2]
-        tf.transform.rotation.w = rot_q[3]
-        tf2_ros.StaticTransformBroadcaster(self).sendTransform(tf)
         # Camera body to imu
         tf = tf2_ros.TransformStamped()
         tf.header.frame_id = 'oakd'
-        tf.child_frame_id = 'oakd_gyro'
+        tf.child_frame_id = 'oakd_imu'
         rot_mat = np.array([
             [0., 0.,-1.],
             [0., 1., 0.],
