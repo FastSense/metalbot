@@ -103,18 +103,6 @@ class SpaceKF12:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_odometry(self, z, R, delta_t, extrinsic=None):
-        '''
-        Update state by a visual odometry measurement coming from a neural network.
-
-        Parameters
-        ----------
-            z (np.array of shape [6]): Output of a neural network. Contains rotations and translations: `[rot_x, rot_y, rot_z, dx, dy, dz]`.
-        '''
-        z_prior, H = measurent.odometry12(self.vel, self.rot_vel, self.q, delta_t, extrinsic=extrinsic)
-        y = z - z_prior
-        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
-
     def update_flow(self, flows, delta_t, depths, pixels, R, camera_matrix, camera_matrix_inv, extrinsic=None):
         '''
         Update state by a visual odometry measurement coming from a neural network.
@@ -132,7 +120,8 @@ class SpaceKF12:
         z = flows.flatten()
         z_prior, H = measurent.flow_odom12(self.vel, self.rot_vel, self.q, delta_t, depths, pixels, camera_matrix, camera_matrix_inv, extrinsic)
         y = z - z_prior
-        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
+        noise = self.Q / self.dt * delta_t
+        self.x, self.P = kalman_update(self.x, self.P, H, R, y, noise)
 
     def reset_manifold(self):
         '''
@@ -198,8 +187,11 @@ class SpaceKF12:
 
 
 @njit
-def kalman_update(x, P, H, R, y):
-    S = H @ P @ H.T + R
+def kalman_update(x, P, H, R, y, noise=None):
+    if noise is None:
+        S = H @ P @ H.T + R
+    else:
+        S = H @ (P + noise) @ H.T + R
     K = P @ H.T @ np.linalg.inv(S)
     new_x = x + K @ y
     new_P = (np.eye(x.shape[0]) - K @ H) @ P

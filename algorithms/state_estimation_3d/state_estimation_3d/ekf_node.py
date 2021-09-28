@@ -37,12 +37,6 @@ class EKFNode(Node):
         self.stereo = None
 
         # Subscribe to sensor topics
-        # self.create_subscription(
-        #     Odometry,
-        #     'vis_odo',
-        #     self.odometry_callback,
-        #     10,
-        # )
         self.create_subscription(
             OdoFlow,
             'odom_flow',
@@ -174,27 +168,6 @@ class EKFNode(Node):
             self.stereo.M1_inv,
             extrinsic=extrinsic,
         )
-    
-    def update_odom(self, msg):
-        '''
-        Update filter state using odometry message
-        '''
-        # Make KF-compatible measurements
-        odom = np.array([
-            msg.twist.twist.angular.x,
-            msg.twist.twist.angular.y,
-            msg.twist.twist.angular.z,
-            msg.twist.twist.linear.x,
-            msg.twist.twist.linear.y,
-            msg.twist.twist.linear.z,
-        ])
-        R = np.array(msg.twist.covariance).reshape([6, 6])
-
-        # Get extrinsics from tf
-        extrinsic = self.get_extrinsic('oakd_left', 'base_link')
-
-        # Update
-        self.tracker.update_odometry(odom, R, delta_t=1, extrinsic=extrinsic)
 
     def get_extrinsic(self, frame1, frame2):
         '''
