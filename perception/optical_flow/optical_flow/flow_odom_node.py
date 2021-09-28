@@ -26,8 +26,7 @@ class FlowOdomNode(Node):
         self.bridge = CvBridge()
 
         # Declare parameters
-        self.declare_parameter('network_path', 'http://192.168.194.51:8345/flow/2021.09.07_flow_sv/flow_sv_op12.onnx')
-        self.declare_parameter('period', 0.3)
+        self.declare_parameter('network_path', 'http://192.168.194.51:8345/flow/2021.09.28_flow_sv/flow_sv_op12.onnx')
 
         # Get camera parameters
         self.stereo = None
@@ -61,7 +60,12 @@ class FlowOdomNode(Node):
 
         # Flow neural network
         network_path = self.get_parameter('network_path').get_parameter_value().string_value
-        self.network = nnio.ONNXModel(network_path)
+        # self.network = nnio.ONNXModel(network_path)
+        self.network = nnio.OpenVINOModel(
+            network_path.replace('_op12.onnx', '_fp16.bin'),
+            network_path.replace('_op12.onnx', '_fp16.xml'),
+            device='GPU'
+        )
         self.preprocess = nnio.Preprocessing(
             resize=(256, 256),
             dtype='float32',
@@ -78,10 +82,6 @@ class FlowOdomNode(Node):
         self.depth_prev = None
         self.depth_std_prev = None
         self.sec_prev = None
-
-        # Create timer for odometry
-        self.period = self.get_parameter('period').get_parameter_value().double_value
-        # self.create_timer(0.0001, self.publish_odometry)
 
     def left_rect_callback(self, msg):
         self.left_msg = msg

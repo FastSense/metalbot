@@ -25,7 +25,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.1)
+        self.declare_parameter('period', 0.02)
         self.declare_parameter('vel_std', 1.0)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -69,8 +69,6 @@ class EKFNode(Node):
 
         # Create Kalman filter
         self.tracker = SpaceKF12(dt=self.period, velocity_std=vel_std, rot_vel_std=rot_vel_std)
-        # theta = 45 * np.pi / 180
-        # self.tracker.q = np.array([np.cos(theta / 2), 0, 0, np.sin(theta / 2)])
         self.tracker.P = self.tracker.P * 0.01
 
         # Buffers for measurements
@@ -158,6 +156,13 @@ class EKFNode(Node):
         # Get extrinsics from tf
         extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
 
+        # Compute time delay
+        msg_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        ros_stamp = self.get_clock().now().seconds_nanoseconds()
+        ros_time = ros_stamp[0] + ros_stamp[1] * 1e-9
+        delay = ros_time - msg_time
+        print('odom delay:', delay)
+
         self.tracker.update_flow(
             z,
             msg.delta_t,
@@ -167,6 +172,7 @@ class EKFNode(Node):
             self.stereo.M1,
             self.stereo.M1_inv,
             extrinsic=extrinsic,
+            delay=delay*0,
         )
 
     def get_extrinsic(self, frame1, frame2):

@@ -60,7 +60,7 @@ class SpaceKF12:
             Q_discrete_white_noise(dim=2, dt=dt, var=velocity_std**2, block_size=3),
             Q_e_w, Q_e_w, Q_e_w,
         )
-        self.q = np.array([1., 0, 0, 0])
+        self.q = np.array([0., 0, 0, 1])
         self.dt = dt
         # Transition function
         self.transition_function = physics.transition_function12
@@ -103,7 +103,7 @@ class SpaceKF12:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_flow(self, flows, delta_t, depths, pixels, R, camera_matrix, camera_matrix_inv, extrinsic=None):
+    def update_flow(self, flows, delta_t, depths, pixels, R, camera_matrix, camera_matrix_inv, extrinsic=None, delay=0):
         '''
         Update state by a visual odometry measurement coming from a neural network.
 
@@ -116,11 +116,12 @@ class SpaceKF12:
             R (np.array of shape [3, 3]): error of measurements
             camera_matrix (np.array of shape [3, 3]): camera intrinsic matrix
             extrinsic (None or np.array of shape [3, 4]): optional. Camera pose relative to filter
+            delay (float): seconds passed between measurement being taken and it being processed
         '''
         z = flows.flatten()
         z_prior, H = measurent.flow_odom12(self.vel, self.rot_vel, self.q, delta_t, depths, pixels, camera_matrix, camera_matrix_inv, extrinsic)
         y = z - z_prior
-        noise = self.Q / self.dt * delta_t
+        noise = self.Q / self.dt * (delta_t + delay)
         self.x, self.P = kalman_update(self.x, self.P, H, R, y, noise)
 
     def reset_manifold(self):
