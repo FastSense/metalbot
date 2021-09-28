@@ -102,17 +102,22 @@ def generate_launch_description():
         #     output='screen',
         #     emulate_tty=True
         # ),
-        Node(
-            package="state_estimation_25d",
-            executable="state_estimation_25d",
-            output='screen',
-            emulate_tty=True,
-            parameters=[{'use_sim_time': 'true'}]
-        ),
+        # Node(
+        #     package="state_estimation_25d",
+        #     executable="state_estimation_25d",
+        #     output='screen',
+        #     emulate_tty=True,
+        #     parameters=[{'use_sim_time': 'true'}]
+        # ),
         Node(
             package="path_visualizer",
             executable="path_visualizer"
         ),
+
+        # launch.actions.ExecuteProcess(
+        #     cmd=['ros2', 'bag', 'play', '/home/user/ros2_ws/src/bags/bag/second_bag_on_polygon_inverted_order'],
+        #     output='screen'
+        # ),
         # launh Teleop node
         # Node(
         #     package='rosbot_controller',

@@ -12,8 +12,8 @@ import tf2_ros
 import time
 from argparse import Namespace
 
-from .ekf import Filter
-from .ekf import geometry
+from . import filter
+from . import geometry
 
 class StateEstimation(Node):
     """
@@ -115,7 +115,7 @@ class StateEstimation(Node):
         self.dt = 0.1
         self.vel_std = 1.0
         self.rot_vel_std = 0.1
-        self.filter = Filter(
+        self.filter = filter.Filter(
             self.dt,
             self.vel_std,
             self.rot_vel_std,
@@ -167,7 +167,7 @@ class StateEstimation(Node):
                                    self.z_rot_vel_imu, self.R_rot_vel_imu, self.imu_gyro_extrinsic)
         # Publish filtered pose
         time_end = time.time()
-        # print(time_end - time_start)
+        print(time_end - time_start)
         self.publish_pose()
 
     def get_imu_extrinsic(self):
