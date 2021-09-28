@@ -43,7 +43,7 @@ def generate_launch_description():
 
     spawn_rosbot = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
-            os.path.join(rosbot_description, 'launch', 'rosbot_spawn.launch.py'))
+            os.path.join(rosbot_description, 'launch', 'rosbot_spawn_filter.launch.py'))
     )
 
     rviz_path = "/home/user/ros2_ws/src/state_estimation_2d/rviz/default.rviz"

@@ -245,7 +245,7 @@ class StateEstimation(Node):
         msg = Odometry()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'map'
-        msg.child_frame_id = 'base_link'
+        msg.child_frame_id = 'state_estimation'
         # Position
         msg.pose.pose.position.x = self.filter.pos[0]
         msg.pose.pose.position.y = self.filter.pos[1]
@@ -276,7 +276,7 @@ class StateEstimation(Node):
         # Broadcast tf2
         t = tf2_ros.TransformStamped()
         t.header = msg.header
-        t.child_frame_id = 'base_link'
+        t.child_frame_id = 'state_estimation'
         t.transform.translation.x = self.filter.pos[0]
         t.transform.translation.y = self.filter.pos[1]
         t.transform.translation.z = self.filter.pos[2]
