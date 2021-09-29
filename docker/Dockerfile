@@ -178,20 +178,21 @@ RUN apt-get update && \
 # <<<<<<<<<<<< Packages dependencies
 
 # >>>>>>>>>>>> ROS2_packages
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt install -y ros-foxy-gazebo-ros-pkgs
-RUN apt install -y ros-foxy-ros-core
-RUN apt install -y ros-foxy-navigation2
-RUN apt install -y ros-foxy-nav2-bringup
-RUN apt install -y ros-foxy-turtlebot3
-RUN apt install -y ros-foxy-geometry2
-RUN apt install -y ros-foxy-filters
-RUN apt install -y ros-foxy-filters
-RUN apt install -y ros-foxy-octomap
-RUN apt install -y ros-foxy-octomap-msgs
-# <<<<<<<<<<<< ROS2_packages
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-foxy-gazebo-ros-pkgs \
+    ros-foxy-ros-core \
+    ros-foxy-navigation2 \
+    ros-foxy-nav2-bringup \
+    ros-foxy-turtlebot3 \
+    ros-foxy-geometry2 \
+    ros-foxy-filters \
+    ros-foxy-filters \
+    ros-foxy-octomap \
+    ros-foxy-octomap-msgs \
+    ros-foxy-perception-pcl \
+    && rm -rf /var/lib/apt/lists/*
+# <<<<<<<<<<<< ROS2_packages
 
 # ROS 1 packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -235,10 +236,5 @@ RUN ./ros-setup.sh
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 # <<<<<<<<<<<< Scripts
-
-# >>>>>>>>>>>> OAK-D repo for testing
-RUN git clone https://github.com/luxonis/depthai
-RUN git clone https://github.com/luxonis/depthai-python
-# <<<<<<<<<<<< OAK-D repo for testing
 
 ENTRYPOINT []

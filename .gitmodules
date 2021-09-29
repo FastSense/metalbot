@@ -34,3 +34,12 @@
 [submodule "algorithms/grid_map"]
 	path = algorithms/grid_map
 	url = https://github.com/ANYbotics/grid_map.git
+[submodule "ros1_ws/elevation_mapping"]
+	path = ros1_ws/elevation_mapping
+	url = https://github.com/anybotics/elevation_mapping.git
+[submodule "ros1_ws/kindr_ros"]
+	path = ros1_ws/kindr_ros
+	url = https://github.com/ANYbotics/kindr_ros.git
+[submodule "ros1_ws/kindr"]
+	path = ros1_ws/kindr
+	url = https://github.com/ANYbotics/kindr.git
