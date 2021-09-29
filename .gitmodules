@@ -28,3 +28,12 @@
 [submodule "algorithms/local_planners"]
 	path = algorithms/local_planners
 	url = https://github.com/FastSense/local_planners.git
+[submodule "utils/ros1_bridge"]
+	path = utils/ros1_bridge
+	url = https://github.com/ros2/ros1_bridge.git
+[submodule "algorithms/-b"]
+	path = algorithms/-b
+	url = https://github.com/ANYbotics/grid_map.git
+[submodule "algorithms/grid_map"]
+	path = algorithms/grid_map
+	url = https://github.com/ANYbotics/grid_map.git

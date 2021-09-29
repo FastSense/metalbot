@@ -9,6 +9,7 @@ docker run -it --privileged --net=host \
     --name $container_name \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
     -v $(pwd)/..:/home/user/ros2_ws/src:rw \
+    -v $(pwd)/../../../ros1_ws/src:/home/user/ros1_ws/src:rw \
     -v /home/${USER}/data:/home/user/data:ro \
     -e ROS_MASTER_URI=http://localhost:11311 \
     -e DISPLAY=$DISPLAY \

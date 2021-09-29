@@ -17,6 +17,7 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
 #############
 # CUDA Base #
 #############
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg2 curl ca-certificates && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
@@ -175,18 +176,6 @@ RUN curl -sSL http://get.gazebosim.org | sh
 # <<<<<<<<<<<< Gazebo
 
 
-# >>>>>>>>>>>> ROS2_packages
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt install -y ros-foxy-gazebo-ros-pkgs
-RUN apt install -y ros-foxy-ros-core
-RUN apt install -y ros-foxy-navigation2
-RUN apt install -y ros-foxy-nav2-bringup
-RUN apt install -y ros-foxy-turtlebot3
-RUN apt install -y ros-foxy-geometry2
-# <<<<<<<<<<<< ROS2_packages
-
-
 # >>>>>>>>>>>> ROS1
 RUN echo "deb http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros1-latest.list
 
@@ -196,21 +185,36 @@ ENV ROS1_DISTRO noetic
 ENV ROS2_DISTRO foxy
 
 
-# ROS 1 packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-ros-comm=1.15.11-1* \
-    ros-noetic-roscpp-tutorials=0.10.2-1* \
-    ros-noetic-rospy-tutorials=0.10.2-1* \
-    && rm -rf /var/lib/apt/lists/*
-
-# <<<<<<<<<<<< ROS1
-
 # >>>>>>>>>>>> Packages dependencies
 RUN apt-get update && \
     apt-get install -y \
-    qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev
+    qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev libpcl-dev
 # <<<<<<<<<<<< Packages dependencies
 
+# >>>>>>>>>>>> ROS2_packages
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN apt install -y ros-foxy-gazebo-ros-pkgs
+RUN apt install -y ros-foxy-ros-core
+RUN apt install -y ros-foxy-navigation2
+RUN apt install -y ros-foxy-nav2-bringup
+RUN apt install -y ros-foxy-turtlebot3
+RUN apt install -y ros-foxy-geometry2
+RUN apt install -y ros-foxy-filters
+# <<<<<<<<<<<< ROS2_packages
+
+
+# ROS 1 packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-noetic-ros-comm=1.15.11-1* \
+    ros-noetic-grid-map \
+    ros-noetic-trajectory-msgs \
+    ros-noetic-tf-conversions \
+    ros-noetic-pcl-ros \
+    ros-noetic-eigen-conversions \
+    && rm -rf /var/lib/apt/lists/*
+
+# <<<<<<<<<<<< ROS1
 
 # >>>>>>>>>>>> Utils 
 RUN apt-get update && \
@@ -247,3 +251,5 @@ RUN rm -rf scripts
 RUN git clone https://github.com/luxonis/depthai
 RUN git clone https://github.com/luxonis/depthai-python
 # <<<<<<<<<<<< OAK-D repo for testing
+
+ENTRYPOINT []
