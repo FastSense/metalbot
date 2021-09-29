@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from scipy.spatial.transform import Rotation
 import depthai as dai
+import time
 
 import rclpy
 from rclpy.node import Node
@@ -19,6 +20,7 @@ class OAKDNode(Node):
         # Declare parameters
         self.declare_parameter('device_id', '14442C1051BDC2D200') # rosbot camera by default
         self.declare_parameter('fps', 30)
+        self.declare_parameter('imu_freq', 100)
         self.declare_parameter('publish_left', False)
         self.declare_parameter('publish_right', False)
         self.declare_parameter('publish_rgb', False)
@@ -29,6 +31,7 @@ class OAKDNode(Node):
         # Get parameters
         device_id = self.get_parameter('device_id').get_parameter_value().string_value
         self.fps = self.get_parameter('fps').get_parameter_value().integer_value
+        self.imu_freq = self.get_parameter('imu_freq').get_parameter_value().integer_value
         self.publish_left = self.get_parameter('publish_left').get_parameter_value().bool_value
         self.publish_right = self.get_parameter('publish_right').get_parameter_value().bool_value
         self.publish_rgb = self.get_parameter('publish_rgb').get_parameter_value().bool_value
@@ -54,18 +57,18 @@ class OAKDNode(Node):
 
         # Create timer
         if self.publish_left:
-            self.create_timer(1e-2, self.timer_callback_left)
+            self.create_timer(self.fps, self.timer_callback_left)
         if self.publish_right:
-            self.create_timer(1e-2, self.timer_callback_right)
+            self.create_timer(self.fps, self.timer_callback_right)
         if self.publish_rgb:
-            self.create_timer(1e-2, self.timer_callback_rgb)
+            self.create_timer(self.fps, self.timer_callback_rgb)
         if self.publish_rect:
-            self.create_timer(1e-2, self.timer_callback_rect_left)
-            self.create_timer(1e-2, self.timer_callback_rect_right)
+            self.create_timer(self.fps, self.timer_callback_rect_left)
+            self.create_timer(self.fps, self.timer_callback_rect_right)
         if self.publish_imu:
-            self.create_timer(1e-2, self.timer_callback_imu)
+            self.create_timer(self.imu_freq, self.timer_callback_imu)
         if self.publish_depth:
-            self.create_timer(1e-2, self.timer_callback_depth)
+            self.create_timer(self.fps, self.timer_callback_depth)
         self.calib_rect_msg = None
         self.create_timer(1, self.publish_camera_parameters)
         self.create_timer(1, self.publish_transforms)
@@ -172,34 +175,31 @@ class OAKDNode(Node):
     def timer_callback_imu(self):
         # ROS time stamp
         ros_stamp = self.get_clock().now()
-        try:
-            # IMU
-            in_imu = self.q_imu.tryGet()
-            if in_imu is not None:
-                imuPackets = in_imu.packets
-                for imuPacket in imuPackets:
-                    # Get data
-                    accelero_values = imuPacket.acceleroMeter
-                    gyro_values = imuPacket.gyroscope
-                    # accelero_ts = acceleroValues.timestamp.get()
-                    gyro_ts = gyro_values.timestamp.get()
-                    # Publish an IMU message
-                    msg = Imu()
-                    msg.header.stamp = self.get_corrected_time(gyro_ts, ros_stamp)
-                    msg.header.frame_id = 'oakd_imu'
-                    msg.angular_velocity.x = gyro_values.x
-                    msg.angular_velocity.y = gyro_values.y
-                    msg.angular_velocity.z = gyro_values.z
-                    msg.angular_velocity_covariance = self.covariance_rotvel
-                    msg.linear_acceleration.x = -accelero_values.y
-                    msg.linear_acceleration.y = accelero_values.x
-                    msg.linear_acceleration.z = accelero_values.z
-                    msg.linear_acceleration_covariance = self.covariance_accel
-                    self.imu_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
+        start = time.time()
+        # IMU
+        in_imu = self.q_imu.get()
+        # if in_imu is not None:
+        imuPackets = in_imu.packets
+        for imuPacket in imuPackets:
+            # Get data
+            accelero_values = imuPacket.acceleroMeter
+            gyro_values = imuPacket.gyroscope
+            # accelero_ts = acceleroValues.timestamp.get()
+            gyro_ts = gyro_values.timestamp.get()
+            # Publish an IMU message
+            msg = Imu()
+            msg.header.stamp = self.get_corrected_time(gyro_ts, ros_stamp)
+            msg.header.frame_id = 'oakd_imu'
+            msg.angular_velocity.x = gyro_values.x
+            msg.angular_velocity.y = gyro_values.y
+            msg.angular_velocity.z = gyro_values.z
+            msg.angular_velocity_covariance = self.covariance_rotvel
+            msg.linear_acceleration.x = -accelero_values.y
+            msg.linear_acceleration.y = accelero_values.x
+            msg.linear_acceleration.z = accelero_values.z
+            msg.linear_acceleration_covariance = self.covariance_accel
+            self.imu_publisher.publish(msg)
+        print('1:', time.time() - start)
     
     def timer_callback_depth(self):
         # ROS time stamp
@@ -325,7 +325,7 @@ class OAKDNode(Node):
         if self.publish_imu:
             imu = pipeline.createIMU()
             # Enable ACCELEROMETER_RAW and GYROSCOPE_RAW at given rate
-            imu.enableIMUSensor([dai.IMUSensor.ACCELEROMETER_RAW, dai.IMUSensor.GYROSCOPE_RAW], 200)
+            imu.enableIMUSensor([dai.IMUSensor.ACCELEROMETER_RAW, dai.IMUSensor.GYROSCOPE_RAW], 100)
             # Above this threshold packets will be sent in batch of X, if the host is not blocked and USB bandwidth is available
             imu.setBatchReportThreshold(1)
             # Maximum number of IMU packets in a batch, if it's reached device will block sending until host can receive it
@@ -361,7 +361,7 @@ class OAKDNode(Node):
             self.q_left_rect = self.device.getOutputQueue(name="left_rect", maxSize=4, blocking=False)
             self.q_right_rect = self.device.getOutputQueue(name="right_rect", maxSize=4, blocking=False)
         if self.publish_imu:
-            self.q_imu = self.device.getOutputQueue(name="imu", maxSize=4, blocking=False)
+            self.q_imu = self.device.getOutputQueue(name="imu", maxSize=100, blocking=False)
         if self.publish_depth:
             self.q_depth = self.device.getOutputQueue(name="depth", maxSize=4, blocking=False)
         
@@ -373,7 +373,8 @@ class OAKDNode(Node):
         # Current delta
         delta = stamp_seconds - hw_seconds
         # Minimun delta
-        self.min_delta = self.min_delta or delta
+        if self.min_delta is None:
+            self.min_delta = delta
         self.min_delta = min(self.min_delta, delta)
         # assert abs(delta - self.min_delta) < 10
         seconds = hw_seconds + self.min_delta

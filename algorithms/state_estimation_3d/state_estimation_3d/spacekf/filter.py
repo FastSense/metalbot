@@ -16,16 +16,16 @@ class SpaceKF12:
 
     State of this filter is called `x` and consists of:
     0. x
-    1. x_vel
-    2. y
-    3. y_vel
-    4. z
+    1. y
+    2. z
+    3. x_vel
+    4. y_vel
     5. z_vel
     6. e_x
-    7. w_x
-    8. e_y
-    9. w_y
-    10. e_z
+    7. e_y
+    8. e_z
+    9. w_x
+    10. w_y
     11. w_z
 
     Here e_xyz is the Euclidian representation of the delta from the center quaternion.
@@ -40,7 +40,6 @@ class SpaceKF12:
     You can get rotation matrix by using property `rot_matrix`.
     '''
 
-    DIM = 12
     ACCEL_STD = 5.0
 
     def __init__(
@@ -62,17 +61,16 @@ class SpaceKF12:
         )
         self.q = np.array([0., 0, 0, 1])
         self.dt = dt
-        # Transition function
-        self.transition_function = physics.transition_function12
-        self.transition_jac = physics.transition_jac12
 
     def predict(self, dt=None):
         # Reset manifold before each predict
         self.reset_manifold()
         # Prediction step
         dt = dt or self.dt
-        F = self.transition_jac(self.rot_vel, dt)
-        self.x, self.q = self.transition_function(self.x, self.q, dt)
+        F = physics.transition_jac(self.rot_vel, dt)
+        self.pos, self.vel, self._epsilon, self.rot_vel, self.q = physics.transition_function(
+            self.pos, self.vel, self._epsilon, self.rot_vel, self.q, dt
+        )
         self.P = F @ self.P @ F.T + self.Q
 
     def update_linear(self, H, z, R):
@@ -90,16 +88,16 @@ class SpaceKF12:
         '''
         Update state by a measurement coming from on-board gyroscope.
         '''
-        z_prior, H = measurent.rot_vel_local(self.rot_vel, self.DIM, extrinsic=extrinsic)
+        z_prior, H = measurent.rot_vel_local(self.rot_vel, extrinsic=extrinsic)
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
     def update_static_vec(self, z, R, vec, extrinsic=None):
         '''
-        Update state by a measurement of some vector which should be constant in the world coordinates.
-        For example, magnetic field.
+        Update state by a measurement of some vector which is known in the world coordinates.
+        For example: magnetic field, gravity vector.
         '''
-        z_prior, H = measurent.static_vec(self.q, vec, self.DIM, extrinsic=extrinsic)
+        z_prior, H = measurent.static_vec(self.q, vec, extrinsic=extrinsic)
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
@@ -134,31 +132,31 @@ class SpaceKF12:
 
     @property
     def pos(self):
-        return self.x[0:5:2]
+        return self.x[:3]
     @pos.setter
     def pos(self, value):
-        self.x[0:5:2] = value
+        self.x[:3] = value
 
     @property
     def vel(self):
-        return self.x[1:6:2]
+        return self.x[3:6]
     @vel.setter
     def vel(self, value):
-        self.x[1:6:2] = value
+        self.x[3:6] = value
 
     @property
     def _epsilon(self):
-        return self.x[6::2]
+        return self.x[6:9]
     @_epsilon.setter
     def _epsilon(self, value):
-        self.x[6::2] = value
+        self.x[6:9] = value
 
     @property
     def rot_vel(self):
-        return self.x[7::2]
+        return self.x[9:]
     @rot_vel.setter
     def rot_vel(self, value):
-        self.x[7::2] = value
+        self.x[9:] = value
 
     @property
     def euler(self):
@@ -173,7 +171,7 @@ class SpaceKF12:
         Returns 6x6 covariance matrix of pose in the form a list with length 36:
         (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
         '''
-        indeces = [0, 2, 4, 6, 8, 10]
+        indeces = [0, 1, 2, 6, 7, 8]
         mat = self.P[indeces][:, indeces]
         return list(mat.flatten())
 
@@ -182,7 +180,7 @@ class SpaceKF12:
         Returns 6x6 covariance matrix of velocity in the form a list with length 36:
         (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
         '''
-        indeces = [1, 3, 5, 7, 9, 11]
+        indeces = [3, 4, 5, 9, 10, 11]
         mat = self.P[indeces][:, indeces]
         return list(mat.flatten())
 

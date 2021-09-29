@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'oakd'
+package_name = 'debug_time'
 
 setup(
     name=package_name,
@@ -13,16 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='user',
-    maintainer_email='user@todo.todo',
+    maintainer='openvino',
+    maintainer_email='openvino@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'oakd_node = oakd.oakd_node:main',
-            'dummy_node = oakd.dummy_node:main',
-            'only_camera_info = oakd.only_camera_info:main',
+            'debug_node = debug_time.debug_node:main',
         ],
     },
 )

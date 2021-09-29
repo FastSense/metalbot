@@ -5,7 +5,7 @@ from . import geometry, physics
 
 
 @njit
-def rot_vel_local(rot_vel, dim, extrinsic=None):
+def rot_vel_local(rot_vel, extrinsic=None):
     # Get rot_vel
     z_prior = rot_vel
 
@@ -15,17 +15,17 @@ def rot_vel_local(rot_vel, dim, extrinsic=None):
         z_prior = rot_extrinsic @ np.ascontiguousarray(z_prior)
 
     # Compose H
-    H = np.zeros((3, dim))
+    H = np.zeros((3, 12))
     if extrinsic is None:
-        H[0, dim - 5] = 1
-        H[1, dim - 3] = 1
-        H[2, dim - 1] = 1
+        H[0, 9] = 1
+        H[1, 10] = 1
+        H[2, 11] = 1
     else:
-        H[:, dim - 5::2] = rot_extrinsic
+        H[:, 9:] = rot_extrinsic
     return z_prior, H
 
 @njit
-def static_vec(q_center, vec, dim, extrinsic=None):
+def static_vec(q_center, vec, extrinsic=None):
     # Rotate the vector backwards
     q_inv = geometry.quat_inv(q_center)
     z_prior = geometry.rotate_vector(vec, q_inv)
@@ -36,12 +36,12 @@ def static_vec(q_center, vec, dim, extrinsic=None):
         z_prior = rot_extrinsic @ np.ascontiguousarray(z_prior)
 
     # Compose H
-    H = np.zeros((3, dim))
+    H = np.zeros((3, 12))
     vec_cross = geometry.vector_to_pseudo_matrix(z_prior)
     if extrinsic is None:
-        H[:, dim - 6::2] = vec_cross
+        H[:, 6:9] = vec_cross
     else:
-        H[:, dim - 6::2] = vec_cross @ rot_extrinsic
+        H[:, 6:9] = vec_cross @ rot_extrinsic
     return z_prior, H
 
 @njit
@@ -120,12 +120,12 @@ def _flow_odom12_single(vel, rot_vel, q_center, delta_t, depth, pixel, camera_ma
     jac = jacobian_2x2 @ jacobian_2x3 @ jacobian_3x9 # [2, 9]
     H = np.zeros((3, 12))
     # Flow
-    H[:2, 1:6:2] = jac[:, :3] # velocity
-    H[:2, 6::2] = jac[:, 3:6] # angle
-    H[:2, 7::2] = jac[:, 6:]  # rotation velocity
+    H[:2, 3:6] = jac[:, :3]  # velocity
+    H[:2, 6:9] = jac[:, 3:6] # angle
+    H[:2, 9:] = jac[:, 6:]   # rotation velocity
     # Delta depth
-    H[2, 1:6:2] = -delta_t * jacobian_3x9[2, :3]
-    H[2, 6::2] = -delta_t * jacobian_3x9[2, 3:6]
-    H[2, 7::2] = -delta_t * jacobian_3x9[2, 6:]
+    H[2, 3:6] = -delta_t * jacobian_3x9[2, :3]  # velocity
+    H[2, 6:9] = -delta_t * jacobian_3x9[2, 3:6] # angle
+    H[2, 9:] = -delta_t * jacobian_3x9[2, 6:]   # rotation velocity
 
     return z_prior, H
