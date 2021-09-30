@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if ! [[ "$USE_OPENCV" == "ON" ]]; then
-  exit 0;
-fi
-
 sudo su $ROSUSER
 # opencv with Gstreamer
 cd /home/$ROSUSER
