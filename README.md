@@ -30,8 +30,8 @@ git clone --recurse-submodules -j4 https://github.com/FastSense/rosbot-ros2/ src
 Комманды необходимые для установки зависимостей и сборки Docker образа и контейнера:
 ```
 cd src/docker-gazebo
-./dependencies.sh		        # Установка зависимостей на локальную машину
-./build.sh			        # Установка Docker образа 
+./deps.sh		        # Установка зависимостей на локальную машину
+./env.sh			        # Установка Docker образа 
 ./run.sh				# Создать Docker контейнер
 ```
 
