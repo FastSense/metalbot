@@ -43,3 +43,6 @@
 [submodule "ros1_ws/kindr"]
 	path = ros1_ws/kindr
 	url = https://github.com/ANYbotics/kindr.git
+[submodule "ros2_ws/sensors/realsense-ros"]
+	path = ros2_ws/sensors/realsense-ros
+	url = https://github.com/IntelRealSense/realsense-ros.git

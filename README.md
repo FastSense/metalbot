@@ -6,47 +6,72 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-* [User Guide](#user-guide)
+* [User](#user)
   * [Docker Guide](#docker-guide)
   * [Настройка окружения](#Настройка-окружения)
   * [Запуск основных модулей](#Запуск-основных-модулей)
+    * [BringUp.](#bringup)
+    * [Navigation2](#navigation2)
+    * [RViz](#rviz)
+    * [Groot](#groot)
+    * [Slam](#slam)
+    * [Teleop](#teleop)
+    * [Oakd Camera](#oakd-camera)
 
 <!-- vim-markdown-toc -->
 
-## User Guide
+
+
+## User 
 
 Для начала необходимо создать воркспейс и склонировать репозиторий
 
 ```
-mkdir rosbot_ws
-cd rosbot_ws
-git clone --recurse-submodules -j4 https://github.com/FastSense/rosbot-ros2/ src
+git clone --recurse-submodules -j4 https://github.com/FastSense/rosbot-ros2/
 ```
 
 Далее рекомендуется использовать Docker для того чтобы не устанавливать все необходимые зависимости вручную
 
 ### Docker Guide
 
-Комманды необходимые для установки зависимостей и сборки Docker образа и контейнера:
 ```
-cd src/docker-gazebo
-./deps.sh		        # Установка зависимостей на локальную машину
-./env.sh			        # Установка Docker образа 
-./run.sh				# Создать Docker контейнер
-```
+cd docker
 
-Для начала работы с созданным контейнером небходимо стартовать контейнер и подсоеденится к нему:
-```
-docker start rosbot2 
-docker attach rosbot2 
+# Если предполагается собирать образ с использованием CUDA
+./nvidia-deps.sh
+
+# Установка имен, необходимых параметров при сборки образа и контейнера
+source ./env
+
+# Создание образа
+./drun.sh build
+
+# Создание контейнера
+./drun.sh run
+
+# Загрузка образа с dockerhub
+./drun.sh pull 
+
+# Загрузка образа на dockerhub
+./drun.sh push
+
+# Работа с уже созданным контейнером
+docker start $container
+docker attach $container
 ```
 
 ### Настройка окружения 
 
-Внутри конейнера нужно собрать рабочее пространство ROS
+Сборка ROS workspace
 ```
 cd ros2_ws
+
+# Set ROS2 environment
+r2
+
+# Build environment
 colcon build --symlink-install
+
 . install/setup.zsh
 ```
 
@@ -56,35 +81,35 @@ colcon build --symlink-install
 Набор модулей для симуляции представлены в пакете rosbot_gazebo. 
 Модули для реального робота, а так же общие модули представлены в пакете rosbot.
 
-- BringUp. 
+#### BringUp. 
 ```bash
 # Запуск основных нод для работы с роботом (в симуляции спаунит робота)
 ros2 launch rosbot[_gazebo] bringup.launch.py
 ```
 
-- Navigation2
+#### Navigation2
 ```bash
 ros2 launch rosbot[_gazebo] nav2.launch.py
 ```
 
-- RViz
+#### RViz
 ```bash
 ros2 launch rosbot rviz.launch.py
 ```
 
-- Groot
+#### Groot
 ```bash
 # Запуск программы для визуализации Behavior Tree
 ros2 run groot Groot
 ```
 
-- Slam
+#### Slam
 ```bash
 # BringUp + Navigation2 + SlamToolBox + RViz[optional] 
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
 
-- Teleop
+#### Teleop
 ```bash
 # Запуск ноды телеуправления с клавиатуры (wasd)  (Запускается на хост машине)
 ros2 launch rosbot_controller rosbot_sim_keyboard_teleop.launch.py
@@ -95,7 +120,7 @@ sudo apt install ros-foxy-teleop-tools
 ros2 run teleop_twist_keyboard teleop_twist_keyboard   
 ```
 
-- Oakd Camera
+#### Oakd Camera
 ```bash
 # Запуск камеры Oakd
 ros2 run oakd oakd_node

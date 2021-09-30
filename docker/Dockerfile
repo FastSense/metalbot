@@ -19,13 +19,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # CUDA
 ARG USE_CUDA
 ENV USE_CUDA=$USE_CUDA
+
 ENV CUDA_VERSION 11.2.2
 ENV CUDNN_VERSION 8.1.1.33
 ENV NCCL_VERSION 2.8.4
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_DRIVER_CAPABILITIES all
 ENV NVIDIA_REQUIRE_CUDA "cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450,driver<451"
 COPY scripts/cuda.sh .
 RUN ./cuda.sh && rm cuda.sh
@@ -47,7 +48,6 @@ ARG USE_REALSENSE
 ENV USE_REALSENSE=$USE_REALSENSE
 COPY scripts/realsense.sh .
 RUN ./realsense.sh && rm realsense.sh
-
 
 # ROS 2
 RUN apt-get update && \

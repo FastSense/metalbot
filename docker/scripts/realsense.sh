@@ -16,4 +16,3 @@ cd /
 
 sudo su root
 rm -rf /var/lib/apt/lists/*
-
