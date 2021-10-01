@@ -105,7 +105,7 @@ RUN pip3 install --upgrade pip && \
 RUN pip3 install --upgrade pip && \
     if [ "$USE_CUDA" = "ON" ]; then \
       pip3 install onnxruntime-gpu \
-    else \
+    ;else \
       pip3 install onnxruntime \
     ;fi
 

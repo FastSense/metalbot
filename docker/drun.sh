@@ -92,5 +92,3 @@ case $1 in
     " $1 
     echo "Try [build, run, push, pull] and don't forget to set environment variables " ;;
 esac
-
-
