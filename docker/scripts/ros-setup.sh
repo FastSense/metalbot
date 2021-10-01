@@ -13,10 +13,11 @@ function colcon_build_selected_release {
 } " >> ~/.zshrc
 
 echo "alias cb_basic='colcon build --symlink-install --packages-skip ${basic_ignore_pkgs}'" >> ~/.zshrc && \
-echo "alias cb_grid_map='colcon build --packages-select ${grid_map_pkgs}'" >> ~/.zshrc
-echo "alias cb_realsense='colcon build --packages-select ${grid_map_pkgs}'" >> ~/.zshrc
-echo "alias cb_oakd='colcon build --packages-select oakd'" >> ~/.zshrc
-echo "alias cb_rplidar='colcon build --packages-select rplidar_ros'" >> ~/.zshrc
+echo "alias cb_grid_map='colcon build --symlink-install --packages-select ${grid_map_pkgs}'" >> ~/.zshrc
+echo "alias cb_oakd='colcon build --symlink-install --packages-select oakd'" >> ~/.zshrc
+echo "alias cb_realsense='colcon build --packages-select ${realsense_pkgs}'" >> ~/.zshrc
+echo "alias cb_oakd='colcon build --symlink-install --packages-select oakd'" >> ~/.zshrc
+echo "alias cb_rplidar='colcon build --symlink-install --packages-select rplidar_ros'" >> ~/.zshrc
 echo "alias cb_bridge='colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure '" >> ~/.zshrc
 
 echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.zshrc
