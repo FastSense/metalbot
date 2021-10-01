@@ -71,7 +71,7 @@ r2 # source workspace
 
 # Build environment
 cd ros2_ws
-cb_basic
+cb_basic # no gui tools like Groot, sensors, and 2.5d Mapping utils (grid_map)
 
 # Optionaly
 
