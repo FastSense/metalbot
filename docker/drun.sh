@@ -16,8 +16,7 @@ echo "USE_OAKD: " $USE_OAKD
 echo "
 " 
 
-
-build_docker()  {
+build_docker() {
     echo "Building ..."
     docker build . -t $image \
       --build-arg USE_ROS1=$USE_ROS1 \
