@@ -62,17 +62,35 @@ docker attach $container
 
 ### Настройка окружения 
 
-Сборка ROS workspace
+Сборка ROS2 workspace
 ```
-cd ros2_ws
 
 # Set ROS2 environment
-r2
+
+r2 # source workspace
 
 # Build environment
-colcon build --symlink-install
+cd ros2_ws
+cb_basic
 
+# Optionaly
+
+cb_selected # Build selected packages
+cb_bridge # ros1_bridge
+cb_realsense 
+cb_oakd 
+cb_rplidar 
+
+r2 
 . install/setup.zsh
+```
+
+Сборка ROS1 workspace
+```
+r1
+cd ros1_ws
+catkin_make
+r1
 ```
 
 ### Запуск основных модулей
