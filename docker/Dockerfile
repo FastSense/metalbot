@@ -191,6 +191,7 @@ RUN apt-get update && \
         neovim \
         nano \
         htop \
+        autojump \
         iputils-ping && \
         rm -rf /var/lib/apt/lists/*
 

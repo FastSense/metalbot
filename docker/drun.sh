@@ -27,8 +27,7 @@ build_docker()  {
       --build-arg USE_CUDA=$USE_CUDA \
       --build-arg USE_OPENCV=$USE_OPENCV \
       --build-arg USE_REALSENSE=$USE_REALSENSE \
-      --build-arg USE_OAKD=$USE_OAKD \
-      --build-arg USE_RPLIDAR=$USE_RPLIDAR
+      --build-arg USE_OAKD=$USE_OAKD 
 }
 
 run_docker()  {
