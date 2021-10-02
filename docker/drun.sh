@@ -35,6 +35,8 @@ run_docker()  {
     environment_args=()
 
     volumes_args+=( "-v /dev/bus/usb:/dev/bus/usb " )
+    volumes_args+=( "-v $HOME/.Xauthority:/home/user/.Xauthority:ro" )
+
     environment_args+=( "-v /dev/bus/usb:/dev/bus/usb " )
 
     if [[ "$USE_CUDA" == "ON" ]]; then
