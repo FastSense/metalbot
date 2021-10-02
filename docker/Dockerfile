@@ -213,6 +213,6 @@ RUN ./ros-setup.sh
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
 
-COPY scripts/configs/* .
+COPY scripts/configs/* ./
 
 ENTRYPOINT []
