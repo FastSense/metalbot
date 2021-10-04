@@ -64,33 +64,32 @@ docker attach $container
 
 Сборка ROS2 workspace
 ```
-
-# Set ROS2 environment
-
-r2 # source workspace
-
-# Build environment
+# Build ROS2 basic packages
 cd ros2_ws
+r2 # source ros2
 cb_basic # no gui tools like Groot, sensors, and 2.5d Mapping utils (grid_map)
+r2
 
 # Optionaly
-
-cb_selected # Build selected packages
-cb_bridge # ros1_bridge
-cb_realsense 
+cd ros2_ws
+cb_selected package_name1 package_name2 ... # Build selected packages
+cb_realsense
 cb_oakd 
 cb_rplidar 
 
-r2 
-. install/setup.zsh
-```
-
-Сборка ROS1 workspace
-```
-r1
+# Сборка ROS1 workspace
 cd ros1_ws
+r1
 catkin_make
 r1
+
+# Building ros1_bridge
+
+# Note that you must build all required interfaces first (msg, srv)
+cd ros2_ws
+r1
+r2
+cb_bridge
 ```
 
 ### Запуск основных модулей
