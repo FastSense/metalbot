@@ -64,7 +64,7 @@ docker attach $container
 
 Сборка ROS2 workspace
 ```
-# Build ROS2 basic packages
+# Build ROS2 basic packages (don't source r1)
 cd ros2_ws
 r2 # source ros2
 cb_basic # no gui tools like Groot, sensors, and 2.5d Mapping utils (grid_map)
@@ -77,15 +77,15 @@ cb_realsense
 cb_oakd 
 cb_rplidar 
 
-# Сборка ROS1 workspace
+# Сборка ROS1 workspace (don't source r2)
 cd ros1_ws
 r1
 catkin_make
 r1
 
 # Building ros1_bridge
-
 # Note that you must build all required interfaces first (msg, srv)
+
 cd ros2_ws
 r1
 r2
