@@ -233,10 +233,10 @@ class StateEstimation(Node):
         msg.pose.pose.position.y = self.filter.pos[1]
         msg.pose.pose.position.z = self.filter.pos[2]
         # Angle
-        msg.pose.pose.orientation.w = self.filter.q[0]
-        msg.pose.pose.orientation.x = self.filter.q[1]
-        msg.pose.pose.orientation.y = self.filter.q[2]
-        msg.pose.pose.orientation.z = self.filter.q[3]
+        msg.pose.pose.orientation.x = self.filter.q[0]
+        msg.pose.pose.orientation.y = self.filter.q[1]
+        msg.pose.pose.orientation.z = self.filter.q[2]
+        msg.pose.pose.orientation.w = self.filter.q[3]
         # Pose & angle covariance
         msg.pose.covariance = self.filter.get_pose_covariance()
         # Velocity
@@ -262,10 +262,10 @@ class StateEstimation(Node):
         t.transform.translation.x = self.filter.pos[0]
         t.transform.translation.y = self.filter.pos[1]
         t.transform.translation.z = self.filter.pos[2]
-        t.transform.rotation.w = self.filter.q[0]
-        t.transform.rotation.x = self.filter.q[1]
-        t.transform.rotation.y = self.filter.q[2]
-        t.transform.rotation.z = self.filter.q[3]
+        t.transform.rotation.x = self.filter.q[0]
+        t.transform.rotation.y = self.filter.q[1]
+        t.transform.rotation.z = self.filter.q[2]
+        t.transform.rotation.w = self.filter.q[3]
         self.tf2_broadcaster.sendTransform(t)
 
 def main(args=None):

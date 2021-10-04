@@ -52,7 +52,7 @@ class Filter:
         self.dt = dt
         self.x = np.zeros(10)
         self.P = np.eye(10)
-        self.q = np.array([1., 0, 0, 0])
+        self.q = np.array([0., 0., 0., 1.])
         Q_e_w = np.array([
             [0.333 * dt**3, -0.5 * dt**2],
             [ -0.5 * dt**2,           dt],
@@ -108,7 +108,7 @@ class Filter:
         """
         Predict robot orientation
         """
-        rot_q = rot_vel_to_q(self.rot_vel, self.dt)
+        rot_q = geometry.rot_vel_to_q(self.rot_vel, self.dt)
         # Rotate the current attitude
         next_q_center = geometry.quat_product(self.q, rot_q)
         next_q_center = next_q_center / np.sqrt(np.sum(next_q_center**2))
@@ -231,23 +231,6 @@ class Filter:
     @epsilon.setter
     def epsilon(self, value):
         self.x[4:7:1] = value
-
-@njit
-def rot_vel_to_q(rot_vel, delta_t):
-    '''
-    input:
-        rot_vel (np.array of shape (3)): rotational velocity
-        delta_t (float): time step
-    output:
-        quaternion of the rotation
-    '''
-    rot_vel_length = np.sqrt((rot_vel**2).sum())
-    rot_angle_05 = rot_vel_length * delta_t * 0.5
-    w_unit = rot_vel / (rot_vel_length + 1e-12)
-    rot_q = np.empty(4)
-    rot_q[0] = np.cos(rot_angle_05)
-    rot_q[1:] = w_unit * np.sin(rot_angle_05)
-    return rot_q
 
 @njit
 def kalman_update(x, P, H, R, y):
