@@ -16,10 +16,10 @@ class Filter:
     2. z
     3. v_parallel
     4. e_x
-    5. w_x
-    6. e_y
-    7. w_y
-    8. e_z
+    5. e_y
+    6. e_z
+    7. w_x
+    8. w_y
     9. w_z
 
     Here e_xyz is the Euclidian representation of the delta from the center quaternion.
@@ -213,10 +213,10 @@ class Filter:
 
     @property
     def rot_vel(self):
-        return self.x[5::2]
+        return self.x[7::1]
     @rot_vel.setter
     def rot_vel(self, value):
-        self.x[5::2] = value
+        self.x[7::1] = value
     
     @property
     def w_yaw(self):
@@ -227,10 +227,10 @@ class Filter:
 
     @property
     def epsilon(self):
-        return self.x[4::2]
+        return self.x[4:7:1]
     @epsilon.setter
     def epsilon(self, value):
-        self.x[4::2] = value
+        self.x[4:7:1] = value
 
 @njit
 def rot_vel_to_q(rot_vel, delta_t):

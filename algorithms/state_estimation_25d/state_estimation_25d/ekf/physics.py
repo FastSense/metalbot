@@ -28,15 +28,15 @@ def transition_jac(
 
     vel_cross = geometry.vector_to_pseudo_matrix(np.array([vel, 0, 0]))
     # dx/de
-    F[:3, 4::2] = -rot_mat @ vel_cross * delta_t
+    F[:3, 4:7:1] = -rot_mat @ vel_cross * delta_t
 
     # Rotation derivatives
     # de/dw
-    F[4, 5] = delta_t
-    F[6, 7] = delta_t
-    F[8, 9] = delta_t
+    F[4, 7] = delta_t
+    F[5, 8] = delta_t
+    F[6, 9] = delta_t
     # de/de
-    F[4::2, 4::2] = rot_mat_w.T
+    F[4:7:1, 4:7:1] = rot_mat_w.T
 
     return F
 

@@ -28,9 +28,9 @@ def static_vec(q_center, vec, extrinsic=None):
     H = np.zeros((3, 10))
     vec_cross = geometry.vector_to_pseudo_matrix(z_prior)
     if extrinsic is None:
-        H[:, 10 - 6::2] = vec_cross
+        H[:, 4:7:1] = vec_cross
     else:
-        H[:, 10 - 6::2] = vec_cross @ rot_extrinsic
+        H[:, 4:7:1] = vec_cross @ rot_extrinsic
     return z_prior, H
 
 @njit
