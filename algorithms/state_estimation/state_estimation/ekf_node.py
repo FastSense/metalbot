@@ -228,6 +228,24 @@ class EKFNode(Node):
     #         self.stereo.M1_inv,
     #         extrinsic=extrinsic,
     #     )
+
+    def update_odom(self, msg):
+        odom, R, extrinsic = self.prepare_odom_data(msg)
+        self.filter.update_odometry(odom, R, extrinsic=extrinsic)
+
+    def prepare_odom_data(self, msg):
+        odom = np.array([
+            self.odom.twist.twist.linear.x,
+            self.odom.twist.twist.angular.z,
+        ])
+        R = np.array([
+            [self.odom.twist.covariance[0], self.odom.twist.covariance[5]],
+            [self.odom.twist.covariance[30], self.odom.twist.covariance[35]],
+        ])
+
+        # Get extrinsics from tf
+        extrinsic = self.get_extrinsic(msg.child_frame_id, 'base_link')
+        return odom, R, extrinsic
     
     # def update_odom(self, msg):
     #     '''

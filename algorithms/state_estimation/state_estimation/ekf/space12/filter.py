@@ -105,7 +105,8 @@ class SpaceKF12:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_odometry(self, z, R, delta_t, extrinsic=None):
+    def update_odometry(self, z, R, extrinsic=None):
+        pass
         '''
         Update state by a visual odometry measurement coming from a neural network.
 
@@ -113,9 +114,9 @@ class SpaceKF12:
         ----------
             z (np.array of shape [6]): Output of a neural network. Contains rotations and translations: `[rot_x, rot_y, rot_z, dx, dy, dz]`.
         '''
-        z_prior, H = measurement.odometry12(self.vel, self.rot_vel, self.q, delta_t, extrinsic=extrinsic)
-        y = z - z_prior
-        self.x, self.P = kalman_update(self.x, self.P, H, R, y)
+        # z_prior, H = measurement.odometry12(self.vel, self.rot_vel, self.q, delta_t, extrinsic=extrinsic)
+        # y = z - z_prior
+        # self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
     def update_flow(self, flows, delta_t, depths, pixels, R, camera_matrix, camera_matrix_inv, extrinsic=None):
         '''

@@ -134,7 +134,7 @@ class Filter:
         '''
         self.epsilon, self.q = geometry.reset_manifold(self.epsilon, self.q)
     
-    def update_odom(self, z, R):
+    def update_odometry(self, z, R, extrinsic=None):
         """
         Update state vector using odometry measurements
         @ parameters
