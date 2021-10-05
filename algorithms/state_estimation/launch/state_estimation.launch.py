@@ -102,9 +102,10 @@ def generate_launch_description():
         Node(
             package="state_estimation",
             executable="ekf_node",
+            name="ekf_node",
             output='screen',
             emulate_tty=True,
-            parameters=[{"use_sim_time": True}],
+            parameters=[os.path.join(get_package_share_directory("state_estimation"), 'params', 'ekf.yaml')],
         ),
         Node(
             package="path_visualizer",
@@ -128,15 +129,6 @@ def generate_launch_description():
                 {'lin_a': "0.1"},
                 {'ang_a': "0.25"},
             ]
-        ),
-        Node(
-            package="robot_localization",
-            executable='ekf_node',
-            name='ekf_filter_node',
-            output='screen',
-            emulate_tty=True,
-            parameters=[{os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')},
-                        {"use_sim_time": True}],
         ),
 
         # launh listener node

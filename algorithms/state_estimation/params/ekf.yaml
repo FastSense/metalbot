@@ -1,0 +1,8 @@
+ekf_node:
+  mode: '2d'
+  use_nn_model: 1
+  sensors: 'imu, odometry'
+  period: 0.3
+  vel_std: 1.0
+  rot_vel_std: 1.0
+  acc_std: 0.0
