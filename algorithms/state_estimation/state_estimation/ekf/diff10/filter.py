@@ -147,6 +147,10 @@ class Filter:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
+    def update_flow(self, flows=None, delta_t=None, depths=None, pixels=None, R=None, camera_matrix=None, camera_matrix_inv=None, extrinsic=None):
+        pass
+
+
     def update_acc(self, z, R, extrinsic=None):
         '''
         Update state by a measurement coming from on-board accelerometer.

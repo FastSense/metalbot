@@ -168,12 +168,12 @@ class EKFNode(Node):
         if self.imu_buffer is not None:
             self.update_imu(self.imu_buffer)
             self.imu_buffer = None
-        # if self.odom_buffer is not None:
-        #     self.update_odom(self.odom_buffer)
-            # self.odom_buffer = None
-        # if self.odom_flow_buffer is not None:
-        #     self.update_odom_flow(self.odom_flow_buffer)
-        #     self.odom_flow_buffer = None
+        if self.odom_buffer is not None:
+            self.update_odom(self.odom_buffer)
+            self.odom_buffer = None
+        if self.odom_flow_buffer is not None:
+            self.update_odom_flow(self.odom_flow_buffer)
+            self.odom_flow_buffer = None
         # # Publish
         self.publish_pose()
 
@@ -203,32 +203,6 @@ class EKFNode(Node):
         extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
         return rot_vel, rot_vel_R, acc, acc_R, extrinsic
 
-    # def update_odom_flow(self, msg):
-    #     '''
-    #     Update filter state using flow odometry message
-    #     '''
-    #     if self.stereo is None:
-    #         print('waiting for camera parameters...')
-    #         return
-
-    #     z = np.vstack([msg.flow_x, msg.flow_y, msg.delta_depth]).transpose() # [N, 3]
-    #     pixels = np.vstack([msg.x, msg.y]).transpose() # [N, 2]
-    #     R = np.diag(msg.covariance_diag)
-
-    #     # Get extrinsics from tf
-    #     extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
-
-    #     self.tracker.update_flow(
-    #         z,
-    #         self.period,
-    #         msg.depth,
-    #         pixels,
-    #         R,
-    #         self.stereo.M1,
-    #         self.stereo.M1_inv,
-    #         extrinsic=extrinsic,
-    #     )
-
     def update_odom(self, msg):
         odom, R, extrinsic = self.prepare_odom_data(msg)
         self.filter.update_odometry(odom, R, extrinsic=extrinsic)
@@ -246,63 +220,68 @@ class EKFNode(Node):
         # Get extrinsics from tf
         extrinsic = self.get_extrinsic(msg.child_frame_id, 'base_link')
         return odom, R, extrinsic
-    
-    # def update_odom(self, msg):
-    #     '''
-    #     Update filter state using odometry message
-    #     '''
-    #     # Make KF-compatible measurements
-    #     odom = np.array([
-    #         msg.twist.twist.angular.x,
-    #         msg.twist.twist.angular.y,
-    #         msg.twist.twist.angular.z,
-    #         msg.twist.twist.linear.x,
-    #         msg.twist.twist.linear.y,
-    #         msg.twist.twist.linear.z,
-    #     ])
-    #     R = np.array(msg.twist.covariance).reshape([6, 6])
 
-    #     # Get extrinsics from tf
-    #     extrinsic = self.get_extrinsic('oakd_left', 'base_link')
+    def get_extrinsic(self, frame1, frame2):
+        '''
+        Parameters:
+        frame1 (str): tf frame
+        frame2 (str): tf frame
 
-    #     # Update
-    #     self.tracker.update_odometry(odom, R, delta_t=1, extrinsic=extrinsic)
+        Returns:
+        np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
+        '''
+        while True:
+            try:
+                # t = self.get_clock().now()
+                # rclpy.spin_once(self)
+                t = Namespace(seconds=0, nanoseconds=0)
+                trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
+                # print(f"Got transform! {frame1} -> {frame2}")
+                break
+            except tf2_ros.LookupException:
+                # rclpy.spin_once(self)
+                print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
 
-    # def get_extrinsic(self, frame1, frame2):
-    #     '''
-    #     Parameters:
-    #     frame1 (str): tf frame
-    #     frame2 (str): tf frame
+        tr = np.array([
+            [trans.transform.translation.x],
+            [trans.transform.translation.y],
+            [trans.transform.translation.z],
+        ])
+        rot_q = np.array([
+            trans.transform.rotation.x,
+            trans.transform.rotation.y,
+            trans.transform.rotation.z,
+            trans.transform.rotation.w,
+        ])
+        rot = Rotation.from_quat(rot_q).as_matrix()
+        extrinsic = np.concatenate([rot, tr], 1)
+        return extrinsic
 
-    #     Returns:
-    #     np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
-    #     '''
-    #     while True:
-    #         try:
-    #             # t = self.get_clock().now()
-    #             # rclpy.spin_once(self)
-    #             t = Namespace(seconds=0, nanoseconds=0)
-    #             trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
-    #             # print(f"Got transform! {frame1} -> {frame2}")
-    #             break
-    #         except tf2_ros.LookupException:
-    #             # rclpy.spin_once(self)
-    #             print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
+    def update_odom_flow(self, msg):
+        '''
+        Update filter state using flow odometry message
+        '''
+        if self.stereo is None:
+            print('waiting for camera parameters...')
+            return
 
-    #     tr = np.array([
-    #         [trans.transform.translation.x],
-    #         [trans.transform.translation.y],
-    #         [trans.transform.translation.z],
-    #     ])
-    #     rot_q = np.array([
-    #         trans.transform.rotation.x,
-    #         trans.transform.rotation.y,
-    #         trans.transform.rotation.z,
-    #         trans.transform.rotation.w,
-    #     ])
-    #     rot = Rotation.from_quat(rot_q).as_matrix()
-    #     extrinsic = np.concatenate([rot, tr], 1)
-    #     return extrinsic
+        z = np.vstack([msg.flow_x, msg.flow_y, msg.delta_depth]).transpose() # [N, 3]
+        pixels = np.vstack([msg.x, msg.y]).transpose() # [N, 2]
+        R = np.diag(msg.covariance_diag)
+
+        # Get extrinsics from tf
+        extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
+
+        self.filter.update_flow(
+            z,
+            self.period,
+            msg.depth,
+            pixels,
+            R,
+            self.stereo.M1,
+            self.stereo.M1_inv,
+            extrinsic=extrinsic,
+        )
 
     # def publish_pose(self):
     #     # Make odometry message
