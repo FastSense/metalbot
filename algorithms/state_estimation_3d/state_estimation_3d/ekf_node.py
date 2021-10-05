@@ -25,7 +25,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.3)
+        self.declare_parameter('period', 0.1)
         self.declare_parameter('vel_std', 1.0)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -37,12 +37,6 @@ class EKFNode(Node):
         self.stereo = None
 
         # Subscribe to sensor topics
-        # self.create_subscription(
-        #     Odometry,
-        #     'vis_odo',
-        #     self.odometry_callback,
-        #     10,
-        # )
         self.create_subscription(
             OdoFlow,
             'odom_flow',
@@ -75,8 +69,6 @@ class EKFNode(Node):
 
         # Create Kalman filter
         self.tracker = SpaceKF12(dt=self.period, velocity_std=vel_std, rot_vel_std=rot_vel_std)
-        # theta = 45 * np.pi / 180
-        # self.tracker.q = np.array([np.cos(theta / 2), 0, 0, np.sin(theta / 2)])
         self.tracker.P = self.tracker.P * 0.01
 
         # Buffers for measurements
@@ -115,7 +107,6 @@ class EKFNode(Node):
         # Predict
         self.tracker.predict()
         # Update
-        # rclpy.spin_once(self)
         if self.imu_buffer is not None:
             self.update_imu(self.imu_buffer)
             self.imu_buffer = None
@@ -146,8 +137,9 @@ class EKFNode(Node):
         extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
 
         # Update
+        print(acc)
         self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic)
-        self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
+        # self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
 
     def update_odom_flow(self, msg):
         '''
@@ -164,37 +156,24 @@ class EKFNode(Node):
         # Get extrinsics from tf
         extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
 
+        # Compute time delay
+        msg_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        ros_stamp = self.get_clock().now().seconds_nanoseconds()
+        ros_time = ros_stamp[0] + ros_stamp[1] * 1e-9
+        delay = ros_time - msg_time
+        print('odom delay:', delay)
+
         self.tracker.update_flow(
             z,
-            self.period,
+            msg.delta_t,
             msg.depth,
             pixels,
             R,
             self.stereo.M1,
             self.stereo.M1_inv,
             extrinsic=extrinsic,
+            delay=delay*0,
         )
-    
-    def update_odom(self, msg):
-        '''
-        Update filter state using odometry message
-        '''
-        # Make KF-compatible measurements
-        odom = np.array([
-            msg.twist.twist.angular.x,
-            msg.twist.twist.angular.y,
-            msg.twist.twist.angular.z,
-            msg.twist.twist.linear.x,
-            msg.twist.twist.linear.y,
-            msg.twist.twist.linear.z,
-        ])
-        R = np.array(msg.twist.covariance).reshape([6, 6])
-
-        # Get extrinsics from tf
-        extrinsic = self.get_extrinsic('oakd_left', 'base_link')
-
-        # Update
-        self.tracker.update_odometry(odom, R, delta_t=1, extrinsic=extrinsic)
 
     def get_extrinsic(self, frame1, frame2):
         '''
@@ -243,10 +222,10 @@ class EKFNode(Node):
         msg.pose.pose.position.y = self.tracker.pos[1]
         msg.pose.pose.position.z = self.tracker.pos[2]
         # Angle
-        msg.pose.pose.orientation.w = self.tracker.q[0]
-        msg.pose.pose.orientation.x = self.tracker.q[1]
-        msg.pose.pose.orientation.y = self.tracker.q[2]
-        msg.pose.pose.orientation.z = self.tracker.q[3]
+        msg.pose.pose.orientation.x = self.tracker.q[0]
+        msg.pose.pose.orientation.y = self.tracker.q[1]
+        msg.pose.pose.orientation.z = self.tracker.q[2]
+        msg.pose.pose.orientation.w = self.tracker.q[3]
         # Pose & angle covariance
         msg.pose.covariance = self.tracker.get_pose_covariance()
         # Velocity
@@ -269,10 +248,10 @@ class EKFNode(Node):
         t.transform.translation.x = self.tracker.pos[0]
         t.transform.translation.y = self.tracker.pos[1]
         t.transform.translation.z = self.tracker.pos[2]
-        t.transform.rotation.w = self.tracker.q[0]
-        t.transform.rotation.x = self.tracker.q[1]
-        t.transform.rotation.y = self.tracker.q[2]
-        t.transform.rotation.z = self.tracker.q[3]
+        t.transform.rotation.x = self.tracker.q[0]
+        t.transform.rotation.y = self.tracker.q[1]
+        t.transform.rotation.z = self.tracker.q[2]
+        t.transform.rotation.w = self.tracker.q[3]
         self.tf2_broadcaster.sendTransform(t)
 
     def calibration_callback(self, msg):

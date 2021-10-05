@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image, Imu, CameraInfo
 from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 import tf2_ros
+import message_filters
 
 from perception_msgs.msg import OdoFlow
 from .stereo_camera import StereoCamera
@@ -25,13 +26,18 @@ class FlowOdomNode(Node):
         self.bridge = CvBridge()
 
         # Declare parameters
-        self.declare_parameter('network_path', 'http://192.168.194.51:8345/flow/2021.09.07_flow_sv/flow_sv_op12.onnx')
-        self.declare_parameter('period', 0.3)
+        self.declare_parameter('network_path', 'http://192.168.194.51:8345/flow/2021.09.28_flow_sv/flow_sv_op12.onnx')
 
         # Get camera parameters
         self.stereo = None
 
         # Subscribe to camera topics
+        self.create_subscription(
+            CameraInfo,
+            'rectified_camera_info',
+            self.calibration_callback,
+            10,
+        )
         self.create_subscription(
             Image,
             'left_rect',
@@ -40,20 +46,8 @@ class FlowOdomNode(Node):
         )
         self.create_subscription(
             Image,
-            'right_rect',
-            self.right_rect_callback,
-            10,
-        )
-        self.create_subscription(
-            Image,
             'depth',
             self.depth_callback,
-            10,
-        )
-        self.create_subscription(
-            CameraInfo,
-            'rectified_camera_info',
-            self.calibration_callback,
             10,
         )
 
@@ -66,7 +60,12 @@ class FlowOdomNode(Node):
 
         # Flow neural network
         network_path = self.get_parameter('network_path').get_parameter_value().string_value
-        self.network = nnio.ONNXModel(network_path)
+        # self.network = nnio.ONNXModel(network_path)
+        self.network = nnio.OpenVINOModel(
+            network_path.replace('_op12.onnx', '_fp16.bin'),
+            network_path.replace('_op12.onnx', '_fp16.xml'),
+            device='GPU'
+        )
         self.preprocess = nnio.Preprocessing(
             resize=(256, 256),
             dtype='float32',
@@ -77,23 +76,15 @@ class FlowOdomNode(Node):
 
         # Buffer for images
         self.left_msg = None
-        self.right_msg = None
         self.depth_msg = None
         self.last_pair = None
         self.img_prev = None
         self.depth_prev = None
         self.depth_std_prev = None
-
-        # Create timer for odometry
-        self.period = self.get_parameter('period').get_parameter_value().double_value
-        self.create_timer(self.period, self.publish_odometry)
+        self.sec_prev = None
 
     def left_rect_callback(self, msg):
         self.left_msg = msg
-        self.check_pair()
-
-    def right_rect_callback(self, msg):
-        self.right_msg = msg
         self.check_pair()
 
     def depth_callback(self, msg):
@@ -101,38 +92,25 @@ class FlowOdomNode(Node):
         self.check_pair()
 
     def check_pair(self):
-        if self.left_msg is None or self.right_msg is None or self.depth_msg is None:
+        if self.left_msg is None or self.depth_msg is None:
             return
         time_left = self.left_msg.header.stamp.sec + self.left_msg.header.stamp.nanosec * 1e-9
-        time_right = self.right_msg.header.stamp.sec + self.right_msg.header.stamp.nanosec * 1e-9
         time_depth = self.depth_msg.header.stamp.sec + self.depth_msg.header.stamp.nanosec * 1e-9
         threshold = 0.01
-        if abs(time_left - time_right) < threshold and abs(time_left - time_depth) < threshold:
-            self.last_pair = self.left_msg, self.right_msg, self.depth_msg
+        if abs(time_left - time_depth) < threshold:
+            self.last_pair = self.left_msg, self.depth_msg, time_left
+            self.publish_odometry()
 
     def publish_odometry(self):
-        if self.last_pair is None:
-            return
-        if self.stereo is None:
+        if self.last_pair is None or self.stereo is None:
             return
 
         # Prepare inputs
         img_left = self.bridge.imgmsg_to_cv2(self.last_pair[0])
         img_left = cv2.cvtColor(img_left, cv2.COLOR_GRAY2RGB)
-        img_right = self.bridge.imgmsg_to_cv2(self.last_pair[1])
-        img_right = cv2.cvtColor(img_right, cv2.COLOR_GRAY2RGB)
-        depth = self.bridge.imgmsg_to_cv2(self.last_pair[2])
-
-        # Get optical flow
         img_left = self.preprocess(img_left)
-        if self.img_prev is None:
-            self.img_prev = img_left
-        pair_preprocessed = np.concatenate([
-            img_left, # [1, 3, H, W]
-            self.img_prev, # [1, 3, H, W]
-        ], 1) # [1, 6, H, W]
-        flow = self.network(pair_preprocessed)
-        flow = flow[0].transpose(1, 2, 0)
+        depth = self.bridge.imgmsg_to_cv2(self.last_pair[1])
+        sec = self.last_pair[2]
 
         # Get depth
         depth = cv2.resize(depth, (128, 128)) / 1000
@@ -140,6 +118,27 @@ class FlowOdomNode(Node):
         depth = depth.clip(0.5)
         baseline = np.linalg.norm(self.stereo.T)
         depth_std = depth**2 / (430 * baseline**2)
+
+        # Remember previous values
+        if self.sec_prev is None:
+            self.img_prev = img_left
+            self.depth_prev = depth
+            self.depth_std_prev = depth_std
+            self.sec_prev = sec
+            return
+
+        delta_t = sec - self.sec_prev
+        print('Pair:', delta_t)
+
+        # Get optical flow
+        pair_preprocessed = np.concatenate([
+            img_left, # [1, 3, H, W]
+            self.img_prev, # [1, 3, H, W]
+        ], 1) # [1, 6, H, W]
+        flow = self.network(pair_preprocessed)
+        flow = flow[0].transpose(1, 2, 0)
+
+        # Get depth error
         mask = mask * 100
         max_flow = np.sqrt((flow**2).sum(2)).max()
         side = max(int(max_flow), 1) + 1
@@ -188,7 +187,7 @@ class FlowOdomNode(Node):
         variance[1::3] = variance[::3]
         variance[2::3] = depth_variance
         
-        # # Generate not random points
+        # Generate not random points (debug)
         # K = 2
         # xs = np.array([depth.shape[1] // 4, 3 * depth.shape[1] // 4])
         # ys = np.array([depth.shape[0] // 2, depth.shape[0] // 2])
@@ -196,12 +195,14 @@ class FlowOdomNode(Node):
         # depths = np.ones([K])
         # delta_depth = np.zeros([K])
         # variance = np.ones([K * 3]) * flow_std
+        # delta_t = 0.1
 
         # Make odometry message
         msg = OdoFlow()
         msg.header.stamp = self.last_pair[0].header.stamp
         msg.header.frame_id = self.last_pair[0].header.frame_id
         msg.child_frame_id = self.last_pair[0].header.frame_id
+        msg.delta_t = delta_t
         msg.x = [int(x) for x in xs]
         msg.y = [int(y) for y in ys]
         msg.flow_x = [float(flow) for flow in flows[:, 0]]
@@ -211,12 +212,11 @@ class FlowOdomNode(Node):
         msg.covariance_diag = [float(v) for v in variance]
         self.odom_publisher.publish(msg)
 
-        print('Time:', self.last_pair[0].header.stamp)
-
-        # Remember data
+        # Remember previous values
         self.img_prev = img_left
         self.depth_prev = depth
         self.depth_std_prev = depth_std
+        self.sec_prev = sec
 
     def calibration_callback(self, msg):
         if self.stereo is None:

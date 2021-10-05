@@ -8,6 +8,8 @@ string child_frame_id
 # Also depth and delta_depth in these N points.
 # Also the diagonal of the covariance matrix (3N numbers)
 
+# Time between this and previous frames
+float32 delta_t
 # x y coordinates of measurement points. Length: N
 int64[] x
 int64[] y
