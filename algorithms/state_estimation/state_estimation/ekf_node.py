@@ -6,22 +6,17 @@ from argparse import Namespace
 
 import rclpy
 from rclpy.node import Node
-# from sensor_msgs.msg import Image, Imu, CameraInfo
-# from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Image, Imu, CameraInfo
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 import tf2_ros
 
 import ekf.diff4.filter as filter2d
 import ekf.diff10.filter as filter25d
 import ekf.space12.filter as filter3d
-# import ekf.space15.filter as filter3d
-# from .ekf.diff4 import Filter2D
-# from .ekf.diff10 import Filter as Filter25D
-# from .ekf.space12 import SpaceKF12
-# from space15.filter import SpaceKF15 as filter3d_acc
-# from .spacekf import SpaceKF12
-# from perception_msgs.msg import OdoFlow
-# from optical_flow.stereo_camera import StereoCamera
+from perception_msgs.msg import OdoFlow
+from optical_flow.stereo_camera import StereoCamera
 
 
 class EKFNode(Node):
@@ -57,47 +52,51 @@ class EKFNode(Node):
         if mode =='2d':
             self.filter = filter2d.Filter2D(self.period, 2, 0, vel_std, rot_vel_std)
         elif mode == '2.5d':
-            self.filter = filter25d.Filter25D(self.period, vel_std, rot_vel_std)
+            self.filter = filter25d.Filter(self.period, vel_std, rot_vel_std)
         elif mode == '3d':
             self.filter = filter3d.SpaceKF12(self.period, vel_std, rot_vel_std)
-        # elif mode == '3d_acc':
-            # self.filter = filter3d_acc.SpaceKF15(self.period, vel_std, rot_vel_std, acc_std)
-        # Subscribe to sensor topics
-        # self.create_subscription(
-        #     Odometry,
-        #     'vis_odo',
-        #     self.odometry_callback,
-        #     10,
-        # )
-    #     self.create_subscription(
-    #         OdoFlow,
-    #         'odom_flow',
-    #         self.odometry_callback,
-    #         10,
-    #     )
-    #     self.create_subscription(
-    #         Imu,
-    #         'imu',
-    #         self.imu_callback,
-    #         10,
-    #     )
-    #     self.create_subscription(
-    #         CameraInfo,
-    #         'rectified_camera_info',
-    #         self.calibration_callback,
-    #         10,
-    #     )
 
-    #     # Publisher
-    #     self.pose_publisher = self.create_publisher(
-    #         Odometry,
-    #         'pose_ekf',
-    #         10,
-    #     )
+        if 'odometry' in self.sensors:
+            self.odom_sub = self.create_subscription(
+                Odometry,
+                'odom_noised',
+                self.odometry_callback,
+                10,
+            )
+        if 'imu' in self.sensors:
+            self.imu_sub = self.create_subscription(
+                Imu,
+                'imu',
+                self.imu_callback,
+                10,
+            )
+        if 'optical_flow' in self.sensors:
+            self.create_subscription(
+                OdoFlow,
+                'odom_flow',
+                self.odometry_flow_callback,
+                10,
+            )
+            self.create_subscription(
+                CameraInfo,
+                'rectified_camera_info',
+                self.calibration_callback,
+                10,
+            )
+        self.cmd_vel_sub = self.create_subscription(
+            Twist,
+            'cmd_vel',
+            self.control_callback,
+            15,
+        )
+        self.pose_publisher = self.create_publisher(
+            Odometry,
+            'odom_filtered',
+            10,
+        )
 
-    #     # Create timer
-    #     self.period = self.get_parameter('period').get_parameter_value().double_value
-    #     self.create_timer(self.period, self.step)
+        # Create timer
+        self.create_timer(self.period, self.step)
 
     #     # Create Kalman filter
     #     self.tracker = SpaceKF12(dt=self.period, velocity_std=vel_std, rot_vel_std=rot_vel_std)
@@ -105,51 +104,78 @@ class EKFNode(Node):
     #     # self.tracker.q = np.array([np.cos(theta / 2), 0, 0, np.sin(theta / 2)])
     #     self.tracker.P = self.tracker.P * 0.01
 
-    #     # Buffers for measurements
-    #     self.imu_buffer = None
-    #     self.imu_count = 0
-    #     self.odom_buffer = None
+        # Buffers for measurements
+        self.imu_buffer = None
+        self.imu_count = 0
+        self.odom_buffer = None
+        self.odom_flow_buffer = None
+        self.control = None
 
     #     # TF listener
     #     self.tf_buffer = tf2_ros.Buffer(rclpy.duration.Duration(seconds=1))
     #     self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
-    # def odometry_callback(self, msg):
-    #     self.odom_buffer = msg
+    def odometry_callback(self, msg):
+        self.odom_buffer = msg
 
-    # def imu_callback(self, msg):
-    #     if not 'oakd' in msg.header.frame_id:
-    #         # print('Wrong imu frame:', msg.header.frame_id)
-    #         return
+    def imu_callback(self, msg):
+        if not 'oakd' in msg.header.frame_id:
+            # print('Wrong imu frame:', msg.header.frame_id)
+            return
 
-    #     if self.imu_buffer is None:
-    #         self.imu_buffer = msg
-    #         self.imu_count = 1
-    #     else:
-    #         self.imu_buffer.angular_velocity.x += msg.angular_velocity.x
-    #         self.imu_buffer.angular_velocity.y += msg.angular_velocity.y
-    #         self.imu_buffer.angular_velocity.z += msg.angular_velocity.z
-    #         self.imu_buffer.linear_acceleration.x += msg.linear_acceleration.x
-    #         self.imu_buffer.linear_acceleration.y += msg.linear_acceleration.y
-    #         self.imu_buffer.linear_acceleration.z += msg.linear_acceleration.z
-    #         self.imu_count += 1
+        if self.imu_buffer is None:
+            self.imu_buffer = msg
+            self.imu_count = 1
+        else:
+            self.imu_buffer.angular_velocity.x += msg.angular_velocity.x
+            self.imu_buffer.angular_velocity.y += msg.angular_velocity.y
+            self.imu_buffer.angular_velocity.z += msg.angular_velocity.z
+            self.imu_buffer.linear_acceleration.x += msg.linear_acceleration.x
+            self.imu_buffer.linear_acceleration.y += msg.linear_acceleration.y
+            self.imu_buffer.linear_acceleration.z += msg.linear_acceleration.z
+            self.imu_count += 1
 
-    # def step(self):
-    #     '''
-    #     EKF predict and update step
-    #     '''
-    #     # Predict
-    #     self.tracker.predict()
-    #     # Update
-    #     # rclpy.spin_once(self)
-    #     if self.imu_buffer is not None:
-    #         self.update_imu(self.imu_buffer)
-    #         self.imu_buffer = None
-    #     if self.odom_buffer is not None:
-    #         self.update_odom_flow(self.odom_buffer)
-    #         self.odom_buffer = None
-    #     # Publish
-    #     self.publish_pose()
+    def odometry_flow_callback(self, msg):
+        self.odom_flow_buffer = msg
+    
+    def calibration_callback(self, msg):
+        if self.stereo is None:
+            M1 = np.array(msg.k).reshape([3, 3])
+            M2 = M1
+            T = [msg.p[3] / msg.k[0], msg.p[7] / msg.k[0], msg.p[11] / msg.k[0]]
+            R = np.array(msg.r).reshape([3, 3])
+            print('T', T)
+            self.stereo = StereoCamera(
+                M1=M1, M2=M2, R=R, T=T, image_h=msg.height, image_w=msg.width
+            )
+            self.stereo.change_dimensions_(128, 128)
+    
+    def control_callback(self, msg):
+        """
+        Callback from /cmd_vel topic with control commands
+        @ parameters
+        msg: Twist
+        """
+        self.control = np.array([msg.linear.x, msg.angular.z])
+
+
+    def step(self):
+        print("Step")
+        # '''
+        # EKF predict and update step
+        # '''
+        # # Predict
+        # self.tracker.predict()
+        # # Update
+        # # rclpy.spin_once(self)
+        # if self.imu_buffer is not None:
+        #     self.update_imu(self.imu_buffer)
+        #     self.imu_buffer = None
+        # if self.odom_buffer is not None:
+        #     self.update_odom_flow(self.odom_buffer)
+        #     self.odom_buffer = None
+        # # Publish
+        # self.publish_pose()
 
     # def update_imu(self, msg):
     #     '''
@@ -300,19 +326,6 @@ class EKFNode(Node):
     #     t.transform.rotation.y = self.tracker.q[2]
     #     t.transform.rotation.z = self.tracker.q[3]
     #     self.tf2_broadcaster.sendTransform(t)
-
-    # def calibration_callback(self, msg):
-    #     if self.stereo is None:
-    #         M1 = np.array(msg.k).reshape([3, 3])
-    #         M2 = M1
-    #         T = [msg.p[3] / msg.k[0], msg.p[7] / msg.k[0], msg.p[11] / msg.k[0]]
-    #         R = np.array(msg.r).reshape([3, 3])
-    #         print('T', T)
-    #         self.stereo = StereoCamera(
-    #             M1=M1, M2=M2, R=R, T=T, image_h=msg.height, image_w=msg.width
-    #         )
-    #         self.stereo.change_dimensions_(128, 128)
-
 
 def main(args=None):
     print('Hi from ekf_3d.')
