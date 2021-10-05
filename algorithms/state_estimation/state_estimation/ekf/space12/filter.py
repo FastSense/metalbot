@@ -51,7 +51,7 @@ class SpaceKF12:
         rot_vel_std,
     ):
         self.x = np.zeros(12)
-        self.P = np.eye(12)
+        self.P = np.eye(12) * 0.01
         # Idk why there are minuses , but it works:
         Q_e_w = np.array([
             [0.333 * dt**3, -0.5 * dt**2],
@@ -61,7 +61,8 @@ class SpaceKF12:
             Q_discrete_white_noise(dim=2, dt=dt, var=velocity_std**2, block_size=3),
             Q_e_w, Q_e_w, Q_e_w,
         )
-        self.q = np.array([1., 0, 0, 0])
+        theta = 45 * np.pi / 180
+        self.q = np.array([np.cos(theta / 2), 0, 0, np.sin(theta / 2)])
         self.dt = dt
         # Transition function
         self.transition_function = physics.transition_function12

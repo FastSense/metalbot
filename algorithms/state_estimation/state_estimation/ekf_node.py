@@ -12,9 +12,13 @@ from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 import tf2_ros
 
-import ekf.diff4.filter as filter2d
-import ekf.diff10.filter as filter25d
-import ekf.space12.filter as filter3d
+# from .ekf.diff4 import Filter2D
+# from .ekf.diff10 import Filter as Filter25D
+# import state_estimation.ekf.space12
+# from .ekf.space12 import SpaceKF12 as Filter3D
+import state_estimation.ekf.diff4.filter as filter2d
+import state_estimation.ekf.diff10.filter as filter25d
+import state_estimation.ekf.space12.filter as filter3d
 from perception_msgs.msg import OdoFlow
 from optical_flow.stereo_camera import StereoCamera
 
@@ -39,7 +43,7 @@ class EKFNode(Node):
 
         # Kalman filter parameters
         mode = self.get_parameter('mode').get_parameter_value().string_value
-        self.sensors = self.get_parameter('sensors').get_parameter_value().string_value.split(",")
+        self.sensors = self.get_parameter('sensors').get_parameter_value().string_value.replace(" ", "").split(",")
         self.period = self.get_parameter('period').get_parameter_value().double_value
         vel_std = self.get_parameter('vel_std').get_parameter_value().double_value
         rot_vel_std = self.get_parameter('rot_vel_std').get_parameter_value().double_value
@@ -98,12 +102,6 @@ class EKFNode(Node):
         # Create timer
         self.create_timer(self.period, self.step)
 
-    #     # Create Kalman filter
-    #     self.tracker = SpaceKF12(dt=self.period, velocity_std=vel_std, rot_vel_std=rot_vel_std)
-    #     # theta = 45 * np.pi / 180
-    #     # self.tracker.q = np.array([np.cos(theta / 2), 0, 0, np.sin(theta / 2)])
-    #     self.tracker.P = self.tracker.P * 0.01
-
         # Buffers for measurements
         self.imu_buffer = None
         self.imu_count = 0
@@ -111,9 +109,9 @@ class EKFNode(Node):
         self.odom_flow_buffer = None
         self.control = None
 
-    #     # TF listener
-    #     self.tf_buffer = tf2_ros.Buffer(rclpy.duration.Duration(seconds=1))
-    #     self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        # TF listener
+        self.tf_buffer = tf2_ros.Buffer(rclpy.duration.Duration(seconds=1))
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
     def odometry_callback(self, msg):
         self.odom_buffer = msg
@@ -160,7 +158,7 @@ class EKFNode(Node):
 
 
     def step(self):
-        print("Step")
+        pass
         # '''
         # EKF predict and update step
         # '''
@@ -333,8 +331,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     node = EKFNode()
-    print(node.filter)
-    # rclpy.spin(node)
+    rclpy.spin(node)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
