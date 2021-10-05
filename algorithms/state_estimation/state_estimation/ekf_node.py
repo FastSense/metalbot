@@ -18,6 +18,7 @@ import tf2_ros
 import state_estimation.ekf.diff4.filter as filter2d
 import state_estimation.ekf.diff10.filter as filter25d
 import state_estimation.ekf.space12.filter as filter3d
+from state_estimation.ekf import geometry
 from perception_msgs.msg import OdoFlow
 from optical_flow.stereo_camera import StereoCamera
 
@@ -283,48 +284,51 @@ class EKFNode(Node):
             extrinsic=extrinsic,
         )
 
-    # def publish_pose(self):
-    #     # Make odometry message
-    #     msg = Odometry()
-    #     msg.header.stamp = self.get_clock().now().to_msg()
-    #     msg.header.frame_id = 'map'
-    #     msg.child_frame_id = 'base_link'
-    #     # Position
-    #     msg.pose.pose.position.x = self.tracker.pos[0]
-    #     msg.pose.pose.position.y = self.tracker.pos[1]
-    #     msg.pose.pose.position.z = self.tracker.pos[2]
-    #     # Angle
-    #     msg.pose.pose.orientation.w = self.tracker.q[0]
-    #     msg.pose.pose.orientation.x = self.tracker.q[1]
-    #     msg.pose.pose.orientation.y = self.tracker.q[2]
-    #     msg.pose.pose.orientation.z = self.tracker.q[3]
-    #     # Pose & angle covariance
-    #     msg.pose.covariance = self.tracker.get_pose_covariance()
-    #     # Velocity
-    #     msg.twist.twist.linear.x = self.tracker.vel[0]
-    #     msg.twist.twist.linear.y = self.tracker.vel[1]
-    #     msg.twist.twist.linear.z = self.tracker.vel[2]
-    #     # Angular velocity
-    #     msg.twist.twist.angular.x = self.tracker.rot_vel[0]
-    #     msg.twist.twist.angular.y = self.tracker.rot_vel[1]
-    #     msg.twist.twist.angular.z = self.tracker.rot_vel[2]
-    #     # Vel & angvel covariance
-    #     msg.twist.covariance = self.tracker.get_twist_covariance()
-    #     # Publish
-    #     self.pose_publisher.publish(msg)
+    def publish_pose(self):
+        # Make odometry message
+        msg = Odometry()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'odom'
+        msg.child_frame_id = 'base_link'
+        # Position
+        msg.pose.pose.position.x = self.filter.pos[0]
+        msg.pose.pose.position.y = self.filter.pos[1]
+        msg.pose.pose.position.z = self.filter.pos[2]
+        # Angle
+        msg.pose.pose.orientation.x = self.filter.q[0]
+        msg.pose.pose.orientation.y = self.filter.q[1]
+        msg.pose.pose.orientation.z = self.filter.q[2]
+        msg.pose.pose.orientation.w = self.filter.q[3]
+        # Pose & angle covariance
+        msg.pose.covariance = self.filter.get_pose_covariance()
+        # Velocity
+        vel_local = np.array([self.filter.v, 0, 0])
+        rot_mat = geometry.quat_as_matrix(self.filter.q)
+        vel_global = rot_mat.T @ vel_local
+        msg.twist.twist.linear.x = vel_global[0]
+        msg.twist.twist.linear.y = vel_global[1]
+        msg.twist.twist.linear.z = vel_global[2]
+        # Angular velocity
+        msg.twist.twist.angular.x = self.filter.rot_vel[0]
+        msg.twist.twist.angular.y = self.filter.rot_vel[1]
+        msg.twist.twist.angular.z = self.filter.rot_vel[2]
+        # Vel & angvel covariance
+        msg.twist.covariance = self.filter.get_twist_covariance()
+        # Publish
+        self.pose_publisher.publish(msg)
 
-    #     # Broadcast tf2
-    #     t = tf2_ros.TransformStamped()
-    #     t.header = msg.header
-    #     t.child_frame_id = 'base_link'
-    #     t.transform.translation.x = self.tracker.pos[0]
-    #     t.transform.translation.y = self.tracker.pos[1]
-    #     t.transform.translation.z = self.tracker.pos[2]
-    #     t.transform.rotation.w = self.tracker.q[0]
-    #     t.transform.rotation.x = self.tracker.q[1]
-    #     t.transform.rotation.y = self.tracker.q[2]
-    #     t.transform.rotation.z = self.tracker.q[3]
-    #     self.tf2_broadcaster.sendTransform(t)
+        # Broadcast tf2
+        t = tf2_ros.TransformStamped()
+        t.header = msg.header
+        t.child_frame_id = 'base_link'
+        t.transform.translation.x = self.filter.pos[0]
+        t.transform.translation.y = self.filter.pos[1]
+        t.transform.translation.z = self.filter.pos[2]
+        t.transform.rotation.x = self.filter.q[0]
+        t.transform.rotation.y = self.filter.q[1]
+        t.transform.rotation.z = self.filter.q[2]
+        t.transform.rotation.w = self.filter.q[3]
+        self.tf2_broadcaster.sendTransform(t)
 
 def main(args=None):
     print('Hi from ekf_3d.')
