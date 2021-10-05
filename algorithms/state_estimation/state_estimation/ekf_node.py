@@ -165,39 +165,43 @@ class EKFNode(Node):
         # Predict
         self.filter.predict(dt=self.period, control=self.control)
         # Update
-        # rclpy.spin_once(self)
         if self.imu_buffer is not None:
             self.update_imu(self.imu_buffer)
             self.imu_buffer = None
-        if self.odom_buffer is not None:
-            self.update_odom_flow(self.odom_buffer)
-            self.odom_buffer = None
-        # Publish
+        # if self.odom_buffer is not None:
+        #     self.update_odom(self.odom_buffer)
+            # self.odom_buffer = None
+        # if self.odom_flow_buffer is not None:
+        #     self.update_odom_flow(self.odom_flow_buffer)
+        #     self.odom_flow_buffer = None
+        # # Publish
         self.publish_pose()
 
-    # def update_imu(self, msg):
-    #     '''
-    #     Update filter state using IMU message
-    #     '''
+    def update_imu(self, msg):
+        '''
+        Update filter state using IMU message
+        '''
+        rot_vel, rot_vel_R, acc, acc_R, extrinsic = self.prepare_imu_data(msg)
+        # Update
+        self.filter.update_acc(acc, acc_R, extrinsic=extrinsic)
+        self.filter.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
 
-    #     # Make KF-compatible measurements
-    #     rot_vel = np.empty(3)
-    #     rot_vel[0] = msg.angular_velocity.x / self.imu_count
-    #     rot_vel[1] = msg.angular_velocity.y / self.imu_count
-    #     rot_vel[2] = msg.angular_velocity.z / self.imu_count
-    #     rot_vel_R = np.array(msg.angular_velocity_covariance).reshape([3, 3])
-    #     acc = np.empty(3)
-    #     acc[0] = msg.linear_acceleration.x / self.imu_count
-    #     acc[1] = msg.linear_acceleration.y / self.imu_count
-    #     acc[2] = msg.linear_acceleration.z / self.imu_count
-    #     acc_R = np.array(msg.linear_acceleration_covariance).reshape([3, 3])
+    def prepare_imu_data(self, msg):
+        # Make KF-compatible measurements
+        rot_vel = np.empty(3)
+        rot_vel[0] = msg.angular_velocity.x / self.imu_count
+        rot_vel[1] = msg.angular_velocity.y / self.imu_count
+        rot_vel[2] = msg.angular_velocity.z / self.imu_count
+        rot_vel_R = np.array(msg.angular_velocity_covariance).reshape([3, 3])
+        acc = np.empty(3)
+        acc[0] = msg.linear_acceleration.x / self.imu_count
+        acc[1] = msg.linear_acceleration.y / self.imu_count
+        acc[2] = msg.linear_acceleration.z / self.imu_count
+        acc_R = np.array(msg.linear_acceleration_covariance).reshape([3, 3])
 
-    #     # Get extrinsics from tf
-    #     extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
-
-    #     # Update
-    #     self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic)
-    #     self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
+        # Get extrinsics from tf
+        extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
+        return rot_vel, rot_vel_R, acc, acc_R, extrinsic
 
     # def update_odom_flow(self, msg):
     #     '''

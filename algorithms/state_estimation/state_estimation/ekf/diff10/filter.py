@@ -147,15 +147,6 @@ class Filter:
         y = z - z_prior
         self.x, self.P = kalman_update(self.x, self.P, H, R, y)
 
-    def update_imu(self, 
-                   z_acc, R_acc, acc_extrinsic,
-                   z_gyro, R_gyro):
-        """
-        Update state vector using odometry measurements
-        """
-        self.update_acc(z_acc, R_acc, acc_extrinsic)
-        self.update_gyro(z_gyro, R_gyro)
-
     def update_acc(self, z, R, extrinsic=None):
         '''
         Update state by a measurement coming from on-board accelerometer.
