@@ -51,14 +51,21 @@ class SpaceKF12:
         self.x = np.zeros(12)
         self.P = np.eye(12)
         # Idk why there are minuses , but it works:
-        Q_e_w = np.array([
-            [0.333 * dt**3, -0.5 * dt**2],
-            [ -0.5 * dt**2,           dt],
-        ]) * rot_vel_std**2
-        self.Q = scipy.linalg.block_diag(
-            Q_discrete_white_noise(dim=2, dt=dt, var=velocity_std**2, block_size=3),
-            Q_e_w, Q_e_w, Q_e_w,
-        )
+        # Q_e_w = np.array([
+        #     [0.333 * dt**3, -0.5 * dt**2],
+        #     [ -0.5 * dt**2,           dt],
+        # ]) * rot_vel_std**2
+        # self.Q = scipy.linalg.block_diag(
+        #     Q_discrete_white_noise(dim=2, dt=dt, var=velocity_std**2, block_size=3),
+        #     Q_e_w, Q_e_w, Q_e_w,
+        # )
+        self.Q = np.zeros([12, 12])
+        self.Q[3, 3] = dt * velocity_std**2
+        self.Q[4, 4] = dt * velocity_std**2
+        self.Q[5, 5] = dt * velocity_std**2
+        self.Q[9, 9] = dt * rot_vel_std**2
+        self.Q[10, 10] = dt * rot_vel_std**2
+        self.Q[11, 11] = dt * rot_vel_std**2
         self.q = np.array([0., 0, 0, 1])
         self.dt = dt
 
@@ -71,7 +78,7 @@ class SpaceKF12:
         self.pos, self.vel, self._epsilon, self.rot_vel, self.q = physics.transition_function(
             self.pos, self.vel, self._epsilon, self.rot_vel, self.q, dt
         )
-        self.P = F @ self.P @ F.T + self.Q
+        self.P = F @ (self.P + self.Q) @ F.T
 
     def update_linear(self, H, z, R):
         y = z - H @ self.x
@@ -192,6 +199,8 @@ def kalman_update(x, P, H, R, y, noise=None):
     else:
         S = H @ (P + noise) @ H.T + R
     K = P @ H.T @ np.linalg.inv(S)
+    # This must be faster but it is slower:
+    # K = np.linalg.solve(S.T, H @ P.T).T
     new_x = x + K @ y
     new_P = (np.eye(x.shape[0]) - K @ H) @ P
     return new_x, new_P

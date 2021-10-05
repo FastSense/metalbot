@@ -25,7 +25,7 @@ class EKFNode(Node):
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Declare parameters
-        self.declare_parameter('period', 0.05)
+        self.declare_parameter('period', 0.1)
         self.declare_parameter('vel_std', 1.0)
         self.declare_parameter('rot_vel_std', 1.0)
 
@@ -137,8 +137,9 @@ class EKFNode(Node):
         extrinsic = self.get_extrinsic(msg.header.frame_id, 'base_link')
 
         # Update
+        print(acc)
         self.tracker.update_acc(acc, acc_R, extrinsic=extrinsic)
-        self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
+        # self.tracker.update_rot_vel(rot_vel, rot_vel_R, extrinsic=extrinsic)
 
     def update_odom_flow(self, msg):
         '''

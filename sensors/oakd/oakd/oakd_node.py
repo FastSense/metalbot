@@ -57,22 +57,23 @@ class OAKDNode(Node):
 
         # Create timer
         if self.publish_left:
-            self.create_timer(self.fps, self.timer_callback_left)
+            self.create_timer(1 / self.fps, self.timer_callback_left)
         if self.publish_right:
-            self.create_timer(self.fps, self.timer_callback_right)
+            self.create_timer(1 / self.fps, self.timer_callback_right)
         if self.publish_rgb:
-            self.create_timer(self.fps, self.timer_callback_rgb)
+            self.create_timer(1 / self.fps, self.timer_callback_rgb)
         if self.publish_rect:
-            self.create_timer(self.fps, self.timer_callback_rect_left)
-            self.create_timer(self.fps, self.timer_callback_rect_right)
+            self.create_timer(1 / self.fps, self.timer_callback_rect_left)
+            self.create_timer(1 / self.fps, self.timer_callback_rect_right)
         if self.publish_imu:
-            self.create_timer(self.imu_freq, self.timer_callback_imu)
+            self.create_timer(1 / self.imu_freq, self.timer_callback_imu)
         if self.publish_depth:
-            self.create_timer(self.fps, self.timer_callback_depth)
+            self.create_timer(1 / self.fps, self.timer_callback_depth)
         self.calib_rect_msg = None
         self.create_timer(1, self.publish_camera_parameters)
-        self.create_timer(1, self.publish_transforms)
-        self.min_delta = None
+        # self.create_timer(1, self.publish_transforms)
+        self.publish_transforms()
+        self.delta = None
 
         self.initialize_device(device_id)
 
@@ -83,102 +84,88 @@ class OAKDNode(Node):
         self.covariance_rotvel = list((np.eye(3) * std_rotvel**2).flatten())
 
     def timer_callback_left(self):
+        # Left image
+        in_left = self.q_left.tryGet()
+        if in_left is None:
+            return
         # ROS time stamp
         ros_stamp = self.get_clock().now()
-        try:
-            # Left image
-            in_left = self.q_left.tryGet()
-            if in_left is not None:
-                frame = in_left.getCvFrame()
-                msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
-                msg.header.frame_id = 'oakd_left'
-                ts = in_left.getTimestamp()
-                msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
-                self.left_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
+        # Convert to message
+        frame = in_left.getCvFrame()
+        msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+        msg.header.frame_id = 'oakd_left'
+        ts = in_left.getTimestamp()
+        msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+        self.left_publisher.publish(msg)
 
     def timer_callback_right(self):
+        # Right image
+        in_right = self.q_right.tryGet()
+        if in_right is None:
+            return
         # ROS time stamp
         ros_stamp = self.get_clock().now()
-        try:
-            # Right image
-            in_right = self.q_right.tryGet()
-            if in_right is not None:
-                frame = in_right.getCvFrame()
-                msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
-                msg.header.frame_id = 'oakd_right'
-                ts = in_right.getTimestamp()
-                msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
-                self.right_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
-    
+        # Convert to message
+        frame = in_right.getCvFrame()
+        msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+        msg.header.frame_id = 'oakd_right'
+        ts = in_right.getTimestamp()
+        msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+        self.right_publisher.publish(msg)
+
     def timer_callback_rgb(self):
+        # RGB image
+        in_rgb = self.q_rgb.tryGet()
+        if in_rgb is None:
+            return
         # ROS time stamp
         ros_stamp = self.get_clock().now()
-        try:
-            # RGB image
-            in_rgb = self.q_rgb.tryGet()
-            if in_rgb is not None:
-                frame = in_rgb.getCvFrame()[:,:,::-1]
-                msg = self.bridge.cv2_to_imgmsg(frame, 'rgb8')
-                msg.header.frame_id = 'oakd'
-                ts = in_rgb.getTimestamp()
-                msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
-                self.rgb_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
-    
+        # Convert to message
+        frame = in_rgb.getCvFrame()[:,:,::-1]
+        msg = self.bridge.cv2_to_imgmsg(frame, 'rgb8')
+        msg.header.frame_id = 'oakd'
+        ts = in_rgb.getTimestamp()
+        msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+        self.rgb_publisher.publish(msg)
+
     def timer_callback_rect_left(self):
+        # Left rectified image
+        in_left_rect = self.q_left_rect.tryGet()
+        if in_left_rect is None:
+            return
         # ROS time stamp
         ros_stamp = self.get_clock().now()
-        try:
-            # Left rectified image
-            in_left_rect = self.q_left_rect.tryGet()
-            if in_left_rect is not None:
-                frame = in_left_rect.getCvFrame()
-                msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
-                msg.header.frame_id = 'oakd_left'
-                ts = in_left_rect.getTimestamp()
-                msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
-                self.left_rect_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
-    
-    def timer_callback_rect_right(self):
-        # ROS time stamp
-        ros_stamp = self.get_clock().now()
-        try:
-            # Right rectified image
-            in_right_rect = self.q_right_rect.tryGet()
-            if in_right_rect is not None:
-                frame = in_right_rect.getCvFrame()
-                msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
-                msg.header.frame_id = 'oakd_right'
-                ts = in_right_rect.getTimestamp()
-                msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
-                self.right_rect_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
-    
-    def timer_callback_imu(self):
-        # ROS time stamp
-        ros_stamp = self.get_clock().now()
+        # Convert to message
         start = time.time()
+        frame = in_left_rect.getCvFrame()
+        msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+        msg.header.frame_id = 'oakd_left'
+        ts = in_left_rect.getTimestamp()
+        msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+        self.left_rect_publisher.publish(msg)
+
+    def timer_callback_rect_right(self):
+        # Right rectified image
+        in_right_rect = self.q_right_rect.tryGet()
+        if in_right_rect is None:
+            return
+        # ROS time stamp
+        ros_stamp = self.get_clock().now()
+        # Convert to message
+        frame = in_right_rect.getCvFrame()
+        msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
+        msg.header.frame_id = 'oakd_right'
+        ts = in_right_rect.getTimestamp()
+        msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+        self.right_rect_publisher.publish(msg)
+
+    def timer_callback_imu(self):
         # IMU
-        in_imu = self.q_imu.get()
-        # if in_imu is not None:
+        in_imu = self.q_imu.tryGet()
+        if in_imu is None:
+            return
+        # ROS time stamp
+        ros_stamp = self.get_clock().now()
         imuPackets = in_imu.packets
         for imuPacket in imuPackets:
             # Get data
@@ -199,25 +186,20 @@ class OAKDNode(Node):
             msg.linear_acceleration.z = accelero_values.z
             msg.linear_acceleration_covariance = self.covariance_accel
             self.imu_publisher.publish(msg)
-        print('1:', time.time() - start)
-    
+
     def timer_callback_depth(self):
         # ROS time stamp
         ros_stamp = self.get_clock().now()
-        try:
-            # Depth image
-            in_depth = self.q_depth.tryGet()
-            if in_depth is not None:
-                frame = in_depth.getCvFrame()
-                msg = self.bridge.cv2_to_imgmsg(frame, 'mono16')
-                msg.header.frame_id = 'oakd_left'
-                ts = in_depth.getTimestamp()
-                msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
-                self.depth_publisher.publish(msg)
-        except RuntimeError as e:
-            print(e)
-            print('Restarting device')
-            self.initialize_device()
+        # Depth image
+        in_depth = self.q_depth.tryGet()
+        if in_depth is None:
+            return
+        frame = in_depth.getCvFrame()
+        msg = self.bridge.cv2_to_imgmsg(frame, 'mono16')
+        msg.header.frame_id = 'oakd_left'
+        ts = in_depth.getTimestamp()
+        msg.header.stamp = self.get_corrected_time(ts, ros_stamp)
+        self.depth_publisher.publish(msg)
 
     def publish_camera_parameters(self):
         if self.calib_rect_msg is None:
@@ -253,7 +235,7 @@ class OAKDNode(Node):
             P[:3, :3] = M2
             P[0, 3] = -M2[0, 0] * 0.075
             self.calib_rect_msg.p = [float(num) for num in P.flatten()]
-        
+
         self.params_publisher.publish(self.calib_rect_msg)
 
     def initialize_device(self, device_id):
@@ -352,32 +334,34 @@ class OAKDNode(Node):
 
         # Output queues will be used to get the grayscale frames from the outputs defined above
         if self.publish_left:
-            self.q_left = self.device.getOutputQueue(name="left", maxSize=4, blocking=False)
+            self.q_left = self.device.getOutputQueue(name="left", maxSize=1, blocking=False)
         if self.publish_right:
-            self.q_right = self.device.getOutputQueue(name="right", maxSize=4, blocking=False)
+            self.q_right = self.device.getOutputQueue(name="right", maxSize=1, blocking=False)
         if self.publish_rgb:
-            self.q_rgb = self.device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
+            self.q_rgb = self.device.getOutputQueue(name="rgb", maxSize=1, blocking=False)
         if self.publish_rect:
-            self.q_left_rect = self.device.getOutputQueue(name="left_rect", maxSize=4, blocking=False)
-            self.q_right_rect = self.device.getOutputQueue(name="right_rect", maxSize=4, blocking=False)
+            self.q_left_rect = self.device.getOutputQueue(name="left_rect", maxSize=1, blocking=False)
+            self.q_right_rect = self.device.getOutputQueue(name="right_rect", maxSize=1, blocking=False)
         if self.publish_imu:
-            self.q_imu = self.device.getOutputQueue(name="imu", maxSize=100, blocking=False)
+            self.q_imu = self.device.getOutputQueue(name="imu", maxSize=1, blocking=False)
         if self.publish_depth:
-            self.q_depth = self.device.getOutputQueue(name="depth", maxSize=4, blocking=False)
+            self.q_depth = self.device.getOutputQueue(name="depth", maxSize=1, blocking=False)
         
 
     def get_corrected_time(self, oakd_timestamp, ros_stamp):
+        return ros_stamp.to_msg()
         # Compute time delta
         stamp_seconds = ros_stamp.nanoseconds * 1e-9
         hw_seconds = oakd_timestamp.total_seconds()
         # Current delta
         delta = stamp_seconds - hw_seconds
         # Minimun delta
-        if self.min_delta is None:
-            self.min_delta = delta
-        self.min_delta = min(self.min_delta, delta)
-        # assert abs(delta - self.min_delta) < 10
-        seconds = hw_seconds + self.min_delta
+        if self.delta is None:
+            self.delta = delta
+        self.delta = max(self.delta, delta)
+        # self.delta = self.delta * 0.99 + delta * 0.01
+        # assert abs(delta - self.delta) < 10
+        seconds = hw_seconds + self.delta
         # Convert to message
         msg = ros_stamp.to_msg()
         msg.sec = int(seconds)

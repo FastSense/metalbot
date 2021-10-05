@@ -70,9 +70,9 @@ def chart(q, q0=None):
     else:
         delta = q
     # RP:
-    epsilon = delta[1:] * (2 / (delta[0] + 1e-12))
+    epsilon = delta[:3] * (2 / (delta[3] + 1e-12))
     # MRP:
-    # epsilon = delta[1:] * (4 / (1 + delta[0] + 1e-12))
+    # epsilon = delta[:3] * (4 / (1 + delta[3] + 1e-12))
     return epsilon
 
 @njit

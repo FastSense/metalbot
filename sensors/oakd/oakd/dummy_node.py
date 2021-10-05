@@ -23,10 +23,10 @@ class DummyNode(Node):
         self.declare_parameter('imu_freq', 100)
         self.declare_parameter('publish_left', False)
         self.declare_parameter('publish_right', False)
-        self.declare_parameter('publish_rgb', False)
-        self.declare_parameter('publish_rect', False)
+        self.declare_parameter('publish_rgb', True)
+        self.declare_parameter('publish_rect', True)
         self.declare_parameter('publish_imu', True)
-        self.declare_parameter('publish_depth', False)
+        self.declare_parameter('publish_depth', True)
 
         # Get parameters
         device_id = self.get_parameter('device_id').get_parameter_value().string_value
@@ -40,7 +40,7 @@ class DummyNode(Node):
         self.publish_depth = self.get_parameter('publish_depth').get_parameter_value().bool_value
 
         # Create publishers
-        # self.params_publisher = self.create_publisher(CameraInfo, 'rectified_camera_info', 10)
+        self.params_publisher = self.create_publisher(CameraInfo, 'rectified_camera_info', 10)
         if self.publish_left:
             self.left_publisher = self.create_publisher(Image, 'left', 10)
         if self.publish_right:
@@ -70,7 +70,7 @@ class DummyNode(Node):
         if self.publish_depth:
             self.create_timer(1 / self.fps, self.timer_callback_depth)
         self.calib_rect_msg = None
-        # self.create_timer(1, self.publish_camera_parameters)
+        self.create_timer(1, self.publish_camera_parameters)
         # self.create_timer(1, self.publish_transforms)
         self.publish_transforms()
         self.min_delta = None
@@ -94,21 +94,21 @@ class DummyNode(Node):
         msg.header.frame_id = 'oakd_right'
         msg.header.stamp = self.get_clock().now().to_msg()
         self.right_publisher.publish(msg)
-    
+
     def timer_callback_rgb(self):
         frame = np.random.randint(0, 255, size=(400, 640, 3), dtype='uint8')
         msg = self.bridge.cv2_to_imgmsg(frame, 'rgb8')
         msg.header.frame_id = 'oakd_rgb'
         msg.header.stamp = self.get_clock().now().to_msg()
         self.rgb_publisher.publish(msg)
-    
+
     def timer_callback_rect_left(self):
         frame = np.random.randint(0, 255, size=(400, 640), dtype='uint8')
         msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')
         msg.header.frame_id = 'oakd_left'
         msg.header.stamp = self.get_clock().now().to_msg()
         self.left_rect_publisher.publish(msg)
-    
+
     def timer_callback_rect_right(self):
         frame = np.random.randint(0, 255, size=(400, 640), dtype='uint8')
         msg = self.bridge.cv2_to_imgmsg(frame, 'mono8')

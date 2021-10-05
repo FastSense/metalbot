@@ -85,11 +85,9 @@ class FlowOdomNode(Node):
 
     def left_rect_callback(self, msg):
         self.left_msg = msg
-        # print('Left', msg.header.stamp)
         self.check_pair()
 
     def depth_callback(self, msg):
-        # print('Depth', msg.header.stamp)
         self.depth_msg = msg
         self.check_pair()
 
@@ -129,7 +127,8 @@ class FlowOdomNode(Node):
             self.sec_prev = sec
             return
 
-        print('Pair:', sec - self.sec_prev)
+        delta_t = sec - self.sec_prev
+        print('Pair:', delta_t)
 
         # Get optical flow
         pair_preprocessed = np.concatenate([
@@ -188,7 +187,7 @@ class FlowOdomNode(Node):
         variance[1::3] = variance[::3]
         variance[2::3] = depth_variance
         
-        # # Generate not random points
+        # Generate not random points (debug)
         # K = 2
         # xs = np.array([depth.shape[1] // 4, 3 * depth.shape[1] // 4])
         # ys = np.array([depth.shape[0] // 2, depth.shape[0] // 2])
@@ -196,13 +195,14 @@ class FlowOdomNode(Node):
         # depths = np.ones([K])
         # delta_depth = np.zeros([K])
         # variance = np.ones([K * 3]) * flow_std
+        # delta_t = 0.1
 
         # Make odometry message
         msg = OdoFlow()
         msg.header.stamp = self.last_pair[0].header.stamp
         msg.header.frame_id = self.last_pair[0].header.frame_id
         msg.child_frame_id = self.last_pair[0].header.frame_id
-        msg.delta_t = sec - self.sec_prev
+        msg.delta_t = delta_t
         msg.x = [int(x) for x in xs]
         msg.y = [int(y) for y in ys]
         msg.flow_x = [float(flow) for flow in flows[:, 0]]
