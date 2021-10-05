@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import nnio
 from numba import njit
 from scipy.spatial.transform import Rotation
 from filterpy.common import Q_discrete_white_noise
@@ -49,7 +50,7 @@ class Filter:
     ACCEL_STD = 5.0
     GRAVITY = np.array([0, 0, 9.8])
     
-    def __init__(self, dt, vel_std, rot_vel_std):
+    def __init__(self, dt, vel_std, rot_vel_std, use_nn_model):
         self.dt = dt
         self.x = np.zeros(10)
         self.P = np.eye(10)
@@ -65,9 +66,13 @@ class Filter:
             Q_e_w, Q_e_w, Q_e_w,
         )
 
+        self.use_nn_model = use_nn_model
+        if self.use_nn_model:
+            self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
+            self.model = nnio.ONNXModel(self.model_path)
         self.transition_jac = physics.transition_jac
     
-    def predict_by_nn_model(self, model, control):
+    def predict_velocities(self, control):
         """
         Kalman filter predict step
         @ parameters
@@ -84,9 +89,13 @@ class Filter:
         model_output = model(model_input)
         # Predicted velocity control
         self.v, self.w_yaw = float(model_output[0][0]), float(model_output[0][1])
-        self.predict()
 
-    def predict(self):
+    def predict(self, dt=None, control=None):
+        if self.use_nn_model:
+            self.predict_velocities(control)
+        else:
+            self.v = control[0]
+            self.w_yaw = control[1]
         self.reset_manifold()
         F = self.transition_jac(self.v, self.rot_vel, self.q, self.dt)
         self.predict_state()

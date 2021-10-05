@@ -1,5 +1,4 @@
 import cv2
-import nnio
 import numpy as np
 from scipy.spatial.transform import Rotation
 from argparse import Namespace
@@ -33,6 +32,7 @@ class EKFNode(Node):
 
         # Declare parameters
         self.declare_parameter('mode', '2d')
+        self.declare_parameter('use_nn_model', 1)
         self.declare_parameter('sensors', 'imu, odometry')
         self.declare_parameter('period', 0.3)
         self.declare_parameter('vel_std', 1.0)
@@ -43,6 +43,7 @@ class EKFNode(Node):
 
         # Kalman filter parameters
         mode = self.get_parameter('mode').get_parameter_value().string_value
+        use_nn_model = self.get_parameter('use_nn_model').get_parameter_value().bool_value
         self.sensors = self.get_parameter('sensors').get_parameter_value().string_value.replace(" ", "").split(",")
         self.period = self.get_parameter('period').get_parameter_value().double_value
         vel_std = self.get_parameter('vel_std').get_parameter_value().double_value
@@ -54,7 +55,7 @@ class EKFNode(Node):
         # self.stereo = None
 
         if mode =='2d':
-            self.filter = filter2d.Filter2D(self.period, 2, 0, vel_std, rot_vel_std)
+            self.filter = filter2d.Filter2D(self.period, 2, 0, vel_std, rot_vel_std, use_nn_model)
         elif mode == '2.5d':
             self.filter = filter25d.Filter(self.period, vel_std, rot_vel_std)
         elif mode == '3d':
@@ -158,22 +159,21 @@ class EKFNode(Node):
 
 
     def step(self):
-        pass
-        # '''
-        # EKF predict and update step
-        # '''
-        # # Predict
-        # self.tracker.predict()
-        # # Update
-        # # rclpy.spin_once(self)
-        # if self.imu_buffer is not None:
-        #     self.update_imu(self.imu_buffer)
-        #     self.imu_buffer = None
-        # if self.odom_buffer is not None:
-        #     self.update_odom_flow(self.odom_buffer)
-        #     self.odom_buffer = None
-        # # Publish
-        # self.publish_pose()
+        '''
+        EKF predict and update step
+        '''
+        # Predict
+        self.filter.predict(dt=self.period, control=self.control)
+        # Update
+        # rclpy.spin_once(self)
+        if self.imu_buffer is not None:
+            self.update_imu(self.imu_buffer)
+            self.imu_buffer = None
+        if self.odom_buffer is not None:
+            self.update_odom_flow(self.odom_buffer)
+            self.odom_buffer = None
+        # Publish
+        self.publish_pose()
 
     # def update_imu(self, msg):
     #     '''

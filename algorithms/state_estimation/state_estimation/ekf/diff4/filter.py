@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 from numpy.linalg import inv
+import nnio
 import math
 import scipy
 
@@ -56,7 +57,7 @@ class Filter2D:
     eps_w: float
         Threshold for angular velocity
     """
-    def __init__(self, x_init, P_init, dt, v_var, w_var):
+    def __init__(self, x_init, P_init, dt, v_var, w_var, use_nn_model):
         self.x_opt = x_init
         self.P_opt = P_init
         self.dt = dt
@@ -74,8 +75,12 @@ class Filter2D:
             Q_vel,
             Q_rot,
         )
+        self.use_nn_model = use_nn_model
+        if self.use_nn_model:
+            self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
+            self.model = nnio.ONNXModel(self.model_path)
 
-    def predict_by_nn_model(self, model, control):
+    def predict_velocities(self, control):
         """
         Kalman filter predict step
         @ parameters
@@ -92,18 +97,19 @@ class Filter2D:
         model_output = model(model_input)
         # Predicted velocity control
         self.v, self.w = float(model_output[0][0]), float(model_output[0][1])
-        self.predict()
 
     def predict_by_naive_model(self, control):
-        self.v = control[0]
-        self.w = control[1]
         self.predict()
 
-    def predict(self):
+    def predict(self, dt=None, control=None):
         """
         Kalman filter predict step equations using dynamic model
         """
-
+        if self.use_nn_model:
+            self.predict_velocities(control)
+        else:
+            self.v = control[0]
+            self.w = control[1]
         if abs(self.w) > self.eps_w:
             rho = self.v / self.w
 

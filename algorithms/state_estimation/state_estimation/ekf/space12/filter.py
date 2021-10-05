@@ -68,7 +68,7 @@ class SpaceKF12:
         self.transition_function = physics.transition_function12
         self.transition_jac = physics.transition_jac12
 
-    def predict(self, dt=None):
+    def predict(self, dt=None, control=None):
         # Reset manifold before each predict
         self.reset_manifold()
         # Prediction step
