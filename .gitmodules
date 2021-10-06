@@ -50,3 +50,7 @@
 	path = micro_ros_ws/src/micro_ros_setup
 	url = https://github.com/micro-ROS/micro_ros_setup.git
 	branch = foxy
+[submodule "ros2_ws/src/algorithms/local_planners"]
+	path = ros2_ws/src/algorithms/local_planners
+	url = https://github.com/FastSense/local_planners.git
+	branch = develop
