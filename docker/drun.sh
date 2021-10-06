@@ -53,14 +53,14 @@ run_docker()  {
     if [[ "$USE_ROS1" == "ON" ]]; then
         local path="/home/user/ros1_ws/src" 
         local master_uri="localhost" 
-        volumes_args+=( "-v $(pwd)/../ros1_src:${path}:rw" )
+        volumes_args+=( "-v $(pwd)/../ros1_ws/src:${path}:rw" )
         environment_args+=( "-e ROS_MASTER_URI=http://${master_uri}:11311 " )
     fi
 
     if [[ "$USE_ROS2" == "ON" ]]; then
         local path="/home/user/ros2_ws/src" 
         environment_args+=( "-e ROS_DOMAIN_ID=0 " )
-        volumes_args+=( "-v $(pwd)/../ros2_src/:${path}:rw" )
+        volumes_args+=( "-v $(pwd)/../ros2_ws/src/:${path}:rw" )
     fi
 
     docker run -it --privileged --net=host \
