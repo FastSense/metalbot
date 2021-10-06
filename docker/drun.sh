@@ -35,8 +35,10 @@ run_docker()  {
     environment_args=()
 
     volumes_args+=( "-v /dev/bus/usb:/dev/bus/usb " )
-    volumes_args+=( "-v $HOME/.Xauthority:/home/user/.Xauthority:ro" )
 
+    local path="/home/user/micro_ros_ws/src/micro_ros_setup" 
+    volumes_args+=( "-v $(pwd)/../micro_ros_ws/src/micro_ros_setup:${path}:rw" )
+    volumes_args+=( "-v $HOME/.Xauthority:/home/user/.Xauthority:ro" )
     environment_args+=( "-v /dev/bus/usb:/dev/bus/usb " )
 
     if [[ "$USE_CUDA" == "ON" ]]; then

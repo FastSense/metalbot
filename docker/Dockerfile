@@ -201,6 +201,7 @@ user $ROSUSER
 RUN mkdir -p /home/$ROSUSER/scripts
 RUN mkdir -p ~/ros2_ws/src
 RUN mkdir -p ~/ros1_ws/src
+RUN mkdir -p ~/micro_ros_ws/src/micro_ros_setup
 
 WORKDIR /home/$ROSUSER/scripts
 
@@ -212,7 +213,5 @@ RUN ./ros-setup.sh
 
 WORKDIR /home/$ROSUSER
 RUN rm -rf scripts
-
-COPY scripts/configs/* ./
 
 ENTRYPOINT []
