@@ -1,48 +1,56 @@
 [submodule "rplidar_ros"]
-	path = ros2_src/sensors/rplidar_ros
+	path = ros2_ws/src/sensors/rplidar_ros
 	branch = ros2
 	url = https://github.com/lukaszmitka/rplidar_ros.git
 	
 [submodule "teleop"]
-	path = ros2_src/control/teleop
+	path = ros2_ws/src/control/teleop
 	branch = master
 	url = https://github.com/FastSense/teleop
 
 [submodule "topic_streamer"]
-	path = ros2_src/control/topic_streamer
+	path = ros2_ws/src/control/topic_streamer
 	branch = ros2_master
 	url = git@github.com:FastSense/topic_streamer.git
 
 [submodule "webrtc_teleop"]
-	path = ros2_src/control/webrtc_teleop
+	path = ros2_ws/src/control/webrtc_teleop
 	branch = ros2_master
 	url = git@github.com:FastSense/webrtc-teleop.git
 
 [submodule "rosbot/rosbot_description"]
-	path = ros2_src/rosbot/rosbot_description
+	path = ros2_ws/src/rosbot/rosbot_description
 	url = git@github.com:husarion/rosbot_description.git
 	branch = foxy
 [submodule "Groot"]
-	path = ros2_src/utils/Groot
+	path = ros2_ws/src/utils/Groot
 	url = git@github.com:BehaviorTree/Groot.git
 [submodule "algorithms/local_planners"]
 	path = ros2_ws/algorithms/local_planners
 	url = https://github.com/FastSense/local_planners.git
 [submodule "utils/ros1_bridge"]
-	path = ros2_src/utils/ros1_bridge
+	path = ros2_ws/src/utils/ros1_bridge
 	url = https://github.com/ros2/ros1_bridge.git
 [submodule "algorithms/grid_map"]
 	path = algorithms/grid_map
 	url = https://github.com/ANYbotics/grid_map.git
 [submodule "ros1_ws/elevation_mapping"]
-	path = ros1_src/elevation_mapping
+	path = ros1_ws/src/elevation_mapping
 	url = https://github.com/anybotics/elevation_mapping.git
 [submodule "ros1_ws/kindr_ros"]
-	path = ros1_src/kindr_ros
+	path = ros1_ws/src/kindr_ros
 	url = https://github.com/ANYbotics/kindr_ros.git
 [submodule "ros1_ws/kindr"]
-	path = ros1_src/kindr
+	path = ros1_ws/src/kindr
 	url = https://github.com/ANYbotics/kindr.git
 [submodule "ros2_ws/sensors/realsense-ros"]
-	path = ros2_src/sensors/realsense-ros
+	path = ros2_ws/src/sensors/realsense-ros
 	url = https://github.com/IntelRealSense/realsense-ros.git
+[submodule "micro_ros_ws/src/micro_ros_setup"]
+	path = micro_ros_ws/src/micro_ros_setup
+	url = https://github.com/micro-ROS/micro_ros_setup.git
+	branch = foxy
+[submodule "ros2_ws/src/algorithms/local_planners"]
+	path = ros2_ws/src/algorithms/local_planners
+	url = https://github.com/FastSense/local_planners.git
+	branch = develop

@@ -64,35 +64,33 @@ docker attach $container
 
 #### Сборка ROS2 workspace
 **First terminal**
+Build ROS2 basic packages (**don't source r1**)
 ```
-
-# Set ROS2 environment
-
-r2 # source workspace
-
-# Build environment
 cd ros2_ws
+r2 # source ros2
 cb_basic # no gui tools like Groot, sensors, and 2.5d Mapping utils (grid_map)
+r2
 
 # Optionaly
-
-cb_selected # Build selected packages
-cb_bridge # ros1_bridge
-cb_realsense 
+cd ros2_ws
+cb_selected package_name1 package_name2 ... # Build selected packages
+cb_realsense
 cb_oakd 
 cb_rplidar 
 
-r2 
-. install/setup.zsh
-```
-
-Сборка ROS1 workspace
-**Second terminal**
-```
-r1
+# Сборка ROS1 workspace (don't source r2)
 cd ros1_ws
+r1
 catkin_make
 r1
+
+# Building ros1_bridge
+# Note that you must build all required interfaces first (msg, srv)
+
+cd ros2_ws
+r1
+r2
+cb_bridge
 ```
 
 ### Запуск основных модулей
@@ -105,11 +103,6 @@ r1
 ```bash
 # Запуск основных нод для работы с роботом (в симуляции спаунит робота)
 ros2 launch rosbot[_gazebo] bringup.launch.py
-```
-
-```bash
-# Запуск основных нод для работы с роботом в симуляции, с нестатичными TF publiher'ами
-ros2 launch rosbot[_gazebo] bringup_no_static_tf.launch.py
 ```
 
 #### Navigation2
