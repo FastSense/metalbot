@@ -86,7 +86,7 @@ cb_rplidar
 ```
 cd ros1_ws
 r1
-catkin_make
+catkin_make -j4
 r1
 ```
 
