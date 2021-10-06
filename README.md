@@ -62,7 +62,8 @@ docker attach $container
 
 ### Настройка окружения 
 
-Сборка ROS2 workspace
+#### Сборка ROS2 workspace
+**First terminal**
 ```
 
 # Set ROS2 environment
@@ -86,6 +87,7 @@ r2
 ```
 
 Сборка ROS1 workspace
+**Second terminal**
 ```
 r1
 cd ros1_ws
@@ -103,6 +105,11 @@ r1
 ```bash
 # Запуск основных нод для работы с роботом (в симуляции спаунит робота)
 ros2 launch rosbot[_gazebo] bringup.launch.py
+```
+
+```bash
+# Запуск основных нод для работы с роботом в симуляции, с нестатичными TF publiher'ами
+ros2 launch rosbot[_gazebo] bringup_no_static_tf.launch.py
 ```
 
 #### Navigation2
