@@ -30,6 +30,7 @@ setup(
             'path_publisher = rosbot_controller.path_publisher:main',
             'path_follower = rosbot_controller.path_follower:main',
             'model_runner = rosbot_controller.model_runner:main',
+            'publish_rosbot_tf = rosbot_controller.publish_rosbot_tf:main',
         ],
     },
 )
