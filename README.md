@@ -1,4 +1,4 @@
-# ROSbot on ROS2
+# MetalBot
 
 ## Описание
 Репозиторий содержит основные модули для работы ROSbot как в симуляции так и на реальном роботе.
@@ -9,6 +9,9 @@
 * [User](#user)
   * [Docker Guide](#docker-guide)
   * [Настройка окружения](#Настройка-окружения)
+    * [Сборка ROS2 workspace](#Сборка-ros2-workspace)
+  * [Сборка ROS1 workspace (don't source r2)](#Сборка-ros1-workspace-dont-source-r2)
+  * [Building ros1_bridge](#building-ros1_bridge)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
     * [Navigation2](#navigation2)
@@ -40,8 +43,10 @@ cd docker
 # Если предполагается собирать образ с использованием CUDA
 ./nvidia-deps.sh
 
-# Установка имен, необходимых параметров при сборки образа и контейнера
-source ./env
+# Установка имен, необходимых параметров при сборки образа и контейнера (выбрать версию с gazebo, для робота или универсальную)
+source ./env-gazebo.sh 
+source ./env-robot.sh
+source ./env-universal.sh
 
 # Создание образа
 ./drun.sh build
@@ -69,11 +74,12 @@ Build ROS2 basic packages (**don't source r1**)
 cd ros2_ws
 # source ros2
 r2
-# build basic packages, no gui tools like Groot, sensors, and 2.5d Mapping utils (grid_map)
+# build basic packages, no Gazebo, Groot, sensors, grid_map
 cb_basic 
 r2
 
 # Optionaly
+cb_gazebo
 cd ros2_ws
 cb_selected package_name1 package_name2 ... # Build selected packages
 cb_realsense
@@ -92,7 +98,7 @@ r1
 
 ### Building ros1_bridge
 **Third terminal**
-Note that you must build all required interfaces first (msg, srv)
+Note that you must build and source all required interfaces first (msg, srv)
 ```
 cd ros2_ws
 r1
