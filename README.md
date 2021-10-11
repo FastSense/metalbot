@@ -44,6 +44,8 @@ cd docker
 ./nvidia-deps.sh
 
 # Установка имен, необходимых параметров при сборки образа и контейнера (выбрать версию с gazebo, для робота или универсальную)
+
+# Select one of the following
 source ./env-gazebo.sh 
 source ./env-robot.sh
 source ./env-universal.sh
