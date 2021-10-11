@@ -54,3 +54,6 @@
 [submodule "ros2_ws/src/algorithms/local_planners/mppic"]
 	path = ros2_ws/src/algorithms/local_planners/mppic
 	url = https://github.com/FastSense/mppic.git
+[submodule "ros2_ws/src/algorithms/mapping/grid_map"]
+	path = ros2_ws/src/algorithms/mapping/grid_map
+	url = https://github.com/ANYbotics/grid_map.git
