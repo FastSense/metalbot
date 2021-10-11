@@ -25,9 +25,6 @@
 [submodule "Groot"]
 	path = ros2_ws/src/utils/Groot
 	url = git@github.com:BehaviorTree/Groot.git
-[submodule "algorithms/local_planners"]
-	path = ros2_ws/algorithms/local_planners
-	url = https://github.com/FastSense/local_planners.git
 [submodule "utils/ros1_bridge"]
 	path = ros2_ws/src/utils/ros1_bridge
 	url = https://github.com/ros2/ros1_bridge.git
