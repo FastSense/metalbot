@@ -51,3 +51,6 @@
 	path = ros2_ws/src/algorithms/local_planners
 	url = https://github.com/FastSense/local_planners.git
 	branch = develop
+[submodule "ros2_ws/src/algorithms/local_planners/mppic"]
+	path = ros2_ws/src/algorithms/local_planners/mppic
+	url = https://github.com/FastSense/mppic.git
