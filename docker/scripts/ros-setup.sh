@@ -23,3 +23,4 @@ echo "alias cb_gazebo='colcon build --symlink-install --packages-select rosbot_d
 
 echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.zshrc
 echo "export TURTLEBOT3_MODEL=waffle" >> ~/.zshrc
+echo "export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:/home/user/ros1_ws/src/ORB_SLAM3/Examples/ROS" >> ~/.zshrc
