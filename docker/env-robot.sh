@@ -10,6 +10,7 @@ export USE_GAZEBO=OFF
 export USE_CUDA=ON
 export USE_TORCH=OFF
 export USE_OPENCV=OFF
+export USE_OPENVSLAM=ON
 
 export USE_REALSENSE=ON
 export USE_OAKD=OFF
