@@ -189,6 +189,7 @@ RUN apt-get update && \
         ranger \
         wget \
         neovim \
+        python3-pybind11 \
         nano \
         htop \
         autojump \
