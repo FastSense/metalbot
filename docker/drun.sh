@@ -54,6 +54,7 @@ run_docker()  {
         local path="/home/user/ros1_ws/src" 
         local master_uri="localhost" 
         volumes_args+=( "-v $(pwd)/../ros1_src:${path}:rw" )
+        volumes_args+=( "-v $(pwd)/../Thirdparty:/home/user/Thirdparty:rw" )
         environment_args+=( "-e ROS_MASTER_URI=http://${master_uri}:11311 " )
     fi
 
