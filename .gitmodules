@@ -49,3 +49,6 @@
 [submodule "Thirdparty/ORB_SLAM3"]
 	path = Thirdparty/ORB_SLAM3
 	url = https://github.com/FastSense/ORB_SLAM3
+[submodule "Thirdparty/Pangolin"]
+	path = Thirdparty/Pangolin
+	url = https://github.com/stevenlovegrove/Pangolin.git
