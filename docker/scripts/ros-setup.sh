@@ -21,5 +21,6 @@ echo "alias cb_rplidar='colcon build --symlink-install --packages-select rplidar
 echo "alias cb_bridge='colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure '" >> ~/.zshrc
 echo "alias cb_gazebo='colcon build --symlink-install --packages-select rosbot_description'" >> ~/.zshrc
 
-echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.zshrc
+echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11:/usr/share/gazebo-11/models:\${GAZEBO_RESOURCE_PATH}" >> ~/.zshrc
+echo "export GAZEBO_MODEL_PATH=\$GAZEBO_MODEL_PATH:/opt/ros/foxy/share/turtlebot3_gazebo/models" >> ~/.zshrc
 echo "export TURTLEBOT3_MODEL=waffle" >> ~/.zshrc

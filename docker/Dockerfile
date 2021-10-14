@@ -195,6 +195,10 @@ RUN apt-get update && \
         iputils-ping && \
         rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && \
+      apt-get upgrade -y && \
+        rm -rf /var/lib/apt/lists/*
+
 # Scripts
 user $ROSUSER
 
