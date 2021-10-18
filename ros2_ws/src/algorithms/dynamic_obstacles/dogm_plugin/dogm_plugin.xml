@@ -1,0 +1,5 @@
+<library path="dogm_plugin">
+  <class name="dogm_plugin/DogmLayer" type="dogm_plugin::DogmLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>Dogm plugin</description>
+  </class>
+</library>
