@@ -53,3 +53,6 @@
 [submodule "ros2_ws/src/algorithms/mapping/grid_map"]
 	path = ros2_ws/src/algorithms/mapping/grid_map
 	url = https://github.com/ANYbotics/grid_map.git
+[submodule "ros2_ws/src/algorithms/dynamic_obstacles/dogm"]
+	path = ros2_ws/src/algorithms/dynamic_obstacles/dogm
+	url = https://github.com/andrey1908/dogm.git

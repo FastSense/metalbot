@@ -14,6 +14,7 @@
 
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
+  <depend>dogm</depend>
 
   <export>
     <costmap_2d plugin="${prefix}/dogm_plugin.xml" />
