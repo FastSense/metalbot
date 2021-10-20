@@ -9,28 +9,32 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
+
 def generate_launch_description():
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
-    rosbot_description = get_package_share_directory('rosbot_description')
-    rplidar_ros = get_package_share_directory('rplidar_ros')
+    use_sim_time = launch.substitutions.LaunchConfiguration(
+        'use_sim_time', default='false')
+    rosbot_pkg = get_package_share_directory('rosbot')
+    # rplidar_ros = get_package_share_directory('rplidar_ros')
 
     camera_depth_tf = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='log',
-        arguments=['0', '0', '0', '-1.5707', '0', '-1.5707', 'camera_link', 'camera_depth_frame'],
+        arguments=['0', '0', '0', '-1.5707', '0',
+                   '-1.5707', 'camera_link', 'camera_depth_frame'],
         parameters=[
-    		rosbot_description + '/config/static_tf.yaml'
-    	],
+                rosbot_pkg + '/config/static_tf.yaml'
+        ],
     )
 
     camera_link_tf = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='log',
-        arguments=['-0.03', '0', '0.11', '0', '0', '0', 'base_link', 'camera_link'],
+        arguments=['-0.03', '0', '0.11', '0',
+                   '0', '0', 'base_link', 'camera_link'],
         parameters=[
-    		rosbot_description + '/config/static_tf.yaml'
+                rosbot_pkg + '/config/static_tf.yaml'
         ]
     )
 
@@ -38,31 +42,32 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         output='log',
-        arguments=['0.0', '0.0', '0.08', '-3.141593', '0.0', '0.0', 'base_link', 'laser'],
+        arguments=['0.0', '0.0', '0.08', '-3.141593',
+                   '0.0', '0.0', 'base_link', 'laser'],
         parameters=[
-    		rosbot_description + '/config/static_tf.yaml'
+                rosbot_pkg + '/config/static_tf.yaml'
         ]
     )
 
     rosserial = launch_ros.actions.Node(
-        package='rosbot_description',
+        package='rosbot',
         executable='rosserial_node.py',
         output='screen',
         parameters=[
-    		rosbot_description + '/config/rosserial.yaml'
+                rosbot_pkg + '/config/rosserial.yaml'
         ]
     )
 
     rosbot_tf = launch_ros.actions.Node(
-        package='rosbot_description',
+        package='rosbot',
         executable='rosbot_tf',
         output='log',
     )
 
-    rp_lidar = launch.actions.IncludeLaunchDescription(
-        launch.launch_description_sources.PythonLaunchDescriptionSource(
-            os.path.join(rplidar_ros, 'launch', 'rplidar.launch.py'))
-    )
+    # rp_lidar = launch.actions.IncludeLaunchDescription(
+    #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+    #         os.path.join(rplidar_ros, 'launch', 'rplidar.launch.py'))
+    # )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -71,7 +76,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('verbose', default_value='true',
                               description='Set "true" to increase messages written to terminal.'),
-        rp_lidar,
+        # rp_lidar,
         laser_frame_tf,
         rosserial,
         rosbot_tf,
@@ -79,26 +84,30 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             output='screen',
-            arguments=['0.08', '0.1', '0', '0', '0', '0', 'base_link', 'front_left_wheel'],
-            ),        
+            arguments=['0.08', '0.1', '0', '0', '0',
+                       '0', 'base_link', 'front_left_wheel'],
+        ),
         launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             output='screen',
-            arguments=['0.08', '-0.1', '0', '0', '0', '0', 'base_link', 'front_right_wheel'],
-            ),
+            arguments=['0.08', '-0.1', '0', '0', '0',
+                       '0', 'base_link', 'front_right_wheel'],
+        ),
         launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             output='screen',
-            arguments=['-0.08', '0.1', '0', '0', '0', '0', 'base_link', 'rear_left_wheel'],
-            ),        
+            arguments=['-0.08', '0.1', '0', '0', '0',
+                       '0', 'base_link', 'rear_left_wheel'],
+        ),
         launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             output='screen',
-            arguments=['-0.08', '-0.1', '0', '0', '0', '0', 'base_link', 'rear_right_wheel'],
-            ),
+            arguments=['-0.08', '-0.1', '0', '0', '0',
+                       '0', 'base_link', 'rear_right_wheel'],
+        ),
         launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
@@ -109,12 +118,12 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             output='screen',
-            arguments=['0', '0', '0.18', '0', '0', '0', 'base_link', 'camera_link'],
+            arguments=['0', '0', '0.18', '0', '0',
+                       '0', 'base_link', 'camera_link'],
         ),
 
     ])
 
+
 if __name__ == '__main__':
     generate_launch_description()
-
-    
