@@ -204,7 +204,8 @@ class StateEstimation2D(Node):
         if self.got_measurements:
             # Predict step
             # self.filter.predict_by_nn_model(self.model, self.control)
-            self.filter.predict_by_naive_model(self.control)
+            self.filter.predict_ukf(self.control)
+            # self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
             self.filter.update_imu(self.z_imu, self.R_imu)

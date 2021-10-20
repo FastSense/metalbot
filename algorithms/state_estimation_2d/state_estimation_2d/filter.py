@@ -3,6 +3,7 @@ import numpy as np
 from numpy.linalg import inv
 import math
 import scipy
+from filterpy.kalman import unscented_transform, MerweScaledSigmaPoints
 
 from state_estimation_2d.model import *
 from state_estimation_2d.measurement import *
@@ -74,6 +75,7 @@ class Filter2D:
             Q_vel,
             Q_rot,
         )
+        self.points = MerweScaledSigmaPoints(n=5, alpha=0.1, beta=2., kappa=0, sqrt_method=scipy.linalg.sqrtm)
 
     def predict_by_nn_model(self, model, control):
         """
@@ -98,6 +100,51 @@ class Filter2D:
         self.v = control[0]
         self.w = control[1]
         self.predict()
+
+    def predict_ukf(self, control):
+        self.P_opt = self.P_opt + self.Q
+        sigmas = self.points.sigma_points(self.x_opt, self.P_opt)
+
+        sigmas_f = np.empty((11, 5))
+        for i in range(11):
+            sigmas_f[i] = self.f(sigmas[i], control)
+
+        self.x_opt, self.P_opt = unscented_transform(sigmas_f, self.points.Wm, self.points.Wc)
+
+    def f(self, x_vec, control):
+        (
+            x,
+            y, 
+            v,
+            yaw,
+            w_yaw
+        ) = x_vec
+        v = control[0]
+        w_yaw = control[1] 
+
+        if abs(w_yaw) > self.eps_w:
+            rho = v / w_yaw
+
+            # step 1. Calc new robot position relative to its previous pose
+            x_r = rho * math.sin(w_yaw * self.dt)
+            y_r = rho * (1 - math.cos(w_yaw * self.dt))
+
+            # step 2. Transfrom this point to map fixed coordinate system taking into account
+            # current robot pose
+            x += x_r * math.cos(yaw) - y_r * math.sin(yaw)
+            y += x_r * math.sin(yaw) + y_r * math.cos(yaw)
+            yaw += w_yaw * self.dt
+        else:
+            x += v * self.dt * math.cos(yaw)
+            y += v * self.dt * math.sin(yaw)
+        new_x = np.array([
+            x,
+            y, 
+            v,
+            yaw,
+            w_yaw
+        ])
+        return new_x
 
     def predict(self):
         """
