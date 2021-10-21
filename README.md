@@ -135,7 +135,8 @@ ros2 run micro_ros_setup build_agent.sh
   **Сборка**
 ```bash
 sudo apt-get install build-essential cmake libudev-dev qtbase5-dev pkg-config
-git clone https://github.com/Koromix/tytools.git
+mkdir tytools_ws
+git clone https://github.com/Koromix/tytools.git tytools_ws
 cd tytools
 mkdir -p build/linux && cd build/linux
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../..
@@ -146,7 +147,8 @@ make install
   **Базовые Команды**
 
 ```bash
-# Наблюдатель. Отображает происходящее со всеми видимыми платами Teensy (запускать отдельном терминале).
+# Наблюдатель. Отображает происходящее со всеми видимыми платами Teensy.
+# (непрерывно работает, следует запускать в отдельном терминале)
 tycmd list -w
 
 # Перезапустить выбранный контроллер (в MetalBot он один, выбирать ничего не надо)
