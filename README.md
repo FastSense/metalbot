@@ -13,7 +13,7 @@
     * [Building ROS1 workspace (don't source r2)](#Building-ros1-workspace-dont-source-r2)
     * [Building ros1_bridge](#building-ros1_bridge)
     * [Building Micro-ROS](#Building-Micro-ROS)
-  * [Установка tycmd](#Установка-tycmd)
+  * [Установка tycmd (хост)](#Установка-tycmd)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
     * [Navigation2](#navigation2)
@@ -72,7 +72,7 @@ docker attach $container
 
 ### Настройка окружения
 
-#### Building ROS2
+#### Building ROS2 workspace
 **First terminal**
 Build ROS2 basic packages (**don't source r1**)
 ```bash
@@ -92,7 +92,7 @@ cb_oakd
 cb_rplidar
 ```
 
-#### Building ROS1 (don't source r2)
+#### Building ROS1 workspace (don't source r2)
 **Second terminal**
 ```bash
 cd ros1_ws
