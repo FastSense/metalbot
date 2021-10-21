@@ -130,8 +130,28 @@ ros2 run micro_ros_setup build_agent.sh
 
 ### Установка tycmd (хост)
 
+  Используется для программного перезапуска прошивки Teensy 4.1. Например, в случае разрыва связи с агентом Micro-ROS.
+
+  **Сборка**
 ```bash
-text
+sudo apt-get install build-essential cmake libudev-dev qtbase5-dev pkg-config
+git clone https://github.com/Koromix/tytools.git
+cd tytools
+mkdir -p build/linux && cd build/linux
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../..
+make
+make install
+```
+
+  **Базовые Команды**
+
+```bash
+# Наблюдатель. Отображает происходящее со всеми видимыми платами Teensy (запускать отдельном терминале).
+tycmd list -w
+
+# Перезапустить выбранный контроллер (в MetalBot он один, выбирать ничего не надо)
+# Micro-ROS агент должен быть выключен!
+sudo tycmd reset
 ```
 ### Запуск основных модулей
 
