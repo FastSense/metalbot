@@ -9,10 +9,10 @@
 * [User](#user)
   * [Docker Guide](#docker-guide)
   * [Настройка окружения](#Настройка-окружения)
-    * [Сборка ROS2 workspace](#Сборка-ros2-workspace)
-    * [Сборка ROS1 workspace (don't source r2)](#Сборка-ros1-workspace-dont-source-r2)
-    * [Сборка ros1_bridge](#building-ros1_bridge)
-    * [Сборка Micro-ROS](#Сборка-Micro-ROS)
+    * [ROS2 workspace](#Building-ros2-workspace)
+    * [ROS1 workspace (don't source r2)](#Building-ros1-workspace-dont-source-r2)
+    * [ros1_bridge](#building-ros1_bridge)
+    * [Micro-ROS](#Building-Micro-ROS)
   * [Сборка tycmd](#Сборка-tycmd)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
@@ -32,7 +32,7 @@
 
 Для начала необходимо создать воркспейс и склонировать репозиторий
 
-```
+```bash
 git clone --recurse-submodules -j4 https://github.com/FastSense/metalbot/
 ```
 
@@ -40,7 +40,7 @@ git clone --recurse-submodules -j4 https://github.com/FastSense/metalbot/
 
 ### Docker Guide
 
-```
+```bash
 cd docker
 
 # Если предполагается собирать образ с использованием CUDA
@@ -75,7 +75,7 @@ docker attach $container
 #### ROS2
 **First terminal**
 Build ROS2 basic packages (**don't source r1**)
-```
+```bash
 cd ros2_ws
 # source ros2
 r2
@@ -94,7 +94,7 @@ cb_rplidar
 
 #### ROS1 (don't source r2)
 **Second terminal**
-```
+```bash
 cd ros1_ws
 r1
 catkin_make -j4
@@ -104,7 +104,7 @@ r1
 #### ros1_bridge
 **Third terminal**
 Note that you must build and source all required interfaces first (msg, srv)
-```
+```bash
 cd ros2_ws
 r1
 r2
@@ -112,7 +112,7 @@ cb_bridge
 ```
 #### Micro-ROS
 **Fourth terminal**
-```
+```bash
 cd microros_ws
 # Source ROS2
 r2
@@ -121,7 +121,11 @@ sudo apt update && rosdep update
 rosdep install --from-path src --ignore-src -y
 # Build micro-ROS tools and source ROS2 & Micro-ROS
 colcon build
-
+r2
+# Download micro-ROS agent packages
+ros2 run micro_ros_setup create_agent_ws.sh
+# Build step
+ros2 run micro_ros_setup build_agent.sh
 ```
 
 ### Запуск основных модулей
@@ -191,3 +195,7 @@ dev.getAllAvailableDevices()[2].getMxId()
 ```
 
 #### Micro-ROS
+```bash
+r2
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
+```
