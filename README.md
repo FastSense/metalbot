@@ -9,11 +9,11 @@
 * [User](#user)
   * [Docker Guide](#docker-guide)
   * [Настройка окружения](#Настройка-окружения)
-    * [ROS2 workspace](#Building-ros2-workspace)
-    * [ROS1 workspace (don't source r2)](#Building-ros1-workspace-dont-source-r2)
-    * [ros1_bridge](#building-ros1_bridge)
-    * [Micro-ROS](#Building-Micro-ROS)
-  * [Сборка tycmd](#Сборка-tycmd)
+    * [Building ROS2 workspace](#Building-ros2-workspace)
+    * [Building ROS1 workspace (don't source r2)](#Building-ros1-workspace-dont-source-r2)
+    * [Building ros1_bridge](#building-ros1_bridge)
+    * [Building Micro-ROS](#Building-Micro-ROS)
+  * [Установка tycmd](#Установка-tycmd)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
     * [Navigation2](#navigation2)
@@ -72,7 +72,7 @@ docker attach $container
 
 ### Настройка окружения
 
-#### ROS2
+#### Building ROS2
 **First terminal**
 Build ROS2 basic packages (**don't source r1**)
 ```bash
@@ -92,7 +92,7 @@ cb_oakd
 cb_rplidar
 ```
 
-#### ROS1 (don't source r2)
+#### Building ROS1 (don't source r2)
 **Second terminal**
 ```bash
 cd ros1_ws
@@ -101,7 +101,7 @@ catkin_make -j4
 r1
 ```
 
-#### ros1_bridge
+#### Building ros1_bridge
 **Third terminal**
 Note that you must build and source all required interfaces first (msg, srv)
 ```bash
@@ -110,7 +110,7 @@ r1
 r2
 cb_bridge
 ```
-#### Micro-ROS
+#### Building Micro-ROS
 **Fourth terminal**
 ```bash
 cd microros_ws
@@ -127,7 +127,10 @@ ros2 run micro_ros_setup create_agent_ws.sh
 # Build step
 ros2 run micro_ros_setup build_agent.sh
 ```
-
+### Установка tycmd (хост)
+```bash
+text
+```
 ### Запуск основных модулей
 
 Для запуска модулей MetalBot существует набор launch фаилов.  
