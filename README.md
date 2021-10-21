@@ -13,7 +13,7 @@
     * [Building ROS1 workspace (don't source r2)](#Building-ros1-workspace-dont-source-r2)
     * [Building ros1_bridge](#building-ros1_bridge)
     * [Building Micro-ROS](#Building-Micro-ROS)
-  * [Установка tycmd (хост)](#Установка-tycmd)
+  * [Установка tycmd (хост)](#Установка-tycmd-хост)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
     * [Navigation2](#navigation2)
@@ -113,7 +113,7 @@ cb_bridge
 #### Building Micro-ROS
 **Fourth terminal**
 ```bash
-cd microros_ws
+cd micro_ros_ws
 # Source ROS2
 r2
 # Update dependencies using rosdep
@@ -127,7 +127,9 @@ ros2 run micro_ros_setup create_agent_ws.sh
 # Build step
 ros2 run micro_ros_setup build_agent.sh
 ```
+
 ### Установка tycmd (хост)
+
 ```bash
 text
 ```
@@ -199,6 +201,5 @@ dev.getAllAvailableDevices()[2].getMxId()
 
 #### Micro-ROS
 ```bash
-r2
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```
