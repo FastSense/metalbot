@@ -10,8 +10,10 @@
   * [Docker Guide](#docker-guide)
   * [Настройка окружения](#Настройка-окружения)
     * [Сборка ROS2 workspace](#Сборка-ros2-workspace)
-  * [Сборка ROS1 workspace (don't source r2)](#Сборка-ros1-workspace-dont-source-r2)
-  * [Building ros1_bridge](#building-ros1_bridge)
+    * [Сборка ROS1 workspace (don't source r2)](#Сборка-ros1-workspace-dont-source-r2)
+    * [Сборка ros1_bridge](#building-ros1_bridge)
+    * [Сборка Micro-ROS](#Сборка-Micro-ROS)
+  * [Сборка tycmd](#Сборка-tycmd)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
     * [Navigation2](#navigation2)
@@ -20,12 +22,13 @@
     * [Slam](#slam)
     * [Teleop](#teleop)
     * [Oakd Camera](#oakd-camera)
+    * [Micro-ROS](#Micro-ROS)
 
 <!-- vim-markdown-toc -->
 
 
 
-## User 
+## User
 
 Для начала необходимо создать воркспейс и склонировать репозиторий
 
@@ -46,7 +49,7 @@ cd docker
 # Установка имен, необходимых параметров при сборки образа и контейнера (выбрать версию с gazebo, для робота или универсальную)
 
 # Select one of the following
-source env-gazebo.sh 
+source env-gazebo.sh
 source env-robot.sh
 source env-universal.sh
 
@@ -57,7 +60,7 @@ source env-universal.sh
 ./drun.sh run
 
 # Загрузка образа с dockerhub
-./drun.sh pull 
+./drun.sh pull
 
 # Загрузка образа на dockerhub
 ./drun.sh push
@@ -67,9 +70,9 @@ docker start $container
 docker attach $container
 ```
 
-### Настройка окружения 
+### Настройка окружения
 
-#### Сборка ROS2 workspace
+#### ROS2
 **First terminal**
 Build ROS2 basic packages (**don't source r1**)
 ```
@@ -77,7 +80,7 @@ cd ros2_ws
 # source ros2
 r2
 # build basic packages, no Gazebo, Groot, sensors, grid_map
-cb_basic 
+cb_basic
 r2
 
 # Optionaly
@@ -85,11 +88,11 @@ cb_gazebo
 cd ros2_ws
 cb_selected package_name1 package_name2 ... # Build selected packages
 cb_realsense
-cb_oakd 
-cb_rplidar 
+cb_oakd
+cb_rplidar
 ```
 
-### Сборка ROS1 workspace (don't source r2)
+#### ROS1 (don't source r2)
 **Second terminal**
 ```
 cd ros1_ws
@@ -98,7 +101,7 @@ catkin_make -j4
 r1
 ```
 
-### Building ros1_bridge
+#### ros1_bridge
 **Third terminal**
 Note that you must build and source all required interfaces first (msg, srv)
 ```
@@ -107,14 +110,27 @@ r1
 r2
 cb_bridge
 ```
+#### Micro-ROS
+**Fourth terminal**
+```
+cd microros_ws
+# Source ROS2
+r2
+# Update dependencies using rosdep
+sudo apt update && rosdep update
+rosdep install --from-path src --ignore-src -y
+# Build micro-ROS tools and source ROS2 & Micro-ROS
+colcon build
+
+```
 
 ### Запуск основных модулей
 
 Для запуска модулей MetalBot существует набор launch фаилов.  
-Набор модулей для симуляции представлены в пакете rosbot_gazebo. 
+Набор модулей для симуляции представлены в пакете rosbot_gazebo.
 Модули для реального робота, а так же общие модули представлены в пакете rosbot.
 
-#### BringUp. 
+#### BringUp.
 ```bash
 # Запуск основных нод для работы с роботом (в симуляции спаунит робота)
 ros2 launch rosbot[_gazebo] bringup.launch.py
@@ -143,7 +159,7 @@ ros2 run groot Groot
 
 #### Slam
 ```bash
-# BringUp + Navigation2 + SlamToolBox + RViz[optional] 
+# BringUp + Navigation2 + SlamToolBox + RViz[optional]
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
 
@@ -173,3 +189,5 @@ dev.getAllAvailableDevices()[2].getMxId()
 
 Один из айди должен подойти.
 ```
+
+#### Micro-ROS
