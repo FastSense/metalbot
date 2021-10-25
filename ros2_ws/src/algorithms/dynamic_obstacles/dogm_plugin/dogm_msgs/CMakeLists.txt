@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(dogm_plugin)
+project(dogm_msgs)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -17,18 +17,17 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(nav2_costmap_2d REQUIRED)
-find_package(pluginlib REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
-# build
-add_library(${PROJECT_NAME} SHARED src/dogm_layer.cpp)
-include_directories(include)
-set(dep_pkgs
-    nav2_costmap_2d
-    pluginlib)
-
-#install
-install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+# create custom messages
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/GridCell.msg"
+  "msg/GridMapInfo.msg"
+  "msg/DynamicOccupancyGrid.msg"
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -41,6 +40,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-pluginlib_export_plugin_description_file(nav2_costmap_2d dogm_plugin.xml)
-ament_target_dependencies(${PROJECT_NAME} ${dep_pkgs})
 ament_package()
