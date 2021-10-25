@@ -9,9 +9,11 @@
 * [User](#user)
   * [Docker Guide](#docker-guide)
   * [Настройка окружения](#Настройка-окружения)
-    * [Сборка ROS2 workspace](#Сборка-ros2-workspace)
-  * [Сборка ROS1 workspace (don't source r2)](#Сборка-ros1-workspace-dont-source-r2)
-  * [Building ros1_bridge](#building-ros1_bridge)
+    * [Building ROS2 workspace](#Building-ros2-workspace)
+    * [Building ROS1 workspace (don't source r2)](#Building-ros1-workspace-dont-source-r2)
+    * [Building ros1_bridge](#building-ros1_bridge)
+    * [Building Micro-ROS](#Building-Micro-ROS)
+  * [Установка tycmd (хост)](#Установка-tycmd-хост)
   * [Запуск основных модулей](#Запуск-основных-модулей)
     * [BringUp.](#bringup)
     * [Navigation2](#navigation2)
@@ -20,16 +22,17 @@
     * [Slam](#slam)
     * [Teleop](#teleop)
     * [Oakd Camera](#oakd-camera)
+    * [Micro-ROS](#Micro-ROS)
 
 <!-- vim-markdown-toc -->
 
 
 
-## User 
+## User
 
 Для начала необходимо создать воркспейс и склонировать репозиторий
 
-```
+```bash
 git clone --recurse-submodules -j4 https://github.com/FastSense/metalbot/
 ```
 
@@ -37,7 +40,7 @@ git clone --recurse-submodules -j4 https://github.com/FastSense/metalbot/
 
 ### Docker Guide
 
-```
+```bash
 cd docker
 
 # Если предполагается собирать образ с использованием CUDA
@@ -46,9 +49,9 @@ cd docker
 # Установка имен, необходимых параметров при сборки образа и контейнера (выбрать версию с gazebo, для робота или универсальную)
 
 # Select one of the following
-source ./env-gazebo.sh 
-source ./env-robot.sh
-source ./env-universal.sh
+source env-gazebo.sh
+source env-robot.sh
+source env-universal.sh
 
 # Создание образа
 ./drun.sh build
@@ -57,7 +60,7 @@ source ./env-universal.sh
 ./drun.sh run
 
 # Загрузка образа с dockerhub
-./drun.sh pull 
+./drun.sh pull
 
 # Загрузка образа на dockerhub
 ./drun.sh push
@@ -67,17 +70,17 @@ docker start $container
 docker attach $container
 ```
 
-### Настройка окружения 
+### Настройка окружения
 
-#### Сборка ROS2 workspace
+#### Building ROS2 workspace
 **First terminal**
 Build ROS2 basic packages (**don't source r1**)
-```
+```bash
 cd ros2_ws
 # source ros2
 r2
 # build basic packages, no Gazebo, Groot, sensors, grid_map
-cb_basic 
+cb_basic
 r2
 
 # Optionaly
@@ -85,36 +88,79 @@ cb_gazebo
 cd ros2_ws
 cb_selected package_name1 package_name2 ... # Build selected packages
 cb_realsense
-cb_oakd 
-cb_rplidar 
+cb_oakd
+cb_rplidar
 ```
 
-### Сборка ROS1 workspace (don't source r2)
+#### Building ROS1 workspace (don't source r2)
 **Second terminal**
-```
+```bash
 cd ros1_ws
 r1
 catkin_make -j4
 r1
 ```
 
-### Building ros1_bridge
+#### Building ros1_bridge
 **Third terminal**
 Note that you must build and source all required interfaces first (msg, srv)
-```
+```bash
 cd ros2_ws
 r1
 r2
 cb_bridge
 ```
+#### Building Micro-ROS
+**Fourth terminal**
+```bash
+cd micro_ros_ws
+# Source ROS2
+r2
+# Update dependencies using rosdep
+sudo apt update && rosdep update
+rosdep install --from-path src --ignore-src -y
+# Build micro-ROS tools and source ROS2 & Micro-ROS
+colcon build
+r2
+# Download micro-ROS agent packages
+ros2 run micro_ros_setup create_agent_ws.sh
+# Build step
+ros2 run micro_ros_setup build_agent.sh
+```
 
+### Установка tycmd (хост)
+
+Используется для программного перезапуска прошивки Teensy 4.1. Например, в случае разрыва связи с агентом Micro-ROS.
+
+  **Сборка**
+```bash
+sudo apt-get install build-essential cmake libudev-dev qtbase5-dev pkg-config
+git clone https://github.com/Koromix/tytools.git
+cd tytools
+mkdir -p build/linux && cd build/linux
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../..
+make 
+make install
+```
+
+  **Базовые Команды**
+
+```bash
+# Наблюдатель. Отображает происходящее со всеми видимыми платами Teensy.
+# (непрерывно работает, следует запускать в отдельном терминале)
+tycmd list -w
+
+# Перезапустить выбранный контроллер (в MetalBot он один, выбирать ничего не надо)
+# Micro-ROS агент должен быть выключен!
+sudo tycmd reset
+```
 ### Запуск основных модулей
 
 Для запуска модулей MetalBot существует набор launch фаилов.  
-Набор модулей для симуляции представлены в пакете rosbot_gazebo. 
+Набор модулей для симуляции представлены в пакете rosbot_gazebo.
 Модули для реального робота, а так же общие модули представлены в пакете rosbot.
 
-#### BringUp. 
+#### BringUp.
 ```bash
 # Запуск основных нод для работы с роботом (в симуляции спаунит робота)
 ros2 launch rosbot[_gazebo] bringup.launch.py
@@ -143,7 +189,7 @@ ros2 run groot Groot
 
 #### Slam
 ```bash
-# BringUp + Navigation2 + SlamToolBox + RViz[optional] 
+# BringUp + Navigation2 + SlamToolBox + RViz[optional]
 ros2 launch rosbot[_gazebo] slam.launch.py
 ```
 
@@ -172,4 +218,9 @@ dev.getAllAvailableDevices()[1].getMxId()
 dev.getAllAvailableDevices()[2].getMxId()
 
 Один из айди должен подойти.
+```
+
+#### Micro-ROS
+```bash
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```

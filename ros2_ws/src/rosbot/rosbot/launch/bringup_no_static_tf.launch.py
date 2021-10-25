@@ -1,38 +1,41 @@
 import os
-from ament_index_python.packages import get_package_share_directory
-import launch
 import launch_ros.actions
+from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+
+# for rp_lidar
+# from launch.actions import IncludeLaunchDescription
+# from launch.launch_description_sources import PythonLaunchDescriptionSource
+
 
 def generate_launch_description():
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
-    # rosbot_description = get_package_share_directory('rosbot_description')
-    # rplidar_ros = get_package_share_directory('rplidar_ros')
+    use_sim_time = LaunchConfiguration(
+        'use_sim_time', default='false')
+    rosbot_pkg = get_package_share_directory('rosbot')
 
-    # rosserial = launch_ros.actions.Node(
-    #     package='rosbot_description',
-    #     executable='rosserial_node.py',
-    #     output='screen',
-    #     parameters=[
-    # 		rosbot_description + '/config/rosserial.yaml'
-    #     ]
-    # )
+    # rplidar_ros_pkg = get_package_share_directory('rplidar_ros')
 
-    # rosbot_tf = launch_ros.actions.Node(
-    #     package='rosbot_description',
-    #     executable='rosbot_tf',
-    #     output='log',
-    # )
+    rosserial = launch_ros.actions.Node(
+        package='rosbot',
+        executable='rosserial_node.py',
+        output='screen',
+        parameters=[
+                rosbot_pkg + '/config/rosserial.yaml'
+        ]
+    )
+
+    rosbot_tf = launch_ros.actions.Node(
+        package='rosbot',
+        executable='rosbot_tf',
+        output='log',
+    )
 
     # rp_lidar = launch.actions.IncludeLaunchDescription(
     #     launch.launch_description_sources.PythonLaunchDescriptionSource(
-    #         os.path.join(rplidar_ros, 'launch', 'rplidar.launch.py'))
+    #         os.path.join(rplidar_ros_pkg, 'launch', 'rplidar.launch.py'))
     # )
 
     return LaunchDescription([
@@ -44,9 +47,9 @@ def generate_launch_description():
                               description='Set "true" to increase messages written to terminal.'),
         # rp_lidar,
         # laser_frame_tf,
-        # rosserial,
-        # rosbot_tf,
-                Node(
+        rosserial,
+        rosbot_tf,
+        Node(
             package='rosbot_controller',
             executable='publish_rosbot_tf',
             name='publish_rosbot_tf',
@@ -56,7 +59,6 @@ def generate_launch_description():
 
     ])
 
+
 if __name__ == '__main__':
     generate_launch_description()
-
-    
