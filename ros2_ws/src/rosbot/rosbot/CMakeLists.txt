@@ -17,12 +17,58 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclpy REQUIRED)
 
-install(DIRECTORY launch rviz behavior_trees config
-  DESTINATION share/${PROJECT_NAME}
+find_package(rclcpp REQUIRED)
+# find_package(rclcpp_lifecycle REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
+
+include_directories(
+  include
+)
+
+#################
+## Executables ##
+#################
+
+set(dependencies
+  rclcpp
+  tf2_geometry_msgs
+  geometry_msgs
+  tf2_ros
+  tf2
+)
+
+add_executable(rosbot_tf src/rosbot_tf_node.cpp src/rosbot_tf.cpp)
+target_link_libraries(rosbot_tf ${Boost_LIBRARIES})
+ament_target_dependencies(rosbot_tf rclcpp geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
+
+#############
+## Install ##
+#############
+
+# install(DIRECTORY config launch models worlds urdf meshes rviz
+#   DESTINATION share/${PROJECT_NAME}
+# )
+
+install(TARGETS rosbot_tf
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(PROGRAMS 
+  scripts/rosserial_node.py
+  scripts/serialclient.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY 
+  scripts/rosserial
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
