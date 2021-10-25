@@ -53,7 +53,7 @@ camera:
         enable_infra2: true
         enable_pointcloud: true
         enable_pose: true
-        enable_sync: false
+        enable_sync: true
         filters: decimation,spatial,temporal,disparity
         fisheye1_frame_id: camera_fisheye1_frame
         fisheye1_optical_frame_id: camera_fisheye1_optical_frame
@@ -85,7 +85,7 @@ camera:
         infra_info_qos: DEFAULT
         infra_optical_frame_id: camera_infra_optical_frame
         infra_qos: SYSTEM_DEFAULT
-        infra_rgb: false
+        infra_rgb: true
         infra_width: -1
         initial_reset: false
         json_file_path: ''
@@ -99,7 +99,7 @@ camera:
         pointcloud.frames_queue_size: 16
         pointcloud.stream_filter: 2
         pointcloud.stream_format_filter: 0
-        pointcloud.stream_index_filter: null
+        # pointcloud.stream_index_filter: null
         pointcloud_qos: DEFAULT
         pointcloud_texture_index: 0
         pointcloud_texture_stream: RS2_STREAM_COLOR
@@ -140,12 +140,12 @@ camera:
         spatial.stream_filter: 1
         spatial.stream_format_filter: 1
         spatial.stream_index_filter: -1
-        stereo_module.auto_exposure_limit: null
+        # stereo_module.auto_exposure_limit: null
         stereo_module.auto_exposure_roi.bottom: 479
         stereo_module.auto_exposure_roi.left: 0
         stereo_module.auto_exposure_roi.right: 847
         stereo_module.auto_exposure_roi.top: 0
-        stereo_module.auto_gain_limit: null
+        # stereo_module.auto_gain_limit: null
         stereo_module.emitter_always_on: false
         stereo_module.emitter_enabled: 1
         stereo_module.emitter_on_off: false
