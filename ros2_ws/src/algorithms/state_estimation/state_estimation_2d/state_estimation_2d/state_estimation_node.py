@@ -9,6 +9,7 @@ from nav_msgs.msg import Odometry
 import numpy as np
 from filterpy.common import Q_discrete_white_noise
 from scipy.spatial.transform import Rotation as R
+import tf2_ros
 
 from state_estimation_2d.filter import *
 #from state_estimation_2d.geometry import *
@@ -81,21 +82,21 @@ class StateEstimation2D(Node):
     def __init__(self):
         super().__init__('state_estimation_2d')
         # ROS Subscribers
-        self.odom_gt_sub = self.create_subscription(
-            Odometry,
-            'odom',
-            self.odometry_gt_callback,
-            10)
+        # self.odom_gt_sub = self.create_subscription(
+        #     Odometry,
+        #     'odom',
+        #     self.odometry_gt_callback,
+        #     10)
         self.odom_sub = self.create_subscription(
-            Odometry,
-            'odom_noised',
+            Twist,
+            'velocity',
             self.odometry_callback,
             10)
-        self.imu_sub = self.create_subscription(
-            Imu,
-            'imu',
-            self.imu_callback,
-            15)
+        # self.imu_sub = self.create_subscription(
+        #     Imu,
+        #     'imu',
+        #     self.imu_callback,
+        #     15)
         self.cmd_vel_sub = self.create_subscription(
             Twist,
             'cmd_vel',
@@ -138,6 +139,10 @@ class StateEstimation2D(Node):
             self.dt,
             self.step_filter
         )
+
+        self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
     
     def control_callback(self, msg):
         """
@@ -165,36 +170,36 @@ class StateEstimation2D(Node):
             Odometry msg that needs to be transfered
         """
         z_odom = np.zeros(2)
-        z_odom[0] = odom.twist.twist.linear.x
-        z_odom[1] = odom.twist.twist.angular.z
+        z_odom[0] = odom.linear.x
+        z_odom[1] = odom.angular.z
         return z_odom
 
-    def odometry_gt_callback(self, msg):
-        """
-        Callback from /odom topic
-        @ parameters
-        msg: Odometry
-        """
-        self.odom_gt = msg
-        x, y = self.odom_gt.pose.pose.position.x, self.odom_gt.pose.pose.position.y
-        self.distance += np.sqrt((x - self.x_prev)**2 + (y - self.y_prev)**2)
-        self.x_prev, self.y_prev = x, y
+    # def odometry_gt_callback(self, msg):
+    #     """
+    #     Callback from /odom topic
+    #     @ parameters
+    #     msg: Odometry
+    #     """
+    #     self.odom_gt = msg
+    #     x, y = self.odom_gt.pose.pose.position.x, self.odom_gt.pose.pose.position.y
+    #     self.distance += np.sqrt((x - self.x_prev)**2 + (y - self.y_prev)**2)
+    #     self.x_prev, self.y_prev = x, y
     
-    def imu_callback(self, msg):
-        """
-        Callback from /imu topic
-        @ parameters
-        msg: Imu
-        """
-        self.z_imu = self.imu_to_vector(msg)
-        self.got_measurements = 1
+    # def imu_callback(self, msg):
+    #     """
+    #     Callback from /imu topic
+    #     @ parameters
+    #     msg: Imu
+    #     """
+    #     self.z_imu = self.imu_to_vector(msg)
+    #     self.got_measurements = 1
     
-    def imu_to_vector(self, imu):
-        """Transfer imu message to measurement vector for filter"""
-        z_imu = np.zeros(2)
-        z_imu[0] = imu.linear_acceleration.y
-        z_imu[1] = imu.angular_velocity.z
-        return z_imu
+    # def imu_to_vector(self, imu):
+    #     """Transfer imu message to measurement vector for filter"""
+    #     z_imu = np.zeros(2)
+    #     z_imu[0] = imu.linear_acceleration.y
+    #     z_imu[1] = imu.angular_velocity.z
+    #     return z_imu
     
     def step_filter(self):
         """
@@ -207,11 +212,11 @@ class StateEstimation2D(Node):
             self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
-            self.filter.update_imu(self.z_imu, self.R_imu)
+            # self.filter.update_imu(self.z_imu, self.R_imu)
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             # Compute error metrics
-            self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
+            # self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
             self.pose_pub.publish(self.odom_filtered)
 
     def state_to_odometry(self, x, P):
@@ -223,11 +228,13 @@ class StateEstimation2D(Node):
         P: np.array
             Covariance matrix
         """
-        self.odom_filtered.header = self.odom_noised.header
-        self.odom_filtered.child_frame_id = self.odom_noised.child_frame_id
+        self.odom_filtered.header.frame_id = 'odom'
+        self.odom_filtered.header.stamp = self.get_clock().now().to_msg()
+        # self.odom_filtered.header.seq = 0
+        self.odom_filtered.child_frame_id = 'base_link'
         self.odom_filtered.pose.pose.position.x = x[0]
         self.odom_filtered.pose.pose.position.y = x[1]
-        self.odom_filtered.pose.pose.position.z = self.odom_noised.pose.pose.position.z
+        self.odom_filtered.pose.pose.position.z = 0.0
         # Transfer yaw angle from euler to quaternion
         r = R.from_euler('z', x[3], degrees=False)
         q = r.as_quat()
@@ -236,14 +243,28 @@ class StateEstimation2D(Node):
         self.odom_filtered.pose.pose.orientation.z = q[2]
         self.odom_filtered.pose.pose.orientation.w = q[3]
         self.odom_filtered.twist.twist.linear.x = x[2]
-        self.odom_filtered.twist.twist.linear.y = self.odom_noised.twist.twist.linear.y
-        self.odom_filtered.twist.twist.linear.z = self.odom_noised.twist.twist.linear.z
-        self.odom_filtered.twist.twist.angular.x = self.odom_noised.twist.twist.angular.x
-        self.odom_filtered.twist.twist.angular.y = self.odom_noised.twist.twist.angular.y
+        self.odom_filtered.twist.twist.linear.y = self.odom_noised.linear.y
+        self.odom_filtered.twist.twist.linear.z = self.odom_noised.linear.z
+        self.odom_filtered.twist.twist.angular.x = self.odom_noised.angular.x
+        self.odom_filtered.twist.twist.angular.y = self.odom_noised.angular.y
         self.odom_filtered.twist.twist.angular.z = x[4]
         # Fill the odometry message covariance matrix with computed KF covariance
-        self.odom_filtered.pose.covariance = self.pose_covariance_to_vector(P)
-        self.odom_filtered.twist.covariance = self.twist_covariance_to_vector(P)
+        # self.odom_filtered.pose.covariance = self.pose_covariance_to_vector(P)
+        # self.odom_filtered.twist.covariance = self.twist_covariance_to_vector(P)
+
+        t = tf2_ros.TransformStamped()
+        t.header.frame_id = 'odom'
+        t.header.stamp = self.odom_filtered.header.stamp
+        # t.header.seq = self.odom_filtered.header.seq
+        t.child_frame_id = 'base_link'
+        t.transform.translation.x = x[0]
+        t.transform.translation.y = x[1]
+        t.transform.translation.z = 0.0
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
+        self.tf2_broadcaster.sendTransform(t)
 
     def pose_covariance_to_vector(self, P):
         """
