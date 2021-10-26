@@ -12,7 +12,6 @@ from scipy.spatial.transform import Rotation as R
 import tf2_ros
 
 from state_estimation_2d.filter import *
-#from state_estimation_2d.geometry import *
 from state_estimation_2d.ate import *
 import nnio
 
@@ -82,21 +81,11 @@ class StateEstimation2D(Node):
     def __init__(self):
         super().__init__('state_estimation_2d')
         # ROS Subscribers
-        # self.odom_gt_sub = self.create_subscription(
-        #     Odometry,
-        #     'odom',
-        #     self.odometry_gt_callback,
-        #     10)
         self.odom_sub = self.create_subscription(
             Twist,
             'velocity',
             self.odometry_callback,
             10)
-        # self.imu_sub = self.create_subscription(
-        #     Imu,
-        #     'imu',
-        #     self.imu_callback,
-        #     15)
         self.cmd_vel_sub = self.create_subscription(
             Twist,
             'cmd_vel',
@@ -112,7 +101,6 @@ class StateEstimation2D(Node):
         self.z_odom = np.zeros(2)
         self.z_imu = np.zeros(2)
         # Upload NN control model
-        #self.model_path = "/home/user/ros2_ws/new_model_dynamic_batch.onnx"
         self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
         self.model = nnio.ONNXModel(self.model_path)
         # Filter parameters
@@ -173,33 +161,6 @@ class StateEstimation2D(Node):
         z_odom[0] = odom.linear.x
         z_odom[1] = odom.angular.z
         return z_odom
-
-    # def odometry_gt_callback(self, msg):
-    #     """
-    #     Callback from /odom topic
-    #     @ parameters
-    #     msg: Odometry
-    #     """
-    #     self.odom_gt = msg
-    #     x, y = self.odom_gt.pose.pose.position.x, self.odom_gt.pose.pose.position.y
-    #     self.distance += np.sqrt((x - self.x_prev)**2 + (y - self.y_prev)**2)
-    #     self.x_prev, self.y_prev = x, y
-    
-    # def imu_callback(self, msg):
-    #     """
-    #     Callback from /imu topic
-    #     @ parameters
-    #     msg: Imu
-    #     """
-    #     self.z_imu = self.imu_to_vector(msg)
-    #     self.got_measurements = 1
-    
-    # def imu_to_vector(self, imu):
-    #     """Transfer imu message to measurement vector for filter"""
-    #     z_imu = np.zeros(2)
-    #     z_imu[0] = imu.linear_acceleration.y
-    #     z_imu[1] = imu.angular_velocity.z
-    #     return z_imu
     
     def step_filter(self):
         """
@@ -212,11 +173,8 @@ class StateEstimation2D(Node):
             self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
-            # self.filter.update_imu(self.z_imu, self.R_imu)
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
-            # Compute error metrics
-            # self.ate.compute_curr_ate(self.odom_gt, self.odom_filtered)
             self.pose_pub.publish(self.odom_filtered)
 
     def state_to_odometry(self, x, P):
@@ -249,13 +207,10 @@ class StateEstimation2D(Node):
         self.odom_filtered.twist.twist.angular.y = self.odom_noised.angular.y
         self.odom_filtered.twist.twist.angular.z = x[4]
         # Fill the odometry message covariance matrix with computed KF covariance
-        # self.odom_filtered.pose.covariance = self.pose_covariance_to_vector(P)
-        # self.odom_filtered.twist.covariance = self.twist_covariance_to_vector(P)
 
         t = tf2_ros.TransformStamped()
         t.header.frame_id = 'odom'
         t.header.stamp = self.odom_filtered.header.stamp
-        # t.header.seq = self.odom_filtered.header.seq
         t.child_frame_id = 'base_link'
         t.transform.translation.x = x[0]
         t.transform.translation.y = x[1]
