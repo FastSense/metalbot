@@ -127,13 +127,29 @@ def main(args=None):
 
     print('On shutdown')
     data_recorder.destroy_node()
+
+    # Synchronize rgb to depth
+    rights_sync = []
+    depths_sync = []
+    stamps = []
+    j = 0
+    eps = 1e-3
+    for i in range(len(depth_stamps)):
+        while j < len(right_stamps) and right_stamps[j] < depth_stamps[i] - eps:
+            j += 1
+        if j == len(right_stamps) or abs(right_stamps[j] - depth_stamps[i]) > eps:
+            continue
+        rights_sync.append(rights[j])
+        depths_sync.append(depths[i])
+        stamps.append(depth_stamps[i])
+
+    # Write dataset
     with h5py.File(path_to_save_hdf5, 'w') as f:
-        f.create_dataset('depth', data=np.array(depths))
-        f.create_dataset('left', data=np.array(lefts))
-        f.create_dataset('right', data=np.array(rights))
-        f.create_dataset('depth_stamp', data=np.array(depth_stamps))
-        f.create_dataset('left_stamp', data=np.array(left_stamps))
-        f.create_dataset('right_stamp', data=np.array(right_stamps))
+        f.create_dataset('depth', data=np.array(depths_sync))
+        #f.create_dataset('left', data=np.array(lefts))
+        f.create_dataset('rgb', data=np.array(rights_sync))
+        #f.create_dataset('left_stamp', data=np.array(left_stamps))
+        f.create_dataset('stamp', data=np.array(stamps))
         f.create_dataset('position', data=np.array(positions))
         f.create_dataset('rotation', data=np.array(rotations))
         f.create_dataset('pose_stamp', data=np.array(pose_stamps))

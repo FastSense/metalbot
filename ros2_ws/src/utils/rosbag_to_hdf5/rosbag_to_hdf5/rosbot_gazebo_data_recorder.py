@@ -9,8 +9,6 @@ import numpy as np
 import signal
 import sys
 
-pcd_topic = 'camera/points'
-odom_topic = 'odom'
 path_to_save_hdf5 = None
 
 odom_positions = []
@@ -87,12 +85,17 @@ def main(args=None):
 
     print('On shutdown')
     data_recorder.destroy_node()
+    pcd_lengths = [len(x) for x in pcd_data]
+    max_len = max(pcd_lengths)
+    for i in range(len(pcd_data)):
+        pcd_data[i] = np.concatenate([pcd_data[i], np.zeros((max_len - len(pcd_data[i])), dtype=np.uint8)], axis=0)
     with h5py.File(path_to_save_hdf5, 'w') as f:
-        f.create_dataset('odom_position', data=odom_positions)
-        f.create_dataset('odom_rotation', data=odom_rotations)
-        f.create_dataset('odom_stamp', data=odom_stamps)
-        f.create_dataset('pcd_data', data=pcd_data)
-        f.create_dataset('pcd_stamp', data=pcd_stamps)
+        f.create_dataset('position', data=np.array(odom_positions))
+        f.create_dataset('rotation', data=np.array(odom_rotations))
+        f.create_dataset('pose_stamp', data=np.array(odom_stamps))
+        f.create_dataset('pcd', data=np.array(pcd_data))
+        f.create_dataset('stamp', data=np.array(pcd_stamps))
+        f.create_dataset('pcd_lengths', data=np.array(pcd_lengths))
     print('Dataset saved to file {}'.format(path_to_save_hdf5))
 
 

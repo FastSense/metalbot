@@ -102,18 +102,40 @@ def main(args=None):
 
     print('On shutdown')
     data_recorder.destroy_node()
-    pcd_lengths = [len(x) for x in pcds]
+
+    # Synchronize rgb to depth
+    rgbs_sync = []
+    pcds_sync = []
+    depths_sync = []
+    stamps = []
+    j = 0
+    k = 0
+    eps = 1e-3
+    for i in range(len(depth_stamps)):
+        while j < len(rgb_stamps) and rgb_stamps[j] < depth_stamps[i] - eps:
+            j += 1
+        while k < len(pcd_stamps) and pcd_stamps[k] < depth_stamps[i] - eps:
+            k += 1
+        if j == len(rgb_stamps) or abs(rgb_stamps[j] - depth_stamps[i]) > eps:
+            continue
+        if k == len(pcd_stamps) or abs(pcd_stamps[k] - depth_stamps[i]) > eps:
+            continue
+        rgbs_sync.append(rgbs[j])
+        pcds_sync.append(pcds[k])
+        depths_sync.append(depths[i])
+        stamps.append(depth_stamps[i])
+
+    # Write dataset
+    pcd_lengths = [len(x) for x in pcds_sync]
     max_len = max(pcd_lengths)
-    for i in range(len(pcds)):
-        pcds[i] = np.concatenate([pcds[i], np.zeros((max_len - len(pcds[i])), dtype=np.uint8)], axis=0)
+    for i in range(len(pcds_sync)):
+        pcds_sync[i] = np.concatenate([pcds_sync[i], np.zeros((max_len - len(pcds_sync[i])), dtype=np.uint8)], axis=0)
     with h5py.File(path_to_save_hdf5, 'w') as f:
-        f.create_dataset('depth', data=np.array(depths))
-        f.create_dataset('rgb', data=np.array(rgbs))
+        f.create_dataset('depth', data=np.array(depths_sync))
+        f.create_dataset('rgb', data=np.array(rgbs_sync))
         f.create_dataset('pcd_lengths', data=np.array(pcd_lengths))        
-        f.create_dataset('pcd', data=np.array(pcds))
-        f.create_dataset('depth_stamp', data=np.array(depth_stamps))
-        f.create_dataset('rgb_stamp', data=np.array(rgb_stamps))
-        f.create_dataset('pcd_stamp', data=np.array(pcd_stamps))
+        f.create_dataset('pcd', data=np.array(pcds_sync))
+        f.create_dataset('stamp', data=np.array(stamps))
     print('Dataset saved to file {}'.format(path_to_save_hdf5))
 
 
