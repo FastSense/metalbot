@@ -7,12 +7,12 @@
 #include <memory>
 #include <dogm/dogm.h>
 #include <dogm/dogm_types.h>
+#include "dogm_msgs/msg/dynamic_occupancy_grid.hpp"
+#include "std_msgs/msg/string.hpp"
 
-namespace dogm_plugin
-{
+namespace dogm_plugin {
 
-class DogmLayer : public nav2_costmap_2d::Layer
-{
+class DogmLayer : public nav2_costmap_2d::Layer {
 public:
     DogmLayer();
 
@@ -22,11 +22,21 @@ public:
                               double* max_x, double* max_y);
     virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
                              int min_i, int min_j, int max_i, int max_j);
+    void costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
+                                          int min_i, int min_j, int max_i, int max_j);
+    void publishDynamicGrid();
     virtual void reset();
 
 private:
     dogm::DOGM::Params params_;
-    std::unique_ptr<dogm::DOGM> grid_map_;
+    std::unique_ptr<dogm::DOGM> dogm_map_;
+    std::vector<dogm::MeasurementCell> measurement_grid_;
+    rclcpp::Publisher<dogm_msgs::msg::DynamicOccupancyGrid>::SharedPtr publisher_;
+
+    double robot_x_;
+    double robot_y_;
+    bool is_first_measurement_;
+    rclcpp::Time last_time_stamp_;
 };
 
 }  // namespace dogm_plugin

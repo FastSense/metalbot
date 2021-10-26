@@ -17,22 +17,18 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(rclcpp REQUIRED)
 find_package(dogm REQUIRED)
 find_package(dogm_msgs REQUIRED)
 
 # build
 add_library(${PROJECT_NAME} SHARED src/dogm_layer.cpp)
-include_directories(include ${DOGM_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${DOGM_LIBRARIES} ${OpenCV_LIBS})
-set(dep_pkgs
-    nav2_costmap_2d
-    pluginlib
-    rclcpp
-    dogm_msgs)
+include_directories(include ${OpenCV_INCLUDE_DIRS} ${DOGM_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DOGM_LIBRARIES})
+ament_target_dependencies(${PROJECT_NAME} rclcpp nav2_costmap_2d pluginlib dogm_msgs)
 
 #install
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
@@ -49,5 +45,4 @@ if(BUILD_TESTING)
 endif()
 
 pluginlib_export_plugin_description_file(nav2_costmap_2d dogm_plugin.xml)
-ament_target_dependencies(${PROJECT_NAME} ${dep_pkgs})
 ament_package()
