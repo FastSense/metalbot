@@ -226,6 +226,7 @@ dev.getAllAvailableDevices()[2].getMxId()
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```
 #### State Estimation 2D
+Запуск на metalbot:
 ```bash
 ros2 launch state_estimation_2d state_estimation_metalbot.launch.py 
 ```
