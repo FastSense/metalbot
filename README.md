@@ -23,6 +23,7 @@
     * [Teleop](#teleop)
     * [Oakd Camera](#oakd-camera)
     * [Micro-ROS](#Micro-ROS)
+    * [State estimation 2d](#state-estimation-2d)
 
 <!-- vim-markdown-toc -->
 
@@ -223,4 +224,8 @@ dev.getAllAvailableDevices()[2].getMxId()
 #### Micro-ROS
 ```bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
+```
+#### State Estimation 2D
+```bash
+ros2 launch state_estimation_2d state_estimation_metalbot.launch.py 
 ```
