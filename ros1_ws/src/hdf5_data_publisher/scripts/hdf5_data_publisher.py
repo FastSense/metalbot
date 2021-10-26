@@ -1,9 +1,9 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import rospy
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2, PointField
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Quaternion
-from cv_bridge import CvBridge 	
+from cv_bridge import CvBridge
 import h5py
 import numpy as np
 import tf
