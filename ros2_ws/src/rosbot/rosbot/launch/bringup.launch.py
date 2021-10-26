@@ -13,6 +13,7 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description():
     use_sim_time = launch.substitutions.LaunchConfiguration(
         'use_sim_time', default='false')
+
     rosbot_pkg = get_package_share_directory('rosbot')
     # rplidar_ros = get_package_share_directory('rplidar_ros')
 
