@@ -16,27 +16,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+enable_viz = 'true'
+
 def generate_launch_description():
-#Teleop
-    default_update_rate = '20'
-    update_rate = launch.substitutions.LaunchConfiguration(
-        'update_rate',
-        default=default_update_rate
-    )
-
-    keyboard_listener_dir = get_package_share_directory('teleop')
-    keyboard_listener_launch = launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                    keyboard_listener_dir + '/keyboard_listener.launch.py'
-            ),
-            launch_arguments = {'output_path': update_rate}.items()
-    )
-
     return LaunchDescription([
-        
         launch.actions.DeclareLaunchArgument(
-            'update_rate',
-            default_value=default_update_rate,
+            'viz',
+            default_value=enable_viz,
             description='update rate'
         ),
         Node(
@@ -48,25 +34,7 @@ def generate_launch_description():
         ),
         Node(
             package="path_visualizer",
-            executable="path_visualizer"
-        ),
-        # launh Teleop node
-        Node(
-            package='rosbot_controller',
-            executable='rosbot_teleop',
-            name='rosbot_teleop',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {"update_rate": update_rate},
-                {'keyboard_topic': "/keyboard"},
-                {'control_topic': "/cmd_vel"},
-                {'joystick_topic': "/joy"},
-                {'movable_camera': "False"},
-                {'v_limit': "0.5"},
-                {'w_limit': "2.5"},
-                {'lin_a': "0.1"},
-                {'ang_a': "0.25"},
-            ]
+            executable="path_visualizer",
+            condition=IfCondition(launch.substitutions.LaunchConfiguration("viz")),
         ),
     ])
