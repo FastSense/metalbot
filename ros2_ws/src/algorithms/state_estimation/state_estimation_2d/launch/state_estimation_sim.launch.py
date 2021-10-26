@@ -103,11 +103,11 @@ def generate_launch_description():
             emulate_tty=True
         ),
         Node(
-            package="state_estimation_25d",
-            executable="state_estimation_25d",
+            package="state_estimation_2d",
+            executable="state_estimation_2d",
             output='screen',
             emulate_tty=True,
-            parameters=[{"use_sim_time": True}],
+            parameters=[{"use_sim_time": False}],
         ),
         Node(
             package="path_visualizer",
