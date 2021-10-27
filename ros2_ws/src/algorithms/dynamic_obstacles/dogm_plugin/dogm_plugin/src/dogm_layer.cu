@@ -12,9 +12,7 @@ __global__ void setUnknownAsFree(cv::cuda::PtrStepSzi occupancy_grid);
 __global__ void fillMeasurementGrid(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
                                     float occupancy_threshold);
 
-DogmLayer::DogmLayer() {
-    CHECK_ERROR(cudaMalloc(&measurement_grid_, dogm_map_->grid_cell_count * sizeof(dogm::MeasurementCell)));
-}
+DogmLayer::DogmLayer() {}
 
 void DogmLayer::onInitialize() {
     declareParameter("enabled", rclcpp::ParameterValue(true));
@@ -43,6 +41,7 @@ void DogmLayer::onInitialize() {
     node_->get_parameter(name_ + "." + "init_max_velocity", params_.init_max_velocity);
 
     dogm_map_ = std::make_unique<dogm::DOGM>(params_);
+    CHECK_ERROR(cudaMalloc(&measurement_grid_, dogm_map_->grid_cell_count * sizeof(dogm::MeasurementCell)));
 
     robot_x_ = 0;
     robot_y_ = 0;
