@@ -193,9 +193,9 @@ __global__ void setUnknownAsFree(cv::cuda::PtrStepSzi occupancy_grid)
     {
         for (int col = start_col; col < occupancy_grid.cols; col += step_col)
         {
-            if (occupancy_grid(row, col) < 0)
+            if (occupancy_grid(row, col) == nav2_costmap_2d::NO_INFORMATION)
             {
-                occupancy_grid(row, col) = 0;
+                occupancy_grid(row, col) = nav2_costmap_2d::FREE_SPACE;
             }
         }
     }
@@ -222,7 +222,7 @@ __global__ void fillMeasurementGrid(dogm::MeasurementCell* __restrict__ measurem
         for (int col = start_col; col < source.cols; col += step_col)
         {
             int index = col + row * source.cols;
-            float occ = source(row, col) / 100.f;
+            float occ = 1.0f * source(row, col) / nav2_costmap_2d::LETHAL_OBSTACLE;
             if (occ < occupancy_threshold)
             {
                 measurement_grid[index].free_mass = clip(1 - occ, eps, 1 - eps);
