@@ -73,9 +73,9 @@ class Logger(Node):
         self.declare_parameter('output_path', "")
         self.declare_parameter('control_topic', '/cmd_vel')
         self.declare_parameter('parent_frame', 'odom')
+        self.declare_parameter('robot_frame', 'camera_pose_frame')
         self.declare_parameter('kinetic_model_frame', 'model_link')
         self.declare_parameter('nn_model_frame', 'nn_model_link')
-        self.declare_parameter('tf_topic', '/tf')
         self.declare_parameter('use_odom_topic', True)
         self.declare_parameter('odom_topic', '/odom')
         self.declare_parameter('velocity_topic', '/velocity')
@@ -90,6 +90,8 @@ class Logger(Node):
             'control_topic').get_parameter_value().string_value
         self.parent_frame = self.get_parameter(
             'parent_frame').get_parameter_value().string_value
+        self.robot_frame = self.get_parameter(
+            'robot_frame').get_parameter_value().string_value
         self.kinetic_model_frame = self.get_parameter(
             'kinetic_model_frame').get_parameter_value().string_value
         self.nn_model_frame = self.get_parameter(
@@ -100,8 +102,6 @@ class Logger(Node):
             'odom_topic').get_parameter_value().string_value
         self.velocity_topic = self.get_parameter(
             'velocity_topic').get_parameter_value().string_value
-        self.tf_topic = self.get_parameter(
-            'tf_topic').get_parameter_value().string_value
 
     def init_containers(self):
         """
@@ -161,6 +161,54 @@ class Logger(Node):
             )
             self.velocity_sub
 
+    def upate_robot_state_container(self, robot_pose, rosbot_velocities):
+        """
+
+        :Args:
+            :robot_pose:
+            :rosbot_velocities:
+        """
+        x = robot_pose.position.x
+        y = robot_pose.position.y
+        z = robot_pose.position.z
+        rpy = Rotation.from_quat([
+            np.float(robot_pose.orientation.x),
+            np.float(robot_pose.orientation.y),
+            np.float(robot_pose.orientation.z),
+            np.float(robot_pose.orientation.w)]
+        ).as_euler('xyz')
+        rpy = list(rpy)
+
+        v_x = rosbot_velocities.linear.x  # Linear velocity
+        v_y = rosbot_velocities.linear.y
+        v_z = rosbot_velocities.linear.z
+
+        w_x = rosbot_velocities.angular.x
+        w_y = rosbot_velocities.angular.y
+        w_z = rosbot_velocities.angular.z  # YAW velocity
+
+        last_row = len(self.robot_state)
+        self.robot_state.loc[last_row] = [x, y, z] + \
+            rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
+
+    def transform_to_pose(self, trans):
+        """
+        Convert transform to Pose
+        :Args:
+            :transform:
+        """
+        result = Pose()
+        result.position.x = trans.transform.translation.x
+        result.position.y = trans.transform.translation.y
+        result.position.z = trans.transform.translation.z
+
+        result.orientation.x = trans.transform.rotation.x
+        result.orientation.y = trans.transform.rotation.y
+        result.orientation.z = trans.transform.rotation.z
+        result.orientation.w = trans.transform.rotation.w
+
+        return result
+
     def velocity_callback(self, vel_msg):
         """
         Callback on velocity msg, update current velocity
@@ -170,61 +218,22 @@ class Logger(Node):
         if (len(self.curr_control) == 0):
             return
 
-        from_frame_rel = 'camera_pose_frame'
-        to_frame_rel = 'odom_frame'
+        # from_frame_rel = 'camera_pose_frame'
+        # to_frame_rel = 'odom_frame'
         try:
             self.curr_velocity = vel_msg
             curr_time = convert_ros2_time_to_float(
                 self.get_clock().now().seconds_nanoseconds()
             )
-            # update time container
             self.time.append(curr_time - self.init_time)
-            print(curr_time - self.init_time)
-
             self.robot_control.loc[len(self.robot_control)] = self.curr_control
-            # update robot_state container
-            rosbot_velocities = self.curr_velocity
-            rosbot_pose = Pose()
-
             trans = self.tf_buffer.lookup_transform(
-                to_frame_rel,
-                from_frame_rel,
+                self.parent_frame,
+                self.robot_frame,
                 rclpy.time.Time()
             )
-            # print(trans.transform.translation.x, trans.transform.translation.y)
-
-            rosbot_pose.position.x = trans.transform.translation.x
-            rosbot_pose.position.y = trans.transform.translation.y
-            rosbot_pose.position.z = trans.transform.translation.z
-
-            rosbot_pose.orientation.x = trans.transform.rotation.x
-            rosbot_pose.orientation.y = trans.transform.rotation.y
-            rosbot_pose.orientation.z = trans.transform.rotation.z
-            rosbot_pose.orientation.w = trans.transform.rotation.w
-
-            x = rosbot_pose.position.x
-            y = rosbot_pose.position.y
-            z = rosbot_pose.position.z
-            rpy = Rotation.from_quat([
-                np.float(rosbot_pose.orientation.x),
-                np.float(rosbot_pose.orientation.y),
-                np.float(rosbot_pose.orientation.z),
-                np.float(rosbot_pose.orientation.w)]
-            ).as_euler('xyz')
-            rpy = list(rpy)
-
-            v_x = rosbot_velocities.linear.x  # Linear velocity
-            v_y = rosbot_velocities.linear.y
-            v_z = rosbot_velocities.linear.z
-
-            w_x = rosbot_velocities.angular.x
-            w_y = rosbot_velocities.angular.y
-            w_z = rosbot_velocities.angular.z  # YAW velocity
-
-            last_row = len(self.robot_state)
-            self.robot_state.loc[last_row] = [x, y, z] + \
-                rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
-
+            robot_pose = self.transform_to_pose(trans)
+            self.upate_robot_state_container(robot_pose, self.curr_velocity)
         except TransformException as ex:
             self.get_logger().info(
                 f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
@@ -240,39 +249,13 @@ class Logger(Node):
 
         if (len(self.curr_control) == 0):
             return
-
         curr_time = convert_ros2_time_to_float(
             self.get_clock().now().seconds_nanoseconds()
         )
-        # update time container
         self.time.append(curr_time - self.init_time)
-        # update control container
         self.robot_control.loc[len(self.robot_control)] = self.curr_control
-        # update robot_state container
-        rosbot_pose = odom_msg.pose.pose
-        rosbot_velocities = odom_msg.twist.twist
-        x = rosbot_pose.position.x
-        y = rosbot_pose.position.y
-        z = rosbot_pose.position.z
-        rpy = Rotation.from_quat([
-            np.float(rosbot_pose.orientation.x),
-            np.float(rosbot_pose.orientation.y),
-            np.float(rosbot_pose.orientation.z),
-            np.float(rosbot_pose.orientation.w)]
-        ).as_euler('xyz')
-        rpy = list(rpy)
-
-        v_x = rosbot_velocities.linear.x  # Linear velocity
-        v_y = rosbot_velocities.linear.y
-        v_z = rosbot_velocities.linear.z
-
-        w_x = rosbot_velocities.angular.x
-        w_y = rosbot_velocities.angular.y
-        w_z = rosbot_velocities.angular.z  # YAW velocity
-
-        last_row = len(self.robot_state)
-        self.robot_state.loc[last_row] = [x, y, z] + \
-            rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
+        self.upate_robot_state_container(
+            odom_msg.pose.pose, odom_msg.twist.twist)
 
     def control_callback(self, control):
         """
