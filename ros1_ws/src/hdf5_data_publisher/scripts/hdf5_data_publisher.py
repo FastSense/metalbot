@@ -43,7 +43,7 @@ with h5py.File(path_to_hdf5, 'r') as f:
 		pcd_lengths = np.array(f['pcd_lengths'])
 		pcds = []
 		for i in range(len(pcd_lengths)):
-			pcds.append(np.array(f['pcd'][i][:pcd_lengths[i]]))
+			pcds.append(f['pcd'][i][:pcd_lengths[i]])
 	if publish_pose:
 		positions = np.array(f['position'])
 		rotations = np.array(f['rotation'])
@@ -204,8 +204,13 @@ for i in range(len(stamps)):
 		pcd_msg.header.stamp = cur_time
 		pcd_msg.width = len(pcds[i]) // pcd_msg.point_step
 		pcd_msg.row_step = pcd_msg.width * pcd_msg.point_step
+		t1 = rospy.Time.now().to_sec()
+		print(len(pcds[i]))
 		pcd_msg.data = list(pcds[i])
+		t2 = rospy.Time.now().to_sec()
 		pcd_publisher.publish(pcd_msg)
+		t3 = rospy.Time.now().to_sec()
+		print('Time deltas:', t2 - t1, t3 - t2)
 
 	# TF
 	if publish_tf:
