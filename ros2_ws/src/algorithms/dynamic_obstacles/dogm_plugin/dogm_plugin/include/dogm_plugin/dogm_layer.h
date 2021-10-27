@@ -15,6 +15,7 @@ namespace dogm_plugin {
 class DogmLayer : public nav2_costmap_2d::Layer {
 public:
     DogmLayer();
+    ~DogmLayer();
 
     virtual void onInitialize();
     virtual void updateBounds(double robot_x, double robot_y, double robot_yaw,
@@ -23,14 +24,16 @@ public:
     virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
                              int min_i, int min_j, int max_i, int max_j);
     void costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
-                                          int min_i, int min_j, int max_i, int max_j);
+                                          int min_i, int min_j, int max_i, int max_j,
+                                          float occupancy_threshold);
     void publishDynamicGrid();
     virtual void reset();
 
 private:
+    bool motion_compensation_;
     dogm::DOGM::Params params_;
     std::unique_ptr<dogm::DOGM> dogm_map_;
-    std::vector<dogm::MeasurementCell> measurement_grid_;
+    dogm::MeasurementCell* measurement_grid_;
     rclcpp::Publisher<dogm_msgs::msg::DynamicOccupancyGrid>::SharedPtr publisher_;
 
     double robot_x_;

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(dogm_plugin)
+project(dogm_plugin LANGUAGES CXX CUDA)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -25,7 +25,7 @@ find_package(dogm REQUIRED)
 find_package(dogm_msgs REQUIRED)
 
 # build
-add_library(${PROJECT_NAME} SHARED src/dogm_layer.cpp)
+add_library(${PROJECT_NAME} SHARED src/dogm_layer.cu)
 include_directories(include ${OpenCV_INCLUDE_DIRS} ${DOGM_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DOGM_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME} rclcpp nav2_costmap_2d pluginlib dogm_msgs)
