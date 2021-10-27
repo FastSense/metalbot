@@ -14,10 +14,10 @@
     <param name="publish_pcd" value="true"/>
     <param name="publish_depth" value="true"/>
     <param name="publish_rgb" value="true"/>
-    <param name="publish_pose" value="false"/>
-    <param name="publish_tf" value="false"/>
+    <param name="publish_pose" value="true"/>
+    <param name="publish_tf" value="true"/>
     <param name="camera_info_file" value="$(find hdf5_data_publisher)/config/realsense_params.yaml"/>
-    <param name="fps" value="30"/>
+    <param name="fps" value="12"/>
     <param name="path_to_hdf5" value="$(arg path_to_hdf5)"/>
   </node>
 </launch>

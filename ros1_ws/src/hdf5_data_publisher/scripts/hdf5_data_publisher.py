@@ -79,7 +79,7 @@ if publish_pose:
 
 
 # Initialize publishers
-rate = rospy.Rate(fps)
+#rate = rospy.Rate(fps)
 if publish_depth:
 	depth_publisher = rospy.Publisher(depth_topic, Image, latch=True, queue_size=100)
 if publish_rgb:
@@ -218,4 +218,7 @@ for i in range(len(stamps)):
 			                         cur_time,
 			                         'base_link', 'odom')
 
-	rate.sleep()
+	#rate.sleep()
+	if i + 1 < len(stamps):
+		dt = rospy.Time.now() - cur_time
+		rospy.sleep(stamps[i + 1] - stamps[i] - dt.to_sec())
