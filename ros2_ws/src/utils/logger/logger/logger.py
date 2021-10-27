@@ -1,23 +1,15 @@
 import os
 import pandas as pd
-from matplotlib import pyplot as plt
-import rclpy
 import numpy as np
-from argparse import Namespace
-
+from scipy.spatial.transform import Rotation
+import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist, Pose
+import tf2_ros
+from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
-import tf2_ros
-
-from tf2_ros import TransformException
-from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener
-
-from logger.utils import convert_ros2_time_to_float
+from logger.utils import convert_ros2_time_to_float, transform_to_pose
 from logger.create_graphs import build_general_graph_for_rosbot
-from scipy.spatial.transform import Rotation
 
 
 class Logger(Node):
@@ -161,12 +153,73 @@ class Logger(Node):
             )
             self.velocity_sub
 
-    def upate_robot_state_container(self, robot_pose, rosbot_velocities):
+    def velocity_callback(self, vel_msg):
+        """
+        Callback on velocity msg, update current velocity
+        :Args:
+            :vel_msg: (geometry_msgs.msg.Twist) velpcity msg
+        """
+        if (len(self.curr_control) == 0):
+            return
+
+        try:
+            self.curr_velocity = vel_msg
+            curr_time = convert_ros2_time_to_float(
+                self.get_clock().now().seconds_nanoseconds()
+            )
+            self.time.append(curr_time - self.init_time)
+            self.robot_control.loc[len(self.robot_control)] = self.curr_control
+            robot_pose_tf = self.tf_buffer.lookup_transform(
+                self.parent_frame,
+                self.robot_frame,
+                rclpy.time.Time()
+            )
+            robot_pose = transform_to_pose(robot_pose_tf)
+            self.upate_robot_state_container(robot_pose, self.curr_velocity)
+        except tf2_ros.TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {self.robot_frame} to {self.robot_frame}: {ex}')
+            return
+
+    def odom_callback(self, odom_msg):
+        """
+        Callback on odom message
+        Robot position, current time and control are logged
+        :Args:
+            :odom_msg: (nav_msgs.msg.Odometry): odom msg
         """
 
+        if (len(self.curr_control) == 0):
+            return
+
+        curr_time = convert_ros2_time_to_float(
+            self.get_clock().now().seconds_nanoseconds()
+        )
+        self.time.append(curr_time - self.init_time)
+        self.robot_control.loc[len(self.robot_control)] = self.curr_control
+        self.upate_robot_state_container(
+            odom_msg.pose.pose, odom_msg.twist.twist)
+
+    def control_callback(self, control):
+        """
+        Updates the current control
+        Args:
+            :control: (geometry_msgs.msg.Twist) control msg
+        """
+        if self.first_tick:
+            self.first_tick = False
+            self.init_time = convert_ros2_time_to_float(
+                self.get_clock().now().seconds_nanoseconds()
+            )
+
+        self.curr_control = [control.linear.x, control.angular.z]
+
+    def upate_robot_state_container(self, robot_pose, rosbot_velocities):
+        """
+        Add new raw with data to the rosbot_state container
         :Args:
-            :robot_pose:
-            :rosbot_velocities:
+            :robot_pose: (geometry_msgs.msg.Pose) robot pose to be added 
+            :rosbot_velocities: (geometry_msgs.msg.Twist) robot velocities (v and w) to be added
         """
         x = robot_pose.position.x
         y = robot_pose.position.y
@@ -191,93 +244,10 @@ class Logger(Node):
         self.robot_state.loc[last_row] = [x, y, z] + \
             rpy + [v_x, v_y, v_z, w_x, w_y, w_z]
 
-    def transform_to_pose(self, trans):
-        """
-        Convert transform to Pose
-        :Args:
-            :transform:
-        """
-        result = Pose()
-        result.position.x = trans.transform.translation.x
-        result.position.y = trans.transform.translation.y
-        result.position.z = trans.transform.translation.z
-
-        result.orientation.x = trans.transform.rotation.x
-        result.orientation.y = trans.transform.rotation.y
-        result.orientation.z = trans.transform.rotation.z
-        result.orientation.w = trans.transform.rotation.w
-
-        return result
-
-    def velocity_callback(self, vel_msg):
-        """
-        Callback on velocity msg, update current velocity
-        :Args:
-            :vel_msg: (geometry_msgs.msg.Twist) velpcity msg
-        """
-        if (len(self.curr_control) == 0):
-            return
-
-        # from_frame_rel = 'camera_pose_frame'
-        # to_frame_rel = 'odom_frame'
-        try:
-            self.curr_velocity = vel_msg
-            curr_time = convert_ros2_time_to_float(
-                self.get_clock().now().seconds_nanoseconds()
-            )
-            self.time.append(curr_time - self.init_time)
-            self.robot_control.loc[len(self.robot_control)] = self.curr_control
-            trans = self.tf_buffer.lookup_transform(
-                self.parent_frame,
-                self.robot_frame,
-                rclpy.time.Time()
-            )
-            robot_pose = self.transform_to_pose(trans)
-            self.upate_robot_state_container(robot_pose, self.curr_velocity)
-        except TransformException as ex:
-            self.get_logger().info(
-                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
-            return
-
-    def odom_callback(self, odom_msg):
-        """
-        Callback on odom message
-        Robot position, current time and control are logged
-        :Args:
-            :odom_msg: (nav_msgs.msg.Odometry): odom msg
-        """
-
-        if (len(self.curr_control) == 0):
-            return
-        curr_time = convert_ros2_time_to_float(
-            self.get_clock().now().seconds_nanoseconds()
-        )
-        self.time.append(curr_time - self.init_time)
-        self.robot_control.loc[len(self.robot_control)] = self.curr_control
-        self.upate_robot_state_container(
-            odom_msg.pose.pose, odom_msg.twist.twist)
-
-    def control_callback(self, control):
-        """
-        Updates the current control
-        Args:
-            :control: (geometry_msgs.msg.Twist) control msg
-        """
-        if self.first_tick:
-            self.first_tick = False
-            self.init_time = convert_ros2_time_to_float(
-                self.get_clock().now().seconds_nanoseconds()
-            )
-
-        self.curr_control = [control.linear.x, control.angular.z]
-
     def save_collected_data_to_csv(self):
         """
         Saves logged data in csv format
         """
-        # if not os.path.exists(self.output_path):
-        #     os.makedirs(self.output_path)
-
         self.robot_state.to_csv(
             path_or_buf=os.path.join(self.output_path, "rosbot_state.csv"),
             sep=' ',
