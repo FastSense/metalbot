@@ -18,10 +18,6 @@
 	branch = ros2_master
 	url = git@github.com:FastSense/webrtc-teleop.git
 
-[submodule "rosbot/rosbot_description"]
-	path = ros2_ws/src/rosbot/rosbot_description
-	url = git@github.com:husarion/rosbot_description.git
-	branch = foxy
 [submodule "Groot"]
 	path = ros2_ws/src/utils/Groot
 	url = git@github.com:BehaviorTree/Groot.git
@@ -53,3 +49,7 @@
 [submodule "ros2_ws/src/algorithms/mapping/grid_map"]
 	path = ros2_ws/src/algorithms/mapping/grid_map
 	url = https://github.com/ANYbotics/grid_map.git
+[submodule "ros2_ws/src/metalbot/rosbot_description"]
+	path = ros2_ws/src/metalbot/rosbot_description
+	url = https://github.com/husarion/rosbot_description.git
+	branch = foxy
