@@ -13,7 +13,7 @@ def generate_launch_description():
 
     * I checked it works well when launch from any directory *
     """
-    output_dir = os.path.join(os.getcwd(), 'src/logger/output_data/')
+    output_dir = os.path.join(os.getcwd(), 'src/utils/logger/output_data/')
     output_path = launch.substitutions.LaunchConfiguration(
         'output_path',
         default=output_dir
