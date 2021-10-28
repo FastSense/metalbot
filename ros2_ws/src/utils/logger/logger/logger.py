@@ -14,7 +14,7 @@ from logger.create_graphs import build_general_graph_for_rosbot
 
 class Logger(Node):
     """
-    Class for logging the state of the rosbot
+    Class for logging the state of the robot
     Node for logging the state of the robot,
     kinematic model (optional) and neural network
     model (optional), control and time stamps
@@ -28,11 +28,11 @@ class Logger(Node):
         :parent_frame: (str) name of the origin tf frame
         :kinetic_model_frame: (str) name of the kinematic model tf frame
         :nn_model_frame: (str) name of the NN model tf frame
-        :robot_state: (pandas.DataFrame) container for rosbot state
+        :robot_state: (pandas.DataFrame) container for robot state
         :kinetic_model_state: (pandas.DataFrame) container for
          kinematic model state
         :nn_model_state: (pandas.DataFrame) container for NN model state
-        :robot_control: (pandas.DataFrame) container for rosbot control
+        :robot_control: (pandas.DataFrame) container for robot control
         :time: (list) container for time stamps
         :odom_sub: subscriber to /odom topic
         :control_sub: subscriber to control topic
@@ -214,12 +214,12 @@ class Logger(Node):
 
         self.curr_control = [control.linear.x, control.angular.z]
 
-    def upate_robot_state_container(self, robot_pose, rosbot_velocities):
+    def upate_robot_state_container(self, robot_pose, robot_velocities):
         """
-        Add new raw with data to the rosbot_state container
+        Add new raw with data to the robot_state container
         :Args:
             :robot_pose: (geometry_msgs.msg.Pose) robot pose to be added 
-            :rosbot_velocities: (geometry_msgs.msg.Twist) robot velocities (v and w) to be added
+            :robot_velocities: (geometry_msgs.msg.Twist) robot velocities (v and w) to be added
         """
         x = robot_pose.position.x
         y = robot_pose.position.y
@@ -232,13 +232,13 @@ class Logger(Node):
         ).as_euler('xyz')
         rpy = list(rpy)
 
-        v_x = rosbot_velocities.linear.x  # Linear velocity
-        v_y = rosbot_velocities.linear.y
-        v_z = rosbot_velocities.linear.z
+        v_x = robot_velocities.linear.x  # Linear velocity
+        v_y = robot_velocities.linear.y
+        v_z = robot_velocities.linear.z
 
-        w_x = rosbot_velocities.angular.x
-        w_y = rosbot_velocities.angular.y
-        w_z = rosbot_velocities.angular.z  # YAW velocity
+        w_x = robot_velocities.angular.x
+        w_y = robot_velocities.angular.y
+        w_z = robot_velocities.angular.z  # YAW velocity
 
         last_row = len(self.robot_state)
         self.robot_state.loc[last_row] = [x, y, z] + \
@@ -249,7 +249,7 @@ class Logger(Node):
         Saves logged data in csv format
         """
         self.robot_state.to_csv(
-            path_or_buf=os.path.join(self.output_path, "rosbot_state.csv"),
+            path_or_buf=os.path.join(self.output_path, "robot_state.csv"),
             sep=' ',
             index=False
         )
