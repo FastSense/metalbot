@@ -6,16 +6,13 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
-    rosbot = get_package_share_directory('rosbot')
 
     camera_link_d455_tf = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='log',
         arguments=['0.16', '0', '0.18', '0', '0', '0', 'base_link', 'camera_link'],
-        parameters=[
-    		rosbot + '/config/static_tf.yaml'
-        ]
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     camera_link_t265_tf = launch_ros.actions.Node(
@@ -23,9 +20,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         output='log',
         arguments=['-0.14', '-0.01', '-0.215', '0.0', '0.0', '0.0', 'camera_pose_frame', 'base_link'],
-        parameters=[
-    		rosbot + '/config/static_tf.yaml'
-        ]
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     odom_tf = launch_ros.actions.Node(
@@ -33,9 +28,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         output='log',
         arguments=['0.14', '0.01', '0.215', '0.0', '0', '0.0', 'odom', 'odom_frame'],
-        parameters=[
-    		rosbot + '/config/static_tf.yaml'
-    	],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     return LaunchDescription([

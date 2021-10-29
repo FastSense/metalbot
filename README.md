@@ -158,28 +158,28 @@ sudo tycmd reset
 ### Запуск основных модулей
 
 Для запуска модулей MetalBot существует набор launch фаилов.  
-Набор модулей для симуляции представлены в пакете rosbot_gazebo.
-Модули для реального робота, а так же общие модули представлены в пакете rosbot.
+Набор модулей для симуляции представлены в пакете metalbot_gazebo.
+Модули для реального робота, а так же общие модули представлены в пакете metalbot.
 
 #### BringUp.
 ```bash
 # Запуск основных нод для работы с роботом (в симуляции спаунит робота)
-ros2 launch rosbot[_gazebo] bringup.launch.py
+ros2 launch metalbot[_gazebo] bringup.launch.py
 ```
 
 ```bash
 # Запуск основных нод для работы с роботом в симуляции, но без статичных tf
-ros2 launch rosbot_gazebo bringup_no_static_tf.launch.py
+ros2 launch metalbot_gazebo bringup_no_static_tf.launch.py
 ```
 
 #### Navigation2
 ```bash
-ros2 launch rosbot[_gazebo] nav2.launch.py
+ros2 launch metalbot[_gazebo] nav2.launch.py
 ```
 
 #### RViz
 ```bash
-ros2 launch rosbot rviz.launch.py
+ros2 launch metalbot rviz.launch.py
 ```
 
 #### Groot
@@ -191,7 +191,7 @@ ros2 run groot Groot
 #### Slam
 ```bash
 # BringUp + Navigation2 + SlamToolBox + RViz[optional]
-ros2 launch rosbot[_gazebo] slam.launch.py
+ros2 launch metalbot[_gazebo] slam.launch.py
 ```
 
 #### Teleop
