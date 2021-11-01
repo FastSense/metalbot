@@ -72,16 +72,17 @@ controller_server:
       temperature: 0.25
       reference_cost_power: 1
       reference_cost_weight: 5
-      goal_cost_power: 1.0
-      goal_cost_weight: 20.0
-      goal_angle_cost_power: 1.0
-      goal_angle_cost_weight: 5.0
+      goal_cost_power: 1
+      goal_cost_weight: 20
+      goal_angle_cost_power: 1
+      goal_angle_cost_weight: 5
       obstacle_cost_power: 2
       obstacle_cost_weight: 10 
       inflation_cost_scaling_factor: 3
       inflation_radius: 0.45
       threshold_to_consider_goal_angle: 0.20
       approx_reference_cost: false
+      visualize: true
 
 controller_server_rclcpp_node:
   ros__parameters:
