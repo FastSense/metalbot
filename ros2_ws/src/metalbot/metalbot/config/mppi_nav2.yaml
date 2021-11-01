@@ -55,20 +55,20 @@ controller_server:
 
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.55
+      xy_goal_tolerance: 0.10
+      yaw_goal_tolerance: 0.25
       stateful: True
 
     FollowPath:
       plugin: "mppi::Controller<float>"
-      time_steps: 15
+      time_steps: 12
       model_dt: 0.1
-      batch_size: 200
+      batch_size: 300
       v_std: 0.1
       w_std: 0.30
       v_limit: 0.5
       w_limit: 1.3
-      iteration_count: 2
+      iteration_count: 3
       temperature: 0.25
       reference_cost_power: 1
       reference_cost_weight: 5
@@ -79,7 +79,7 @@ controller_server:
       obstacle_cost_power: 2
       obstacle_cost_weight: 10 
       inflation_cost_scaling_factor: 3
-      inflation_radius: 0.75
+      inflation_radius: 0.45
       threshold_to_consider_goal_angle: 0.20
       approx_reference_cost: false
 
@@ -96,40 +96,36 @@ local_costmap:
       robot_base_frame: base_link
       use_sim_time: False
       rolling_window: true
-      width: 3
-      height: 3
+      width: 6
+      height: 6
       resolution: 0.05
       footprint: '[[0.14, 0.16], [0.14, -0.16], [-0.14, -0.16], [-0.14, 0.16]]'
       plugins: ["voxel_layer", "inflation_layer"]
-
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.75
-
+        inflation_radius: 0.45
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
-        publish_voxel_map: True
+        publish_voxel_map: False
         origin_z: 0.0
         z_resolution: 0.05
         z_voxels: 16
-        max_obstacle_height: 2.0
         mark_threshold: 0
         observation_sources: point_cloud
         point_cloud:
-          topic: /camera/points
-          max_obstacle_height: 2.0
+          topic: /camera/depth/color/points
+          max_obstacle_height: 0.4
+          min_obstacle_height: 0.05
+          inf_is_valid: True
           clearing: True
           marking: True
           data_type: "PointCloud2"
-          raytrace_max_range: 2.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 1.5
-          obstacle_min_range: 0.0
-          min_obstacle_height: 0.1
-
-
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.1
+          obstacle_max_range: 6.0
+          obstacle_min_range: 0.1
       always_send_full_costmap: True
   local_costmap_client:
     ros__parameters:
@@ -143,6 +139,8 @@ global_costmap:
   global_costmap:
     ros__parameters:
       rolling_window: true
+      width: 6
+      height: 6
       update_frequency: 1.0
       publish_frequency: 1.0
       global_frame: odom
@@ -151,34 +149,32 @@ global_costmap:
       footprint: '[[0.14, 0.16], [0.14, -0.16], [-0.14, -0.16], [-0.14, 0.16]]'
       resolution: 0.05
       track_unknown_space: true
-
       plugins: ["voxel_layer", "inflation_layer"]
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
-        publish_voxel_map: True
+        publish_voxel_map: False
         origin_z: 0.0
         z_resolution: 0.05
         z_voxels: 16
-        max_obstacle_height: 2.0
         mark_threshold: 0
         observation_sources: point_cloud
         point_cloud:
-          topic: /camera/points
-          max_obstacle_height: 2.0
+          topic: /camera/depth/color/points
+          max_obstacle_height: 0.4
+          min_obstacle_height: 0.05
+          inf_is_valid: True
           clearing: True
           marking: True
           data_type: "PointCloud2"
-          raytrace_max_range: 2.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 1.5
-          obstacle_min_range: 0.0
-          min_obstacle_height: 0.2
-
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.1
+          obstacle_max_range: 6.0
+          obstacle_min_range: 0.1
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+        inflation_radius: 0.45
       always_send_full_costmap: True
   global_costmap_client:
     ros__parameters:

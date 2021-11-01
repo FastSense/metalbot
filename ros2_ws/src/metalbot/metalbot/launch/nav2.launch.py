@@ -12,11 +12,9 @@ def generate_launch_description():
     params_file    = LaunchConfiguration('params')
     default_bt_xml = LaunchConfiguration('default_bt_xml_filename')
 
-    params_pkg = FindPackageShare('rosbot')
-    params = PathJoinSubstitution([params_pkg, 'config', 'nav2.yaml'])
-
-    default_bt_pkg = FindPackageShare('rosbot')
-    defautl_bt = PathJoinSubstitution([default_bt_pkg, 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'])
+    params_pkg = FindPackageShare('metalbot')
+    params = PathJoinSubstitution([params_pkg, 'config', 'mppi_nav2.yaml'])
+    defautl_bt = PathJoinSubstitution([params_pkg, 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'])
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
