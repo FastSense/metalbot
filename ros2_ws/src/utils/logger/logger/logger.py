@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 import tf2_ros
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -42,12 +43,10 @@ class Logger(Node):
         """
         """
         super().__init__('logger')
-
         self.init_parameters()
         self.get_node_parametes()
         self.init_subs()
         self.init_containers()
-
         self.first_tick = True
         self.init_time = None
         self.curr_control = list()
@@ -145,11 +144,16 @@ class Logger(Node):
             )
             self.odom_sub
         else:
+            qos_profile = QoSProfile(
+                reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+                history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+                depth=1
+            )
             self.velocity_sub = self.create_subscription(
                 Twist,
                 self.velocity_topic,
                 self.velocity_callback,
-                1
+                qos_profile=qos_profile
             )
             self.velocity_sub
 
@@ -161,19 +165,19 @@ class Logger(Node):
         """
         if (len(self.curr_control) == 0):
             return
-
         try:
+            robot_pose_tf = self.tf_buffer.lookup_transform(
+                self.parent_frame,
+                self.robot_frame,
+                rclpy.time.Time()
+            )
             self.curr_velocity = vel_msg
             curr_time = convert_ros2_time_to_float(
                 self.get_clock().now().seconds_nanoseconds()
             )
             self.time.append(curr_time - self.init_time)
             self.robot_control.loc[len(self.robot_control)] = self.curr_control
-            robot_pose_tf = self.tf_buffer.lookup_transform(
-                self.parent_frame,
-                self.robot_frame,
-                rclpy.time.Time()
-            )
+
             robot_pose = transform_to_pose(robot_pose_tf)
             self.upate_robot_state_container(robot_pose, self.curr_velocity)
         except tf2_ros.TransformException as ex:
