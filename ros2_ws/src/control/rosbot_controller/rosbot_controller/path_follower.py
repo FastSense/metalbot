@@ -1,5 +1,6 @@
 import rclpy
 from geometry_msgs.msg import Twist
+from tf2_msgs.msg import TFMessage
 from nav_msgs.msg import Path
 from rosbot_controller.rosbot_2D import Goal, Rosbot, RobotState, RobotControl
 
@@ -54,6 +55,9 @@ class TrajFollower():
         self.node.declare_parameter('w_max', 2.5)
         self.node.declare_parameter('kill_follower', True)
         self.node.declare_parameter('cmd_freq', 30.0)
+        self.node.declare_parameter('use_odom', False)
+        self.node.declare_parameter('parent_frame', 'odom_frame')
+        self.node.declare_parameter('robot_frame', 'camera_pose_frame')
 
         self.odom_topic = self.node.get_parameter(
             'odom_topic').get_parameter_value().string_value
@@ -67,10 +71,16 @@ class TrajFollower():
             'cmd_freq').get_parameter_value().double_value
         self.kill_follower = self.node.get_parameter(
             'kill_follower').get_parameter_value().bool_value
+        self.use_odom = self.node.get_parameter(
+            'use_odom').get_parameter_value().bool_value
+        self.parent_frame = self.node.get_parameter(
+            'parent_frame').get_parameter_value().string_value
+        self.robot_frame = self.node.get_parameter(
+            'robot_frame').get_parameter_value().string_value
 
     def init_subs_pubs(self):
         """
-        Initializing 2 subscriptions on /path and /odom 
+        Initializing 2 subscriptions on /path and /odom
         and 1 publisher to a cmd_topic (\cmd_vel)
 
         """
@@ -82,11 +92,41 @@ class TrajFollower():
             Path, '/path', self.path_callback, 10)
 
         # subscriber for the robot position
-        self.odom_sub = self.node.create_subscription(
-            Odometry, self.odom_topic, self.odom_callback, 10)
-
+        if self.use_odom:
+            self.odom_sub = self.node.create_subscription(
+                Odometry, self.odom_topic, self.odom_callback, 10)
+            self.odom_sub
+        else:
+            self.tf_sub = self.node.create_subscription(
+                TFMessage, 'tf', self.tf_callback, 1)
+            self.odom_sub
         self.path_sub
-        self.odom_sub
+
+    def tf_callback(self, tf_msg):
+        """
+        """
+        for item in tf_msg.transforms:
+            if (
+                item.header.frame_id == self.parent_frame and
+                item.child_frame_id == self.robot_frame
+            ):
+                print(tf_msg)
+                try:
+                    robot_pose_tf = self.tf_buffer.lookup_transform(
+                        self.parent_frame,
+                        self.robot_frame,
+                        rclpy.time.Time()
+                    )
+                    x, y = robot_pose_tf.translation.x, robot_pose_tf.translation.y
+                    yaw = Rotation.from_quat([
+                        np.float(robot_pose_tf.rotation.x),
+                        np.float(robot_pose_tf.rotation.y),
+                        np.float(robot_pose_tf.rotation.z),
+                        np.float(robot_pose_tf.rotation.w)]
+                    ).as_euler('xyz')[2]
+                    self.robot_state = RobotState(x, y, yaw)
+                except:
+                    print("(((((")
 
     def odom_callback(self, odom_msg: Odometry):
         """
@@ -94,14 +134,13 @@ class TrajFollower():
 
         """
         rosbot_pose = odom_msg.pose.pose
-        x, y, z = rosbot_pose.position.x, rosbot_pose.position.y, rosbot_pose.position.z
-        rpy = Rotation.from_quat([
+        x, y = rosbot_pose.position.x, rosbot_pose.position.y
+        yaw = Rotation.from_quat([
             np.float(rosbot_pose.orientation.x),
             np.float(rosbot_pose.orientation.y),
             np.float(rosbot_pose.orientation.z),
             np.float(rosbot_pose.orientation.w)]
-        ).as_euler('xyz')
-        yaw = rpy[2]
+        ).as_euler('xyz')[2]
         # state of the robot is updated
         self.robot_state = RobotState(x, y, yaw)
 
