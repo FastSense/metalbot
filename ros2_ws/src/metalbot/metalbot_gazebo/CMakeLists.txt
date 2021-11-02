@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
 ## Install ##
 #############
 
-install(DIRECTORY launch config models
+install(DIRECTORY launch config models urdf worlds meshes
   DESTINATION share/${PROJECT_NAME}
 )
 
