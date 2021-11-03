@@ -12,6 +12,7 @@
   - [Настройка среды](#настройка-среды)
     - [Setup Docker](#setup-docker)
       - [Утилита drun.sh](#утилита-drunsh)
+      - [Работа с уже созданным контейнером](#работа-с-уже-созданным-контейнером)
     - [Setup workspaces](#setup-workspaces)
       - [Build ROS2 workspace](#build-ros2-workspace)
       - [Build ROS1 workspace](#build-ros1-workspace)
@@ -70,13 +71,16 @@ source env-universal.sh
 # Загрузка образа на dockerhub
 ./drun.sh push
 
-# Работа с уже созданным контейнером
+
+```
+
+#### Работа с уже созданным контейнером
+```bash
 docker start $container
 docker attach $container
 ```
 
 ### Setup workspaces
-
 Докер содержит пространства ros1, ros2 и micro_ros
 
 > При сборке ros1 не должны быть экспортированы переменные окружения ros2, и наоборот.
@@ -86,6 +90,7 @@ docker attach $container
 
 
 #### Build ROS2 workspace
+> Переменные окружения ROS1 не должны быть экспортированы
 ```bash
 # Basic packages (no gazebo, groot, sensors, grid_map)
 cd ros2_ws
