@@ -13,11 +13,12 @@
     - [Setup Docker](#setup-docker)
     - [Утилита drun.sh](#утилита-drunsh)
     - [Работа с уже созданным контейнером](#работа-с-уже-созданным-контейнером)
-    - [Setup workspaces](#setup-workspaces)
+  - [Setup workspaces](#setup-workspaces)
     - [Build ROS2 workspace](#build-ros2-workspace)
     - [Build ROS1 workspace](#build-ros1-workspace)
     - [Build ros1_bridge](#build-ros1_bridge)
     - [Build Micro-ROS](#build-micro-ros)
+  - [Настройка утилит на хосте](#настройка-утилит-на-хосте)
     - [Build tycmd](#build-tycmd)
   - [Запуск основных модулей](#запуск-основных-модулей)
       - [Bring Up](#bring-up)
@@ -80,7 +81,7 @@ docker start $container
 docker attach $container
 ```
 
-### Setup workspaces
+## Setup workspaces
 Докер содержит пространства ros1, ros2 и micro_ros
 
 > При сборке ros1 не должны быть экспортированы переменные окружения ros2, и наоборот.
@@ -141,6 +142,7 @@ ros2 run micro_ros_setup create_agent_ws.sh
 ros2 run micro_ros_setup build_agent.sh
 ```
 
+## Настройка утилит на хосте
 ### Build tycmd
 > Установливать утилиту следует в систему бортового компьютера (не в докер)
 
