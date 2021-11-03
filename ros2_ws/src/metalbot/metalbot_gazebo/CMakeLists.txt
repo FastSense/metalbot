@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
 ## Install ##
 #############
 
-install(DIRECTORY launch config
+install(DIRECTORY launch config models worlds meshes
   DESTINATION share/${PROJECT_NAME}
 )
 

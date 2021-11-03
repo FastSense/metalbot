@@ -1,30 +1,28 @@
-from ament_index_python.packages import get_package_share_directory
 import launch_ros.actions
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch_ros.substitutions import FindPackageShare
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
-    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    serial = LaunchConfiguration('serial', default='/dev/ttyACM0')
 
-    camera_link_d455_tf = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='log',
-        arguments=['0.16', '0', '0.18', '0', '0', '0', 'base_link', 'camera_link'],
-        parameters=[{'use_sim_time': use_sim_time}],
-    )
+    realsense_pkg                = FindPackageShare('fs-realsense')
+    robot_pkg                    = FindPackageShare('metalbot')
+    robot_state_publisher_launch = PathJoinSubstitution([robot_pkg, 'launch', 'robot_state_publisher.launch.py'])
+    micro_ros_launch             = PathJoinSubstitution([robot_pkg, 'launch', 'micro_ros.launch.py'])
+    realsense_launch             = PathJoinSubstitution([realsense_pkg, 'launch', 'rs_launch.py'])
 
     return LaunchDescription([
-        DeclareLaunchArgument(
-            name='use_sim_time',
-            default_value='false'
-        ),
+        DeclareLaunchArgument('serial', default_value='/dev/ttyACM0', description='Serial port'),
+        DeclareLaunchArgument(name='use_sim_time', default_value='false'),
+        DeclareLaunchArgument('verbose', default_value='true', 
+            description='Set "true" to increase messages written to terminal.'),
 
-        DeclareLaunchArgument('verbose', default_value='true',
-                              description='Set "true" to increase messages written to terminal.'),
-
-        camera_link_d455_tf,
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(robot_state_publisher_launch)),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(micro_ros_launch)),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(realsense_launch))
     ])
 
 if __name__ == '__main__':
