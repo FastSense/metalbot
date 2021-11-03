@@ -162,6 +162,7 @@ RUN if [ "$USE_ROS2" = "ON" ]; then \
     ros-foxy-nav2-bringup \
     ros-foxy-geometry2 \
     ros-foxy-filters \
+    ros-foxy-xacro \
     ros-foxy-octomap \
     ros-foxy-octomap-msgs \
     ros-foxy-perception-pcl \
@@ -193,6 +194,10 @@ RUN apt-get update && \
         htop \
         autojump \
         iputils-ping && \
+        rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+      apt-get upgrade -y && \
         rm -rf /var/lib/apt/lists/*
 
 # Scripts
