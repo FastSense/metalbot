@@ -1,29 +1,16 @@
-from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
-    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-    use_tf_static = LaunchConfiguration('use_tf_static', default='true')
+    serial = LaunchConfiguration('serial', default='/dev/ttyACM0')
 
-    description_pkg = get_package_share_directory('metalbot_description')
-
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        output='screen',
-        parameters=[
-            {'robot_description': description},
-            {'use_sim_time': use_sim_time},
-            {'use_tf_static': use_tf_static},
-            {'publish_frequency': 20.0}]
-    )
+    micro_ros = ExecuteProcess(
+             cmd=['ros2', 'run', 'micro_ros_agent', 'micro_ros_agent','serial', '--dev', serial],
+             output='screen')
 
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
-        robot_state_publisher,
+        DeclareLaunchArgument('serial', default_value='/dev/ttyACM0', description='Serial port'),
+        micro_ros,
     ])
 
