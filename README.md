@@ -31,8 +31,6 @@
       - [State Estimation 2D](#state-estimation-2d)
       - [ros1_bridge](#ros1_bridge)
 
-
-
 ## Настройка среды
 
 Для начала необходимо создать воркспейс и склонировать репозиторий
@@ -225,4 +223,42 @@ ros2 run ros1_bridge dynamic_bridge --print-pairs
 
 # Запуск ros2_bridge
 ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
+```
+
+#### Rosbag2 to ROS1
+
+Для публикации топиков из ROS2 Bag в ROS1 нужно сделать два шага:
+
+1) Записать данные из ROS2 Bag в файл hdf5 - с помощью пакета **rosbag_to_hdf5**:
+
+Терминал 1
+```bash
+r2
+cd ~/ros2_ws
+colcon build --packages-select rosbag_to_hdf5
+ros2 run rosbag_to_hdf5 oakd_data_recorder --ros-args -p path_to_save_hdf5:=/path/to/save.hdf5 -p verbose:=True (для данных с oakd)
+ros2 run rosbag_to_hdf5 realsense_data_recorder --ros-args -p path_to_save_hdf5:=/path/to/save.hdf5 -p verbose:=True (для данных с realsense)
+ros2 run rosbag_to_hdf5 rosbot_gazebo_data_recorder --ros-args -p path_to_save_hdf5:=/path/to/save.hdf5 -p verbose:=True (для данных из Gazebo)
+```
+Терминал 2
+```bash
+r2
+ros2 bag play /path/to/rosbag
+```
+
+2) Считать данные из hdf5 и застримить в топики ROS1 - с помощью пакета **hdf5_data_publisher**:
+
+Терминал 1
+```bash
+r1
+roscore
+```
+Терминал 2
+```bash
+r1
+cd ~/ros1_ws
+catkin_make
+roslaunch hdf5_data_publisher oakd.launch path_to_hdf5:=/path/to/save.hdf5 (для данных с oakd)
+roslaunch hdf5_data_publisher realsense.launch path_to_hdf5:=/path/to/save.hdf5 (для данных с realsense)
+roslaunch hdf5_data_publisher rosbot_gazebo.launch path_to_hdf5:=/path/to/save.hdf5 (для данных из Gazebo)
 ```
