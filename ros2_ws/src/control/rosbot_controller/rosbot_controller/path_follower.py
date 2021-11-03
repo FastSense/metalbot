@@ -55,7 +55,7 @@ class TrajFollower():
         self.node.declare_parameter('w_max', 2.5)
         self.node.declare_parameter('kill_follower', True)
         self.node.declare_parameter('cmd_freq', 30.0)
-        self.node.declare_parameter('use_odom', False)
+        self.node.declare_parameter('use_odom', True)
         self.node.declare_parameter('parent_frame', 'odom_frame')
         self.node.declare_parameter('robot_frame', 'camera_pose_frame')
 
@@ -97,36 +97,29 @@ class TrajFollower():
                 Odometry, self.odom_topic, self.odom_callback, 10)
             self.odom_sub
         else:
-            self.tf_sub = self.node.create_subscription(
+            self._tf_sub = self.node.create_subscription(
                 TFMessage, 'tf', self.tf_callback, 1)
-            self.odom_sub
+            self._tf_sub
         self.path_sub
 
     def tf_callback(self, tf_msg):
         """
+        Receiving TF transform from /tf topic.
+
         """
         for item in tf_msg.transforms:
             if (
                 item.header.frame_id == self.parent_frame and
                 item.child_frame_id == self.robot_frame
             ):
-                print(tf_msg)
-                try:
-                    robot_pose_tf = self.tf_buffer.lookup_transform(
-                        self.parent_frame,
-                        self.robot_frame,
-                        rclpy.time.Time()
-                    )
-                    x, y = robot_pose_tf.translation.x, robot_pose_tf.translation.y
-                    yaw = Rotation.from_quat([
-                        np.float(robot_pose_tf.rotation.x),
-                        np.float(robot_pose_tf.rotation.y),
-                        np.float(robot_pose_tf.rotation.z),
-                        np.float(robot_pose_tf.rotation.w)]
-                    ).as_euler('xyz')[2]
-                    self.robot_state = RobotState(x, y, yaw)
-                except:
-                    print("(((((")
+                x, y = item.transform.translation.x, item.transform.translation.y
+                yaw = Rotation.from_quat([
+                    np.float(item.transform.rotation.x),
+                    np.float(item.transform.rotation.y),
+                    np.float(item.transform.rotation.z),
+                    np.float(item.transform.rotation.w)]
+                ).as_euler('xyz')[2]
+                self.robot_state = RobotState(x, y, yaw)
 
     def odom_callback(self, odom_msg: Odometry):
         """
@@ -153,7 +146,7 @@ class TrajFollower():
             x, y = p.pose.position.x, p.pose.position.y
             self.goal_queue.append(Goal(x, y))
             self.path.append((x, y))
-
+        print("GOT PATH!!!")
         self.got_path = True
 
     def get_min_dist_to_path(self):
