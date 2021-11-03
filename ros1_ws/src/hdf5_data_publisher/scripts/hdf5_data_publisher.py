@@ -3,6 +3,7 @@
 import rospy
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2, PointField
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Quaternion
+from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 import h5py
 import numpy as np
@@ -59,6 +60,7 @@ if publish_tf and not publish_pose:
 	publish_tf = False
 
 # Synchronize poses to images
+positions[:, -1] = 0
 if publish_pose:
 	positions_sync = []
 	rotations_sync = []
@@ -90,6 +92,8 @@ if publish_camera_info:
 	camera_info_publisher = rospy.Publisher(camera_info_topic, CameraInfo, latch=True, queue_size=100)
 if publish_pose:
 	pose_publisher = rospy.Publisher('/pose', PoseWithCovarianceStamped, latch=True, queue_size=100)
+
+odom_publisher = rospy.Publisher('/odom', Odometry, latch=True, queue_size=100)
 bridge = CvBridge()
 
 # Initialize camera info message
@@ -164,6 +168,11 @@ if publish_pcd:
 		pcd_msg.fields = [field_x, field_y, field_z]
 		pcd_msg.point_step = 16
 
+odom_msg = Odometry()
+odom_msg.header.frame_id = 'odom'
+odom_msg.child_frame_id = 'base_link'
+odom_msg.twist.covariance = list(np.eye(6).ravel())
+
 # Publish depths, camera info, and poses with specified rate
 for i in range(len(stamps)):
 	if rospy.is_shutdown():
@@ -198,15 +207,20 @@ for i in range(len(stamps)):
 		pose_orientation.x, pose_orientation.y, pose_orientation.z, pose_orientation.w = rotations_sync[i]
 		pose_msg.pose.pose.orientation = pose_orientation
 		pose_publisher.publish(pose_msg)
+
+		# Odom
+		odom_msg.pose = pose_msg.pose
+		odom_msg.header.stamp = cur_time
+		odom_publisher.publish(odom_msg)
 	
 	# Point cloud
 	if publish_pcd:
 		pcd_msg.header.stamp = cur_time
-		pcd_msg.width = len(pcds[i]) // pcd_msg.point_step
-		pcd_msg.row_step = pcd_msg.width * pcd_msg.point_step
 		t1 = rospy.Time.now().to_sec()
 		print(len(pcds[i]))
-		pcd_msg.data = list(pcds[i])
+		pcd_msg.data = list(pcds[i].reshape(-1, 20)[::2].ravel())
+		pcd_msg.width = len(pcd_msg.data) // pcd_msg.point_step
+		pcd_msg.row_step = len(pcd_msg.data)
 		t2 = rospy.Time.now().to_sec()
 		pcd_publisher.publish(pcd_msg)
 		t3 = rospy.Time.now().to_sec()

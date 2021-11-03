@@ -23,6 +23,8 @@ setup(
         'console_scripts': [
             'oakd_data_recorder = rosbag_to_hdf5.oakd_data_recorder:main',
             'realsense_data_recorder = rosbag_to_hdf5.realsense_data_recorder:main',
+            'realsense_data_recorder_pcd_rgb = rosbag_to_hdf5.realsense_data_recorder_pcd_rgb:main',
+            'realsense_data_recorder_pcd_only = rosbag_to_hdf5.realsense_data_recorder_pcd_only:main',
             'rosbot_gazebo_data_recorder = rosbag_to_hdf5.rosbot_gazebo_data_recorder:main'
         ],
     },
