@@ -9,51 +9,40 @@ import xacro
 import os
 
 def generate_launch_description():
-    robot_name = 'metalbot'
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    use_tf_static = LaunchConfiguration('use_tf_static', default='true')
 
-    default_update_rate = '10'
-    odom_update_rate = LaunchConfiguration(
-        'odom_update_rate',
-        default=default_update_rate
-    )
+    model_pkg = get_package_share_directory('metalbot_gazebo')
+    description_pkg = get_package_share_directory('metalbot_description')
 
-    models_pkg = get_package_share_directory('metalbot_gazebo')
+    # Description
+    description_path = os.path.join(description_pkg, 'urdf', 'metalbot.xacro')
+    description = xacro.process_file(description_path).toxml()
 
-    # Xacro
-    xacro_file = os.path.join(models_pkg, 'urdf', 'rosbot.xacro')
-    xacro_xml = xacro.process_file(xacro_file).toxml()
-
-    # Sdf or Urdf 
-    sdf = os.path.join(models_pkg, 'models', 'metalbot.sdf')
-    sdf_xml = open(sdf, 'r').read()
-    sdf_xml = sdf_xml.replace('"', '\\"')
-    spawn_args = '{name: \"robot\", xml: \"'  +  sdf_xml + '\" }'
+    # Model
+    model_path = os.path.join(model_pkg, 'models', 'metalbot.sdf')
+    model_file = open(model_path, 'r').read()
+    model_file = model_file.replace('"', '\\"')
+    model = '{name: \"robot\", xml: \"'  +  model_file + '\" }'
 
     robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
         parameters=[
-            {'robot_description': xacro_xml},
+            {'robot_description': description},
             {'use_sim_time': use_sim_time},
-            {'use_tf_static': True},
+            {'use_tf_static': use_tf_static},
             {'publish_frequency': 20.0}]
     )
 
-    spawn_process = ExecuteProcess(cmd=['ros2', 'service', 'call', '/spawn_entity', 'gazebo_msgs/SpawnEntity', spawn_args], 
+    spawn_service_call = ExecuteProcess(cmd=['ros2', 'service', 'call', '/spawn_entity', 'gazebo_msgs/SpawnEntity', model], 
             output='screen')
 
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='true',
-            description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument(
-            'odom_update_rate',
-            default_value=default_update_rate,
-            description=''
-        ),
+        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument('use_tf_static', default_value='true', description='Use static transforms'),
+
         robot_state_publisher,
-        spawn_process
+        spawn_service_call
     ])

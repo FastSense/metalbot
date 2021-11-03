@@ -1,12 +1,12 @@
 <?xml version='1.0'?>
 
-<robot name="rosbot" 
+<robot name="metalbot" 
   xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <xacro:arg name="robot_namespace" default=""/>
   <xacro:property name="namespace" value="$(arg robot_namespace)" />
 
-  <xacro:include filename="$(find metalbot_gazebo)/urdf/rosbot.gazebo" />
+  <xacro:include filename="$(find metalbot_description)/urdf/metalbot.gazebo" />
 
   <link name='base_link'>
     <pose>0 0 0.1 0 0 0</pose>
@@ -30,7 +30,7 @@
     <visual name='base_link_visual'>
       <origin xyz="0 0 -0.02" rpy=" 1.5707 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/box.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/box.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
 
@@ -58,7 +58,7 @@
     <visual name='top'>
       <origin xyz="0 0 0.055" rpy=" 1.5707 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/upper.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/upper.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
   </link>
@@ -67,7 +67,7 @@
     <collision name="collision">
       <origin xyz="0 0 0" rpy="0 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <surface>
         <friction>
@@ -81,7 +81,7 @@
     <visual name="front_left_wheel_visual">
       <origin xyz="0 0 0" rpy="0 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
     <inertial>
@@ -98,7 +98,7 @@
     <collision name="collision">
       <origin xyz="0 0 0" rpy="0 0 -1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <surface>
         <friction>
@@ -112,7 +112,7 @@
     <visual name="front_right_wheel_visual">
       <origin xyz="0 0 0" rpy="0 0 -1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
     <inertial>
@@ -129,7 +129,7 @@
     <collision name="collision">
       <origin xyz="0 0 0" rpy="0 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <surface>
         <friction>
@@ -143,7 +143,7 @@
     <visual name="rear_left_wheel_visual">
       <origin xyz="0 0 0" rpy="0 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
     <inertial>
@@ -160,7 +160,7 @@
     <collision name="collision">
       <origin xyz="0 0 0" rpy="0 0 -1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel-v2.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <surface>
         <friction>
@@ -174,7 +174,7 @@
     <visual name="rear_right_wheel_visual">
       <origin xyz="0 0 0" rpy="0 0 -1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/wheel.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
     <inertial>
@@ -283,7 +283,7 @@
     <visual>
       <origin xyz="-0.01 0 -0.03" rpy="1.5707 0 1.5707"/>
       <geometry>
-        <mesh filename="file://$(find metalbot_gazebo)/meshes/astra.dae" scale="0.001 0.001 0.001" />
+        <mesh filename="file://$(find metalbot_description)/meshes/astra.dae" scale="0.001 0.001 0.001" />
       </geometry>
     </visual>
 

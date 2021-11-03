@@ -7,7 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    pkg = get_package_share_directory('metalbot')
+    pkg = get_package_share_directory('metalbot_description')
     config=os.path.join(pkg, 'rviz', 'metalbot.rviz'),
 
     rviz_node = Node(
