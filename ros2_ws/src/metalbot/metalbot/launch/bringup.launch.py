@@ -14,6 +14,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('serial', default_value='/dev/ttyACM0', description='Serial port'),
+        DeclareLaunchArgument('use_tf_static', default_value='true', description='Use static transforms'),
         DeclareLaunchArgument(name='use_sim_time', default_value='false'),
         DeclareLaunchArgument('verbose', default_value='true', 
             description='Set "true" to increase messages written to terminal.'),
