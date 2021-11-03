@@ -11,11 +11,13 @@ def generate_launch_description():
 
     gazebo_ros_pkg   = FindPackageShare('gazebo_ros')
     gazebo_robot_pkg = FindPackageShare('metalbot_gazebo')
+    robot_pkg        = FindPackageShare('metalbot')
 
-    gz_server_launch = PathJoinSubstitution([gazebo_ros_pkg,     'launch',  'gzserver.launch.py'])
-    gz_client_launch = PathJoinSubstitution([gazebo_ros_pkg,     'launch',  'gzclient.launch.py'])
-    spawn_launch     = PathJoinSubstitution([gazebo_robot_pkg,   'launch',  'spawn.launch.py'])
-    world            = PathJoinSubstitution([gazebo_robot_pkg,    'worlds',  'willow_garage.world'])
+    gz_server_launch             = PathJoinSubstitution([gazebo_ros_pkg,     'launch',  'gzserver.launch.py'])
+    gz_client_launch             = PathJoinSubstitution([gazebo_ros_pkg,     'launch',  'gzclient.launch.py'])
+    spawn_launch                 = PathJoinSubstitution([gazebo_robot_pkg,   'launch',  'spawn.launch.py'])
+    world                        = PathJoinSubstitution([gazebo_robot_pkg,   'worlds',  'willow_garage.world'])
+    robot_state_publisher_launch = PathJoinSubstitution([robot_pkg,          'launch',  'robot_state_publisher.launch.py'])
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value=[world, ''], description='SDF world file'),
@@ -28,7 +30,8 @@ def generate_launch_description():
 
         IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_server_launch)),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_client_launch), condition=IfCondition(use_gui)),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(spawn_launch))
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(spawn_launch)),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(robot_state_publisher_launch))
     ])
 
 if __name__ == '__main__':
