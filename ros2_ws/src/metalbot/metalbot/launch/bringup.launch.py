@@ -12,7 +12,7 @@ def generate_launch_description():
     robot_pkg                    = FindPackageShare('metalbot')
     robot_state_publisher_launch = PathJoinSubstitution([robot_pkg, 'launch', 'robot_state_publisher.launch.py'])
     micro_ros_launch             = PathJoinSubstitution([robot_pkg, 'launch', 'micro_ros.launch.py'])
-    realsense_launch             = PathJoinSubstitution([realsense_pkg, 'launch', 'rs.launch.py'])
+    realsense_launch             = PathJoinSubstitution([realsense_pkg, 'launch', 'rs_launch.py'])
 
     return LaunchDescription([
         DeclareLaunchArgument('serial', default_value='/dev/ttyACM0', description='Serial port'),
