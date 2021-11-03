@@ -11,13 +11,13 @@
   - [Оглавление](#оглавление)
   - [Настройка среды](#настройка-среды)
     - [Setup Docker](#setup-docker)
-      - [Утилита drun.sh](#утилита-drunsh)
-      - [Работа с уже созданным контейнером](#работа-с-уже-созданным-контейнером)
+    - [Утилита drun.sh](#утилита-drunsh)
+    - [Работа с уже созданным контейнером](#работа-с-уже-созданным-контейнером)
     - [Setup workspaces](#setup-workspaces)
-      - [Build ROS2 workspace](#build-ros2-workspace)
-      - [Build ROS1 workspace](#build-ros1-workspace)
-      - [Build ros1_bridge](#build-ros1_bridge)
-      - [Build Micro-ROS](#build-micro-ros)
+    - [Build ROS2 workspace](#build-ros2-workspace)
+    - [Build ROS1 workspace](#build-ros1-workspace)
+    - [Build ros1_bridge](#build-ros1_bridge)
+    - [Build Micro-ROS](#build-micro-ros)
     - [Build tycmd](#build-tycmd)
   - [Запуск основных модулей](#запуск-основных-модулей)
       - [Bring Up](#bring-up)
@@ -57,7 +57,7 @@ source env-robot.sh
 source env-universal.sh
 ```
 
-#### Утилита drun.sh
+### Утилита drun.sh
 ```bash
 # Создание образа
 ./drun.sh build
@@ -74,7 +74,7 @@ source env-universal.sh
 
 ```
 
-#### Работа с уже созданным контейнером
+### Работа с уже созданным контейнером
 ```bash
 docker start $container
 docker attach $container
@@ -89,7 +89,7 @@ docker attach $container
 Для экспорта ros2_ws и micro_ros_ws существует alias ```r2```
 
 
-#### Build ROS2 workspace
+### Build ROS2 workspace
 > Переменные окружения ROS1 не должны быть экспортированы
 ```bash
 # Basic packages (no gazebo, groot, sensors, grid_map)
@@ -105,7 +105,7 @@ cb_gazebo
 cb_realsense
 ```
 
-#### Build ROS1 workspace
+### Build ROS1 workspace
 > Переменные окружения ROS2 не должны быть экспортированы
 ```bash
 cd ros1_ws
@@ -113,7 +113,7 @@ r1
 catkin_make -j4
 ```
 
-#### Build ros1_bridge
+### Build ros1_bridge
 
 > Перед началом сборки ros1_bridge следует собрать все имеющиеся интерфейсы (сообщения, сервисы) ros1 и ros2 и экспортировать переменные окружения в порядке: ros1, ros2
 ```bash
@@ -123,7 +123,7 @@ r1
 r2
 cb_bridge
 ```
-#### Build Micro-ROS
+### Build Micro-ROS
 ```bash
 cd micro_ros_ws
 r2
