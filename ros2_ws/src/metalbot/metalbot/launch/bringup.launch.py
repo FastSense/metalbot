@@ -8,9 +8,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     serial = LaunchConfiguration('serial', default='/dev/ttyACM0')
 
-    robot_pkg        = FindPackageShare('metalbot')
+    realsense_pkg                = FindPackageShare('fs-realsense')
+    robot_pkg                    = FindPackageShare('metalbot')
     robot_state_publisher_launch = PathJoinSubstitution([robot_pkg, 'launch', 'robot_state_publisher.launch.py'])
-    micro_ros_launch = PathJoinSubstitution([robot_pkg, 'launch', 'micro_ros.launch.py'])
+    micro_ros_launch             = PathJoinSubstitution([robot_pkg, 'launch', 'micro_ros.launch.py'])
+    realsense_launch             = PathJoinSubstitution([realsense_pkg, 'launch', 'rs.launch.py'])
 
     return LaunchDescription([
         DeclareLaunchArgument('serial', default_value='/dev/ttyACM0', description='Serial port'),
@@ -19,7 +21,8 @@ def generate_launch_description():
             description='Set "true" to increase messages written to terminal.'),
 
         IncludeLaunchDescription(PythonLaunchDescriptionSource(robot_state_publisher_launch)),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(micro_ros_launch))
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(micro_ros_launch)),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(realsense_launch))
     ])
 
 if __name__ == '__main__':
