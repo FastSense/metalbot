@@ -1,14 +1,37 @@
 #!/bin/bash
 
-sudo su $ROSUSER
-# opencv with Gstreamer
-cd /home/$ROSUSER
-git clone https://github.com/opencv/opencv.git -b 4.5.0
-git clone https://github.com/opencv/opencv_contrib.git -b 4.5.0
-mkdir opencv/build
+# opencv with Gstreamer and CUDA
+cd /usr/local/src
+sudo git clone https://github.com/opencv/opencv.git -b 4.5.2
+sudo git clone https://github.com/opencv/opencv_contrib.git -b 4.5.2
+sudo mkdir opencv/build
 cd opencv/build
-cmake -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -DWITH_GSTREAMER=ON -DBUILD_opencv_python3=ON ..
-make -j4
+sudo cmake \
+    -D CMAKE_BUILD_TYPE=RELEASE \
+    -D CMAKE_INSTALL_PREFIX=/usr/local/opencv4.5+cuda \
+    -D WITH_TBB=ON \
+    -D ENABLE_FAST_MATH=1 \
+    -D CUDA_FAST_MATH=1 \
+    -D WITH_CUBLAS=1 \
+    -D WITH_CUDA=ON \
+    -D BUILD_opencv_cudacodec=OFF \
+    -D WITH_V4L=ON \
+    -D WITH_QT=OFF \
+    -D WITH_OPENGL=ON \
+    -D WITH_GSTREAMER=ON \
+    -D OPENCV_GENERATE_PKGCONFIG=ON \
+    -D OPENCV_PC_FILE_NAME=opencv.pc \
+    -D OPENCV_ENABLE_NONFREE=ON \
+    -D BUILD_opencv_python3=ON \
+    -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+    -D INSTALL_PYTHON_EXAMPLES=OFF \
+    -D INSTALL_C_EXAMPLES=OFF \
+    -D BUILD_EXAMPLES=OFF ..
+sudo make -j4
 sudo make install
 
-sudo su root
+echo "\
+export PATH=\"/usr/local/opencv4.5+cuda/bin:\$PATH\" \n\
+export PKG_CONFIG_PATH=\"/usr/local/opencv4.5+cuda/lib/pkgconfig:\$PKG_CONFIG_PATH\" \n\
+export LD_LIBRARY_PATH=\"/usr/local/opencv4.5+cuda/lib:\$LD_LIBRARY_PATH\"" > /home/user/activate_opencv4.5.bash
+

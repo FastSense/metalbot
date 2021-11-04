@@ -42,7 +42,6 @@ RUN if [ "$USE_CUDA" = "ON" ]; then \
     rm cuda.sh 
 
 # OpenCV
-
 COPY scripts/opencv.sh .
 RUN if [ "$USE_OPENCV" = "ON" ]; then \
       sh ./opencv.sh \
@@ -194,6 +193,14 @@ RUN apt-get update && \
         autojump \
         iputils-ping && \
         rm -rf /var/lib/apt/lists/*
+
+# Dependencies for dogm
+RUN apt-get update && \
+    apt-get install -y \
+        libglfw3-dev \
+        libglew-dev \
+        libglm-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && \
       apt-get upgrade -y && \
