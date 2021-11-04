@@ -1,9 +1,9 @@
 # Robot.
-map_frame_id:                               odom_frame
-robot_base_frame_id:                        camera_pose_frame
+map_frame_id:                               odom
+robot_base_frame_id:                        base_link
 robot_pose_with_covariance_topic:           /pose
 robot_pose_cache_size:                      200
-point_cloud_topic:                          /camera/depth/color/points
+point_cloud_topic:                          /points
 track_point_frame_id:                       points
 track_point_x:                              0.0
 track_point_y:                              0.0
