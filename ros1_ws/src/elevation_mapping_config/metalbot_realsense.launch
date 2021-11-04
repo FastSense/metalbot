@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="elevation_mapping" type="elevation_mapping" name="elevation_mapping" output="screen">
+    <rosparam command="load" file="$(find elevation_mapping_demos)/config/robots/metalbot_realsense.yaml" />
+    <rosparam command="load" file="$(find elevation_mapping)/config/sensor_processors/perfect.yaml" />
+    <rosparam command="load" file="$(find elevation_mapping_demos)/config/postprocessing/postprocessor_pipeline.yaml" />
+  </node>
+
+</launch>
