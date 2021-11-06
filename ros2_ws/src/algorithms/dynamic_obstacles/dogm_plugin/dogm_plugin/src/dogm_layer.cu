@@ -74,7 +74,8 @@ void DogmLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
 
     auto time_stamp = node_->now();
     costMapToMeasurementGrid(master_grid, min_i, min_j, max_i, max_j, 0.5);
-    float robot_x = 0.f, robot_y = 0.f;
+    float robot_x = 0.f;
+    float robot_y = 0.f;
     if (motion_compensation_) {
         robot_x = robot_x_;
         robot_y = robot_y_;
@@ -101,8 +102,8 @@ void DogmLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
 void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
                                          int min_i, int min_j, int max_i, int max_j,
                                          float occupancy_threshold) {
-    unsigned char* master_array = master_grid.getCharMap();
-    unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
+    unsigned int size_x = master_grid.getSizeInCellsX();
+    unsigned int size_y = master_grid.getSizeInCellsY();
     min_i = std::max(0, min_i);
     min_j = std::max(0, min_j);
     max_i = std::min(static_cast<int>(size_x), max_i);
@@ -117,8 +118,8 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
     
     float measurement_grid_origin_x = robot_x_ - dogm_map_->params.size / 2;
     float measurement_grid_origin_y = robot_y_ - dogm_map_->params.size / 2;
-    float costmap_origin_x = master_grid.getOriginX();
-    float costmap_origin_y = master_grid.getOriginY();
+    float costmap_origin_x = master_grid.getOriginX() + min_i * costmap_resolution;
+    float costmap_origin_y = master_grid.getOriginY() + min_j * costmap_resolution;
     cv::Mat scaled_measurement_grid_to_costmap(cv::Mat::eye(cv::Size(3, 3), CV_32F));
     scaled_measurement_grid_to_costmap.at<float>(0, 2) = (costmap_origin_x - measurement_grid_origin_x) / costmap_resolution;
     scaled_measurement_grid_to_costmap.at<float>(1, 2) = (costmap_origin_y - measurement_grid_origin_y) / costmap_resolution;
@@ -127,7 +128,8 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
 
     dim3 blocks(1, 1);
     dim3 threads(16, 16);
-    cv::Mat costmap(cv::Size(size_x, size_y), CV_8U, master_array);
+    unsigned char* master_array = master_grid.getCharMap();
+    cv::Mat costmap(cv::Size(max_i - min_i, max_j - min_j), CV_8U, master_array + master_grid.getIndex(min_i, min_j), size_x * sizeof(unsigned char));
     costmap.convertTo(costmap, CV_32S);
     cv::cuda::GpuMat costmap_device;
     costmap_device.upload(costmap);
@@ -136,7 +138,7 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
     cv::Mat measurement_grid;
     cv::cuda::GpuMat measurement_grid_device;
     cv::cuda::warpAffine(costmap_device, measurement_grid_device, measurement_grid_to_costmap(cv::Range(0, 2), cv::Range(0, 3)),
-        cv::Size(dogm_map_->grid_size, dogm_map_->grid_size), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0));
+        cv::Size(dogm_map_->grid_size, dogm_map_->grid_size), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(nav2_costmap_2d::FREE_SPACE));
     fillMeasurementGrid<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, occupancy_threshold);
 
     CHECK_ERROR(cudaGetLastError());
