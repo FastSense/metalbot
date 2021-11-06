@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# requirements
+sudo apt-get update
+sudo apt-get install -y build-essential cmake pkg-config unzip yasm git checkinstall
+sudo apt-get install -y libjpeg-dev libpng-dev libtiff-dev
+sudo apt-get install -y libgtk-3-dev
+sudo apt-get install -y libtbb-dev
+sudo apt-get install -y libatlas-base-dev gfortran
+
 # opencv with Gstreamer and CUDA
 cd /usr/local/src
 sudo git clone https://github.com/opencv/opencv.git -b 4.5.2
@@ -30,6 +38,7 @@ sudo cmake \
 sudo make -j4
 sudo make install
 
+# create bash file to activate opencv 4.5
 echo "\
 export PATH=\"/usr/local/opencv4.5+cuda/bin:\$PATH\" \n\
 export PKG_CONFIG_PATH=\"/usr/local/opencv4.5+cuda/lib/pkgconfig:\$PKG_CONFIG_PATH\" \n\
