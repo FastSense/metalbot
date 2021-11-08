@@ -12,7 +12,7 @@ def generate_launch_description():
     defaut_w_max = "2.5"
     default_cmd_freq = "30.0"
     default_kill_follower = "True"
-    defaut_use_odom = "True"
+    defaut_use_odom = "False"
     default_parent_frame = "odom_frame"
     default_robot_frame = "camera_pose_frame"
 
