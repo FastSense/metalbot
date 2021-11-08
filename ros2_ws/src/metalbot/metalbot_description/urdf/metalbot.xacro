@@ -272,6 +272,36 @@
     <child link="camera_link"/>
   </joint>
 
+  <joint name="camera_link_to_depth" type="fixed">
+    <axis xyz="0 0 0" />
+    <origin xyz="0 -0.05 0" rpy="0 0 0"/>
+    <parent link="camera_link"/>
+    <child link="camera_aligned_depth_to_color"/>
+  </joint>
+
+  <joint name="depth_to_optical" type="fixed">
+    <axis xyz="0 0 0" />
+    <origin xyz="0 0 0" rpy="-1.57 0 -1.57"/>
+    <parent link="camera_aligned_depth_to_color"/>
+    <child link="camera_color_optical_frame"/>
+  </joint>
+
+  <joint name="camera_pose_to_base_link" type="fixed">
+    <axis xyz="0 0 0" />
+    <origin xyz="-0.14 -0.01 -0.215" rpy="0 0 0"/>
+    <parent link="camera_pose_frame"/>
+    <child link="base_link"/>
+  </joint>
+
+  <link name="camera_aligned_depth_to_color">
+  </link>
+
+  <link name="camera_pose_frame">
+  </link>
+  
+  <link name="camera_color_optical_frame">
+  </link>
+
   <link name="camera_link">
     <collision>
       <origin xyz="0.02 0 0" rpy="0 0 0"/>
