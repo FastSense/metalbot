@@ -148,6 +148,24 @@ class Filter2D:
         I = np.eye(5)
         self.P_opt = (I - K @ H) @ self.P_opt
         self.x_opt = self.x_opt + K @ y
+
+    def update_imu_accel(self, z_accel, R_accel):
+        H = get_jacobian_accel(self.x_opt) 
+        y = z_accel - accel(self.x_opt)
+        G = H @ self.P_opt @ H.T + R_accel
+        K = self.P_opt @ H.T @ inv(G)
+        I = np.eye(5)
+        self.P_opt = (I - K @ H) @ self.P_opt
+        self.x_opt = self.x_opt + K @ y
+    
+    def update_imu_gyro(self, z_gyro, R_gyro):
+        H = get_jacobian_gyro(self.x_opt) 
+        y = z_gyro - accel(self.x_opt)
+        G = H @ self.P_opt @ H.T + R_gyro
+        K = self.P_opt @ H.T @ inv(G)
+        I = np.eye(5)
+        self.P_opt = (I - K @ H) @ self.P_opt
+        self.x_opt = self.x_opt + K @ y
     
     @property
     def v(self):

@@ -91,6 +91,16 @@ class StateEstimation2D(Node):
             'cmd_vel',
             self.control_callback,
             15)
+        self.imu_accel_sub = self.create_subscription(
+            Imu,
+            '/camera/accel/sample',
+            self.imu_accel_callback,
+            15)
+        self.imu_gyro_sub = self.create_subscription(
+            Imu,
+            '/camera/gyro/sample',
+            self.imu_gyro_callback,
+            15)
         self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
         # ROS variables
         self.odom_noised = Odometry()
@@ -99,7 +109,8 @@ class StateEstimation2D(Node):
         self.got_measurements = 0
         self.control = np.zeros(2)
         self.z_odom = np.zeros(2)
-        self.z_imu = np.zeros(2)
+        self.z_accel = np.zeros(1)
+        self.z_gyro = np.zeros(1)
         # Upload NN control model
         self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
         self.model = nnio.ONNXModel(self.model_path)
@@ -107,8 +118,8 @@ class StateEstimation2D(Node):
         self.dt = 0.1
         self.R_odom = np.array([[0.5, 0],
                                 [0, 0.1]])
-        self.R_imu = np.array([[0.1, 0],
-                               [0, 0.1]])
+        self.R_accel = np.array([[0.5]])
+        self.R_gyro = np.array([[0.5]])
         
         self.filter = Filter2D(
             x_init=np.zeros(5), 
@@ -161,6 +172,14 @@ class StateEstimation2D(Node):
         z_odom[0] = odom.linear.x
         z_odom[1] = odom.angular.z
         return z_odom
+
+    def imu_accel_callback(self, msg):
+        self.imu = msg
+        self.z_accel = np.array([self.imu.linear_acceleration.x])
+    
+    def imu_gyro_callback(self, msg):
+        self.imu = msg
+        self.z_gyro = np.array([self.imu.angular_velocity.y / 2])
     
     def step_filter(self):
         """
@@ -173,6 +192,8 @@ class StateEstimation2D(Node):
             self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
+            # self.filter.update_imu_accel(self.z_accel, self.R_accel)
+            self.filter.update_imu_gyro(self.z_gyro, self.R_gyro)
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             self.pose_pub.publish(self.odom_filtered)
