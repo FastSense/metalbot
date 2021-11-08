@@ -25,8 +25,10 @@ def generate_launch_description():
     kill_follower = LaunchConfiguration(
         'kill_follower', default=default_kill_follower)
     use_odom = LaunchConfiguration('use_odom', default=defaut_use_odom)
-    parent_frame = LaunchConfiguration('parent_frame', default=defaut_parent_frame)
-    robot_frame = LaunchConfiguration('robot_frame', default=default_robot_frame)
+    parent_frame = LaunchConfiguration(
+        'parent_frame', default=default_parent_frame)
+    robot_frame = LaunchConfiguration(
+        'robot_frame', default=default_robot_frame)
 
     return LaunchDescription([
 
@@ -44,7 +46,7 @@ def generate_launch_description():
                               description='Signal, that we have to kill the follower process'),
         DeclareLaunchArgument('use_odom', default_value=defaut_use_odom,
                               description='If true - use /odom topic for position, else use - tf topic'),
-        DeclareLaunchArgument('parent_frame', default_value=defaut_parent_frame,
+        DeclareLaunchArgument('parent_frame', default_value=default_parent_frame,
                               description='Static TF frame'),
         DeclareLaunchArgument('robot_frame', default_value=default_robot_frame,
                               description='Robot TF frame'),
