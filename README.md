@@ -271,8 +271,8 @@ roslaunch hdf5_data_publisher rosbot_gazebo.launch path_to_hdf5:=/path/to/save.h
 
 ```bash
 cd ~/ros1_ws/src/
-cp ./elevation_mapping_config/metalbot_realsense.launch ./elevation_mapping/elevation_mapping_demos/launch
-cp ./elevation_mapping_config/metalbot_realsense.yaml ./elevation_mapping/elevation_mapping_demos/config/robots
+cp ./fs_elevation_mapping/launch/metalbot_realsense.launch ./elevation_mapping/elevation_mapping_demos/launch
+cp ./fs_elevation_mapping/config/metalbot_realsense.yaml ./elevation_mapping/elevation_mapping_demos/config/robots
 ```
 
 Для запуска Elevation Mapping на бэгах с Realsense в ROS1 нужно сначала перегнать данные из бэга в hdf5 (как описано в разделе [Rosbag2 to ROS1](#rosbag2-to-ros1). Затем запустить публикацию данных из hdf5 и Elevation Mapping с нужным конфигом:
@@ -287,7 +287,7 @@ roscore
 Терминал 2
 ```bash
 r1
-rosrun rviz rviz -d ~/ros1_ws/src/elevation_mapping.rviz
+rosrun rviz rviz -d ~/ros1_ws/src/fs_elevation_mapping/rviz/elevation_mapping.rviz
 ```
 
 Терминал 3
