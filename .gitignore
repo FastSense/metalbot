@@ -2,6 +2,9 @@ cartpole
 build
 install
 log
+*/build
+*/log
+*/install
 .idea
 build/*
 log/*
