@@ -10,6 +10,7 @@ import numpy as np
 from filterpy.common import Q_discrete_white_noise
 from scipy.spatial.transform import Rotation as R
 import tf2_ros
+from argparse import Namespace
 
 from state_estimation_2d.filter import *
 from state_estimation_2d.ate import *
@@ -179,7 +180,12 @@ class StateEstimation2D(Node):
     
     def imu_gyro_callback(self, msg):
         self.imu = msg
-        self.z_gyro = np.array([self.imu.angular_velocity.y / 2])
+        extrinsic = self.get_extrinsic("camera_gyro_optical_frame", "base_link")
+        gyro = extrinsic @ np.array([self.imu.angular_velocity.x,
+                                            self.imu.angular_velocity.y,
+                                            self.imu.angular_velocity.z,])
+        print(gyro)
+        self.z_gyro = np.array([gyro[2]])
     
     def step_filter(self):
         """
@@ -197,6 +203,42 @@ class StateEstimation2D(Node):
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             self.pose_pub.publish(self.odom_filtered)
+
+    def get_extrinsic(self, frame1, frame2):
+        '''
+        Parameters:
+        frame1 (str): tf frame
+        frame2 (str): tf frame
+
+        Returns:
+        np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
+        '''
+        while True:
+            try:
+                # t = self.get_clock().now()
+                # rclpy.spin_once(self)
+                t = Namespace(seconds=0, nanoseconds=0)
+                trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
+                # print(f"Got transform! {frame1} -> {frame2}")
+                break
+            except tf2_ros.LookupException:
+                # rclpy.spin_once(self)
+                print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
+        tr = np.array([
+            [trans.transform.translation.x],
+            [trans.transform.translation.y],
+            [trans.transform.translation.z],
+        ])
+        rot_q = np.array([
+            trans.transform.rotation.x,
+            trans.transform.rotation.y,
+            trans.transform.rotation.z,
+            trans.transform.rotation.w,
+        ])
+        rot = R.from_quat(rot_q).as_matrix()
+        extrinsic = np.concatenate([rot, tr], 1)
+        return extrinsic
+
 
     def state_to_odometry(self, x, P):
         """
