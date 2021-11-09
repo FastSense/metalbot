@@ -107,7 +107,7 @@ local_costmap:
         plugin: "dogm_plugin/DogmLayer"
         enabled: True
         motion_compensation: False
-        size: 20.0
+        size: 5.0
         resolution: 0.2
         particle_count: 3000000
         new_born_particle_count: 300000
