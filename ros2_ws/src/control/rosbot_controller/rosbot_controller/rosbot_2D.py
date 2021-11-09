@@ -6,8 +6,9 @@ import time
 class RobotState():
     """
     Describes the robot state as (x, y, yaw)
-    
+
     """
+
     def __init__(self, x=0.0, y=0.0, yaw=0.0, vx=0.0, vy=0.0, w=0.0):
         self.x = x
         self.y = y
@@ -22,8 +23,9 @@ class RobotControl:
     Describes the current control velocity
 
     """
+
     def __init__(self, v=0.0, w=0.0):
-        self.v = v  # control by linear.x 
+        self.v = v  # control by linear.x
         self.w = w  # control by angular.z
 
     def to_str(self):
@@ -35,6 +37,7 @@ class Goal:
     Describes the goal to be achieved
 
     """
+
     def __init__(self, x=0.0, y=0.0, yaw=0.0):
         self.x = x
         self.y = y
@@ -49,6 +52,7 @@ class Params:
     Restriction of a linear and angular velocities
 
     """
+
     def __init__(self, v_max=2.0, w_max=1.5):
         self.v_max = v_max
         self.w_max = w_max
@@ -60,6 +64,7 @@ class Rosbot:
     Defines state of a rosbot
 
     """
+
     def __init__(self, v_max=2.0, w_max=1.5):
         self.state = RobotState()
         self.params = Params(v_max, w_max)
@@ -116,7 +121,8 @@ class Rosbot:
         if (abs(alpha) > math.pi):
             alpha -= np.sign(alpha) * 2 * math.pi
 
-        v = self.params.v_max * math.tanh(r) * math.cos(alpha)
+        v = self.params.v_max * math.cos(alpha) * math.tanh(r)
+        # print(self.params.v_max, math.tanh(r), math.cos(alpha))
         if r > self.eps_r:
             w = self.params.w_max * alpha + \
                 math.tanh(r) * math.sin(alpha) * math.cos(alpha) / r

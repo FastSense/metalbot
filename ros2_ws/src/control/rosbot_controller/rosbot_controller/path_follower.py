@@ -1,4 +1,5 @@
 import rclpy
+from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from tf2_msgs.msg import TFMessage
 from nav_msgs.msg import Path
@@ -9,74 +10,76 @@ from nav_msgs.msg import Odometry
 import numpy as np
 
 
-class TrajFollower():
+class TrajFollower(Node):
     """
     TrajFollower tries to follow given path.
     Trajectory should be defined as array of (x, y, quaternion) points.
     It computes control to follow the path.
     Args:
-        node_name: name of node
+        _name: name of
     Args of a command line:
         control_topic: name of a control topic (default = /cmd_vel).
         v_max:         maximum forward speed.
         w_max:         maximum value of a rotation speed around axe z.
     """
 
-    def __init__(self, node_name):
-        self.node_name = node_name
+    def __init__(self, _name):
+
         rclpy.init(args=None)
-        self.node = rclpy.create_node(node_name)
+
+        super().__init__(_name)
+
         self.declare_and_get_parametrs()
         self.robot = Rosbot(self.v_max, self.w_max)
-        # state of the Robot that updated
-        self.robot_state = RobotState()
         self.current_goal = Goal()
-
-        self.dt = 1.0 / self.cmd_freq
-
-        self.goal_queue = []
+        # self.goal_queue = []
         self.path = []
-
+        self.dt = 1.0 / self.cmd_freq
         self.path_deviation = 0.0
         self.path_index = 0
-        self.got_path = False
+        self.wait_for_path = True
 
         self.init_subs_pubs()
-        rclpy.get_default_context().on_shutdown(self.on_shutdown)
 
     def declare_and_get_parametrs(self):
         """
         Initializing of the parameters from a command line
 
         """
-        self.node.declare_parameter('odom_topic', '/odom')
-        self.node.declare_parameter('control_topic', '/cmd_vel')
-        self.node.declare_parameter('v_max', 2.5)
-        self.node.declare_parameter('w_max', 2.5)
-        self.node.declare_parameter('kill_follower', True)
-        self.node.declare_parameter('cmd_freq', 30.0)
-        self.node.declare_parameter('use_odom', True)
-        self.node.declare_parameter('parent_frame', 'odom_frame')
-        self.node.declare_parameter('robot_frame', 'camera_pose_frame')
+        self.declare_parameter('use_odom', True)
+        self.declare_parameter('path_topic', '/path')
+        self.declare_parameter('odom_topic', '/odom')
+        self.declare_parameter('tf_topic', '/tf')
+        self.declare_parameter('parent_frame', 'odom_frame')
+        self.declare_parameter('robot_frame', 'camera_pose_frame')
+        self.declare_parameter('control_topic', '/cmd_vel')
+        self.declare_parameter('v_max', 2.5)
+        self.declare_parameter('w_max', 2.5)
+        self.declare_parameter('cmd_freq', 30.0)
+        self.declare_parameter('kill_follower', True)
 
-        self.odom_topic = self.node.get_parameter(
-            'odom_topic').get_parameter_value().string_value
-        self.cmd_topic = self.node.get_parameter(
-            'control_topic').get_parameter_value().string_value
-        self.v_max = self.node.get_parameter(
-            'v_max').get_parameter_value().double_value
-        self.w_max = self.node.get_parameter(
-            'w_max').get_parameter_value().double_value
-        self.cmd_freq = self.node.get_parameter(
-            'cmd_freq').get_parameter_value().double_value
-        self.kill_follower = self.node.get_parameter(
-            'kill_follower').get_parameter_value().bool_value
-        self.use_odom = self.node.get_parameter(
+        self.path_topic = self.get_parameter(
+            'path_topic').get_parameter_value().bool_value
+        self.use_odom = self.get_parameter(
             'use_odom').get_parameter_value().bool_value
-        self.parent_frame = self.node.get_parameter(
+        self.odom_topic = self.get_parameter(
+            'odom_topic').get_parameter_value().string_value
+        self.tf_topic = self.get_parameter(
+            'tf_topic').get_parameter_value().string_value
+        self.parent_frame = self.get_parameter(
             'parent_frame').get_parameter_value().string_value
-        self.robot_frame = self.node.get_parameter(
+        self.robot_frame = self.get_parameter(
             'robot_frame').get_parameter_value().string_value
+        self.cmd_topic = self.get_parameter(
+            'control_topic').get_parameter_value().string_value
+        self.v_max = self.get_parameter(
+            'v_max').get_parameter_value().double_value
+        self.w_max = self.get_parameter(
+            'w_max').get_parameter_value().double_value
+        self.cmd_freq = self.get_parameter(
+            'cmd_freq').get_parameter_value().double_value
+        self.kill_follower = self.get_parameter(
+            'kill_follower').get_parameter_value().bool_value
 
     def init_subs_pubs(self):
         """
@@ -84,28 +87,23 @@ class TrajFollower():
         and 1 publisher to a cmd_topic (\cmd_vel)
 
         """
-        # publisher to control the robot
-        self.cmd_pub = self.node.create_publisher(
-            Twist, self.cmd_topic, 1)
-        # subscriber to get the trajectory
-        self.path_sub = self.node.create_subscription(
-            Path, '/path', self.path_callback, 10)
+        self.cmd_pub = self.create_publisher(Twist, self.cmd_topic, 1)
+        self.path_sub = self.create_subscription(
+            Path, self.path_topic, self.path_callback, 1)
 
-        # subscriber for the robot position
         if self.use_odom:
-            self.odom_sub = self.node.create_subscription(
-                Odometry, self.odom_topic, self.odom_callback, 10)
+            self.odom_sub = self.create_subscription(
+                Odometry, self.odom_topic, self.odom_callback, 1)
             self.odom_sub
         else:
-            self._tf_sub = self.node.create_subscription(
-                TFMessage, 'tf', self.tf_callback, 1)
-            self._tf_sub
+            self.tf_sub_ = self.create_subscription(
+                TFMessage, self.tf_topic, self.tf_callback, 1)
+            self.tf_sub_
         self.path_sub
 
     def tf_callback(self, tf_msg):
         """
         Receiving TF transform from /tf topic.
-
         """
         for item in tf_msg.transforms:
             if (
@@ -119,35 +117,28 @@ class TrajFollower():
                     np.float(item.transform.rotation.z),
                     np.float(item.transform.rotation.w)]
                 ).as_euler('xyz')[2]
-                self.robot_state = RobotState(x, y, yaw)
+                self.robot.set_state(RobotState(x, y, yaw))
 
     def odom_callback(self, odom_msg: Odometry):
         """
         Receiving coordinates from /odom and update state of the robot
-
         """
-        rosbot_pose = odom_msg.pose.pose
-        x, y = rosbot_pose.position.x, rosbot_pose.position.y
+        robot_pose = odom_msg.pose.pose
+        x, y = robot_pose.position.x, robot_pose.position.y
         yaw = Rotation.from_quat([
-            np.float(rosbot_pose.orientation.x),
-            np.float(rosbot_pose.orientation.y),
-            np.float(rosbot_pose.orientation.z),
-            np.float(rosbot_pose.orientation.w)]
+            np.float(robot_pose.orientation.x),
+            np.float(robot_pose.orientation.y),
+            np.float(robot_pose.orientation.z),
+            np.float(robot_pose.orientation.w)]
         ).as_euler('xyz')[2]
-        # state of the robot is updated
-        self.robot_state = RobotState(x, y, yaw)
+        self.robot.set_state(RobotState(x, y, yaw))
 
     def path_callback(self, msg: Path):
         """
         Receiving message with coordinates of a path to follow
-
         """
-        for p in msg.poses:
-            x, y = p.pose.position.x, p.pose.position.y
-            self.goal_queue.append(Goal(x, y))
-            self.path.append((x, y))
-        print("GOT PATH!!!")
-        self.got_path = True
+        self.wait_for_path = False
+        self.path = [(p.pose.position.x, p.pose.position.y) for p in msg.poses]
 
     def get_min_dist_to_path(self):
 
@@ -167,45 +158,39 @@ class TrajFollower():
 
     def publish_control(self, control: RobotControl):
         """
-        Args:
-            control: control vector of RobotControl type
-
+        :Args:
+            :control: control vector of RobotControl type
         """
         twist_cmd = Twist()
         twist_cmd.linear.x = control.v
-        twist_cmd.linear.y = 0.0
-        twist_cmd.linear.z = 0.0
-        twist_cmd.angular.x = 0.0
-        twist_cmd.angular.y = 0.0
         twist_cmd.angular.z = control.w
         self.cmd_pub.publish(twist_cmd)
 
     def run(self):
         """
         Create timer which call calculate_publish_control every dt seconds
-        and start spinning the node.
-
+        and start spinning the .
         """
-        self.timer = self.node.create_timer(
+        self.timer = self.create_timer(
             self.dt, self.calculate_publish_control)
-        rclpy.spin(self.node)
+        rclpy.spin(self)
 
     def calculate_publish_control(self):
         """
         Calculate and publish control until the robot reaches the goal
 
         """
-        # if the path has not yet been received, then we do not execute
-        if not self.got_path:
+        if self.wait_for_path:
             return
-        self.robot.set_state(self.robot_state)
 
         if self.robot.goal_reached(self.current_goal):
-            if self.goal_queue:
-                self.current_goal = self.goal_queue.pop(0)
+            # if self.goal_queue:
+            if self.path_index < len(self.path):
+                # self.current_goal = self.goal_queue.pop(0)
+                x, y = self.path[self.path_index][0], self.path[self.path_index][1]
+                self.current_goal = Goal(x, y)
                 self.path_index += 1
             else:
-                # end of the path, slow down
                 self.publish_control(RobotControl())
                 print(
                     f"Trajectory finished. Path deviation = {self.path_deviation}")
@@ -218,16 +203,8 @@ class TrajFollower():
         self.publish_control(control)
         return
 
-    def on_shutdown(self):
-        """
-        A function that is executed when a node shutdown.
-
-        """
-        pass
-
 
 def main(args=None):
-
     traj_follower = TrajFollower("trajectory_follower")
     traj_follower.run()
 

@@ -1,14 +1,16 @@
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
+from rclpy.node import Node
 import pathlib
 import numpy as np
 import rclpy
 import math
 import time
 from scipy.spatial.transform import Rotation
+from .robot_trajectory import Trajectory
 
 
-class TrajPublish():
+class TrajPublish(Node):
     """
     TrajPublish creates a message of a type Path(), and publish it in path_topic.
     If path stores in the file, it should be defines as array of (x, y).
@@ -25,30 +27,34 @@ class TrajPublish():
     """
 
     def __init__(self, node_name):
-        self.node_name = node_name
+
         rclpy.init(args=None)
-        self.node = rclpy.create_node(self.node_name)
-        self.node.declare_parameter('traj_type')
-        self.node.declare_parameter('move_plan')
-        self.node.declare_parameter('num_of_subs', 1)
-        self.node.declare_parameter('path_topic', '/path')
+        super().__init__(node_name)
+        self.declare_and_get_parameters()
 
-        self.path_topic = self.node.get_parameter(
+        self.trajectory = Trajectory()
+        self.trajectory.set_step(0.1)
+        self.trajectory.set_frame("odom")
+
+        self.path_pub = self.create_publisher(Path, self.path_topic, 5)
+
+    def declare_and_get_parameters(self):
+        """
+        """
+
+        self.declare_parameter('traj_type')
+        self.declare_parameter('move_plan')
+        self.declare_parameter('num_of_subs', 1)
+        self.declare_parameter('path_topic', '/path')
+
+        self.path_topic = self.get_parameter(
             'path_topic').get_parameter_value().string_value
-        self.traj_type = self.node.get_parameter(
+        self.traj_type = self.get_parameter(
             'traj_type').get_parameter_value().string_value
-        self.move_plan = self.node.get_parameter(
+        self.move_plan = self.get_parameter(
             'move_plan').get_parameter_value().string_value
-        self.num_of_subs = self.node.get_parameter(
+        self.num_of_subs = self.get_parameter(
             'num_of_subs').get_parameter_value().double_value
-
-        self.path_pub = None
-
-        # create empty message
-        self.msg = Path()
-        self.msg.header.frame_id = "odom"
-        self.msg.poses = []
-        self.step = 0.1  # step for generating the trajectory of sinus and spiral
 
     def generate_message(self):
         """
@@ -72,22 +78,13 @@ class TrajPublish():
         and publish it in topic
 
         """
-        if not self.is_valid_traj_type():
-            self.node.get_logger().info("Not valid type of trajectory")
-            return 1
 
-        self.path_pub = self.node.create_publisher(Path, self.path_topic, 5)
-        self.generate_message()
-
-        # waiting for subs on our channel
         while self.path_pub.get_subscription_count() < self.num_of_subs:
-            time.sleep(0.1)
-        time.sleep(0.1)
+            time.sleep(0.2)
 
         self.path_pub.publish(self.msg)
 
-        time.sleep(0.1)
-        self.node.destroy_node()
+        self.destroy_node()
         rclpy.shutdown()
 
     def is_valid_traj_type(self):
@@ -210,7 +207,7 @@ class TrajPublish():
         Generating a trajectory of the square
 
         """
-        p_edges = [(2.0, -0.1), (2.1, 1.9),  (0.1, 2.0), (0, 0)]  # square
+        p_edges = [(1.0, -0.1), (1.1, 1.9),  (0.1, 1.0), (0, 0)]  # square
         points = self.edges_to_points(p_edges)
 
         for p in points:
