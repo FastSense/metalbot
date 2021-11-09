@@ -27,3 +27,4 @@ tests/report.txt
 logger/output_data
 *.cache
 bags
+dataset
