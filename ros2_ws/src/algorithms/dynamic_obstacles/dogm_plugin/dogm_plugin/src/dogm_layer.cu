@@ -17,8 +17,12 @@ DogmLayer::DogmLayer() {}
 void DogmLayer::onInitialize() {
     declareParameter("enabled", rclcpp::ParameterValue(true));
     node_->get_parameter(name_ + "." + "enabled", enabled_);
+
+    declareParameter("opencv_visualization", rclcpp::ParameterValue(false));
+    node_->get_parameter(name_ + "." + "opencv_visualization", opencv_visualization_);
     declareParameter("motion_compensation", rclcpp::ParameterValue(true));
     node_->get_parameter(name_ + "." + "motion_compensation", motion_compensation_);
+
     declareParameter("size", rclcpp::ParameterValue(50.0f));
     node_->get_parameter(name_ + "." + "size", params_.size);
     declareParameter("resolution", rclcpp::ParameterValue(0.2f));
@@ -39,6 +43,9 @@ void DogmLayer::onInitialize() {
     node_->get_parameter(name_ + "." + "stddev_velocity", params_.stddev_velocity);
     declareParameter("init_max_velocity", rclcpp::ParameterValue(30.0f));
     node_->get_parameter(name_ + "." + "init_max_velocity", params_.init_max_velocity);
+
+    declareParameter("normalized_threshold", rclcpp::ParameterValue(0.5f));
+    node_->get_parameter(name_ + "." + "normalized_threshold", normalized_threshold_);
 
     dogm_map_ = std::make_unique<dogm::DOGM>(params_);
     CHECK_ERROR(cudaMalloc(&measurement_grid_, dogm_map_->grid_cell_count * sizeof(dogm::MeasurementCell)));
@@ -72,8 +79,9 @@ void DogmLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
         return;
     }
 
+    // TODO: get current time from map
     auto time_stamp = node_->now();
-    costMapToMeasurementGrid(master_grid, min_i, min_j, max_i, max_j, 0.5);
+    costMapToMeasurementGrid(master_grid, min_i, min_j, max_i, max_j);
     float robot_x = 0.f;
     float robot_y = 0.f;
     if (motion_compensation_) {
@@ -89,19 +97,20 @@ void DogmLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
     }
     last_time_stamp_ = time_stamp;
 
-    cv::Mat occupancy_image = dogm_map_->getOccupancyImage();
-    int vis_image_size_ = 600;
-    float vis_occupancy_threshold_ = 0.6;
-    float vis_mahalanobis_distance_ = 2.0;
-    dogm_map_->drawVelocities(occupancy_image, vis_image_size_, 1., vis_occupancy_threshold_, vis_mahalanobis_distance_);
-    cv::namedWindow("occupancy_image", cv::WINDOW_NORMAL);
-    cv::imshow("occupancy_image", occupancy_image);
-    cv::waitKey(1);
+    if (opencv_visualization_) {
+        cv::Mat occupancy_image = dogm_map_->getOccupancyImage();
+        int vis_image_size_ = 600;
+        float vis_occupancy_threshold_ = 0.6;
+        float vis_mahalanobis_distance_ = 2.0;
+        dogm_map_->drawVelocities(occupancy_image, vis_image_size_, 1., vis_occupancy_threshold_, vis_mahalanobis_distance_);
+        cv::namedWindow("occupancy_image", cv::WINDOW_NORMAL);
+        cv::imshow("occupancy_image", occupancy_image);
+        cv::waitKey(1);
+    }
 }
 
 void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
-                                         int min_i, int min_j, int max_i, int max_j,
-                                         float occupancy_threshold) {
+                                         int min_i, int min_j, int max_i, int max_j) {
     unsigned int size_x = master_grid.getSizeInCellsX();
     unsigned int size_y = master_grid.getSizeInCellsY();
     min_i = std::max(0, min_i);
@@ -139,7 +148,7 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
     cv::cuda::GpuMat measurement_grid_device;
     cv::cuda::warpAffine(master_array_device, measurement_grid_device, measurement_grid_to_costmap(cv::Range(0, 2), cv::Range(0, 3)),
         cv::Size(dogm_map_->grid_size, dogm_map_->grid_size), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(nav2_costmap_2d::FREE_SPACE));
-    fillMeasurementGrid<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, occupancy_threshold);
+    fillMeasurementGrid<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, normalized_threshold_);
 
     CHECK_ERROR(cudaGetLastError());
     CHECK_ERROR(cudaDeviceSynchronize());

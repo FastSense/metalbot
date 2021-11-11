@@ -106,6 +106,7 @@ local_costmap:
       dogm_layer:
         plugin: "dogm_plugin/DogmLayer"
         enabled: True
+        opencv_visualization: True
         motion_compensation: False
         size: 5.0
         resolution: 0.2
@@ -117,6 +118,7 @@ local_costmap:
         birth_prob: 0.02
         stddev_velocity: 30.0
         init_max_velocity: 30.0
+        normalized_threshold: 0.5
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"

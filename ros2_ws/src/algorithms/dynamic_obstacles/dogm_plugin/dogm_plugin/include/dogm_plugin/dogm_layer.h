@@ -24,14 +24,15 @@ public:
     virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
                              int min_i, int min_j, int max_i, int max_j);
     void costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
-                                          int min_i, int min_j, int max_i, int max_j,
-                                          float occupancy_threshold);
+                                  int min_i, int min_j, int max_i, int max_j);
     void publishDynamicGrid();
     virtual void reset();
 
 private:
+    bool opencv_visualization_;
     bool motion_compensation_;
     dogm::DOGM::Params params_;
+    float normalized_threshold_;
     std::unique_ptr<dogm::DOGM> dogm_map_;
     dogm::MeasurementCell* measurement_grid_;
     rclcpp::Publisher<dogm_msgs::msg::DynamicOccupancyGrid>::SharedPtr publisher_;
