@@ -146,39 +146,39 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
 }
 
 void DogmLayer::publishDynamicGrid() {
-    auto message = dogm_msgs::msg::DynamicOccupancyGrid();
-    message.header.stamp = node_->now();
-    message.header.frame_id = "abc";
-    message.info.resolution = dogm_map_->getResolution();
-    message.info.length = dogm_map_->getGridSize() * dogm_map_->getResolution();
-    message.info.size = dogm_map_->getGridSize();
-    message.info.pose.position.x = dogm_map_->getPositionX();
-    message.info.pose.position.y = dogm_map_->getPositionY();
-    message.info.pose.position.z = 0.0;
-    message.info.pose.orientation.x = 0.0;
-    message.info.pose.orientation.y = 0.0;
-    message.info.pose.orientation.z = 0.0;
-    message.info.pose.orientation.w = 1.0;
+    auto message = std::make_unique<dogm_msgs::msg::DynamicOccupancyGrid>();
+    message->header.stamp = node_->now();
+    message->header.frame_id = "abc";
+    message->info.resolution = dogm_map_->getResolution();
+    message->info.length = dogm_map_->getGridSize() * dogm_map_->getResolution();
+    message->info.size = dogm_map_->getGridSize();
+    message->info.pose.position.x = dogm_map_->getPositionX();
+    message->info.pose.position.y = dogm_map_->getPositionY();
+    message->info.pose.position.z = 0.0;
+    message->info.pose.orientation.x = 0.0;
+    message->info.pose.orientation.y = 0.0;
+    message->info.pose.orientation.z = 0.0;
+    message->info.pose.orientation.w = 1.0;
 
-    message.data.clear();
-    message.data.resize(dogm_map_->getGridSize() * dogm_map_->getGridSize());
+    message->data.clear();
+    message->data.resize(dogm_map_->getGridSize() * dogm_map_->getGridSize());
 
     std::vector<dogm::GridCell> grid_cell_array = dogm_map_->getGridCells();
     #pragma omp parallel for
-    for (int i = 0; i < message.data.size(); i++) {
+    for (int i = 0; i < message->data.size(); i++) {
         const dogm::GridCell& cell = grid_cell_array[i];
 
-        message.data[i].free_mass = cell.free_mass;
-        message.data[i].occ_mass = cell.occ_mass;
+        message->data[i].free_mass = cell.free_mass;
+        message->data[i].occ_mass = cell.occ_mass;
 
-        message.data[i].mean_x_vel = cell.mean_x_vel;
-        message.data[i].mean_y_vel = cell.mean_y_vel;
-        message.data[i].var_x_vel = cell.var_x_vel;
-        message.data[i].var_y_vel = cell.var_y_vel;
-        message.data[i].covar_xy_vel = cell.covar_xy_vel;
+        message->data[i].mean_x_vel = cell.mean_x_vel;
+        message->data[i].mean_y_vel = cell.mean_y_vel;
+        message->data[i].var_x_vel = cell.var_x_vel;
+        message->data[i].var_y_vel = cell.var_y_vel;
+        message->data[i].covar_xy_vel = cell.covar_xy_vel;
     }
 
-    publisher_->publish(message);
+    publisher_->publish(std::move(message));
 }
 
 void DogmLayer::reset() {
