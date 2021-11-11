@@ -8,7 +8,7 @@
 
 namespace dogm_plugin {
 
-__global__ void setUnknownAsFree(cv::cuda::PtrStepSzi occupancy_grid);
+__global__ void setUnknownAsFree(cv::cuda::PtrStepSzb master_array);
 __global__ void fillMeasurementGrid(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
                                     float occupancy_threshold);
 
@@ -129,15 +129,15 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
     dim3 blocks(1, 1);
     dim3 threads(16, 16);
     unsigned char* master_array = master_grid.getCharMap();
-    cv::Mat costmap(cv::Size(max_i - min_i, max_j - min_j), CV_8U, master_array + master_grid.getIndex(min_i, min_j), size_x * sizeof(unsigned char));
-    costmap.convertTo(costmap, CV_32S);
-    cv::cuda::GpuMat costmap_device;
-    costmap_device.upload(costmap);
-    setUnknownAsFree<<<blocks, threads>>>(costmap_device);
+    cv::Mat master_array_host(cv::Size(max_i - min_i, max_j - min_j), CV_8U, master_array + master_grid.getIndex(min_i, min_j), size_x * sizeof(unsigned char));
+    cv::cuda::GpuMat master_array_device;
+    master_array_device.upload(master_array_host);
+    setUnknownAsFree<<<blocks, threads>>>(master_array_device);
+    master_array_device.convertTo(master_array_device, CV_32S);
 
     cv::Mat measurement_grid;
     cv::cuda::GpuMat measurement_grid_device;
-    cv::cuda::warpAffine(costmap_device, measurement_grid_device, measurement_grid_to_costmap(cv::Range(0, 2), cv::Range(0, 3)),
+    cv::cuda::warpAffine(master_array_device, measurement_grid_device, measurement_grid_to_costmap(cv::Range(0, 2), cv::Range(0, 3)),
         cv::Size(dogm_map_->grid_size, dogm_map_->grid_size), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(nav2_costmap_2d::FREE_SPACE));
     fillMeasurementGrid<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, occupancy_threshold);
 
@@ -185,19 +185,19 @@ void DogmLayer::reset() {
     return;
 }
 
-__global__ void setUnknownAsFree(cv::cuda::PtrStepSzi occupancy_grid)
+__global__ void setUnknownAsFree(cv::cuda::PtrStepSzb master_array)
 {
     int start_row = blockIdx.y * blockDim.y + threadIdx.y;
     int start_col = blockIdx.x * blockDim.x + threadIdx.x;
     int step_row = blockDim.y * gridDim.y;
     int step_col = blockDim.x * gridDim.x;
-    for (int row = start_row; row < occupancy_grid.rows; row += step_row)
+    for (int row = start_row; row < master_array.rows; row += step_row)
     {
-        for (int col = start_col; col < occupancy_grid.cols; col += step_col)
+        for (int col = start_col; col < master_array.cols; col += step_col)
         {
-            if (occupancy_grid(row, col) == nav2_costmap_2d::NO_INFORMATION)
+            if (master_array(row, col) == nav2_costmap_2d::NO_INFORMATION)
             {
-                occupancy_grid(row, col) = nav2_costmap_2d::FREE_SPACE;
+                master_array(row, col) = nav2_costmap_2d::FREE_SPACE;
             }
         }
     }
