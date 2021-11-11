@@ -59,7 +59,7 @@ class TrajFollower(Node):
         self.declare_parameter('kill_follower', True)
 
         self.path_topic = self.get_parameter(
-            'path_topic').get_parameter_value().bool_value
+            'path_topic').get_parameter_value().string_value
         self.use_odom = self.get_parameter(
             'use_odom').get_parameter_value().bool_value
         self.odom_topic = self.get_parameter(
@@ -89,7 +89,7 @@ class TrajFollower(Node):
         """
         self.cmd_pub = self.create_publisher(Twist, self.cmd_topic, 1)
         self.path_sub = self.create_subscription(
-            Path, self.path_topic, self.path_callback, 1)
+            Path, 'path', self.path_callback, 1)
 
         if self.use_odom:
             self.odom_sub = self.create_subscription(

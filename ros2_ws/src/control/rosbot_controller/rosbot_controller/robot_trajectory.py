@@ -28,7 +28,7 @@ class Trajectory():
         self.points_ = path
         self.step_ = step
         self.points_.header.frame_id = frame
-        self.default_polygonal_way_points = [
+        self.default_polygonal_waypoints = [
             (2.0, 0.0), (2.0, 2.0),  (0.0, 2.0), (0, 0)
         ]
         self.default_sin = "1.0sin1.0"
@@ -61,66 +61,65 @@ class Trajectory():
     def parse_move_plan(self, mp_path):
         """
         """
-        way_points = list()
+        waypoints = list()
         with (pathlib.Path(mp_path)).open() as f:
             for line in f:
-                way_points.append(
-                    self.str_to_way_point(line)
+                waypoints.append(
+                    self.str_to_waypoint(line)
                 )
 
-        self.fill_path_with_way_points(way_points)
+        self.fill_path_with_waypoints(waypoints)
 
-    def str_to_way_point(self, line):
+    def str_to_waypoint(self, line):
         """
         """
         line = [float(l) for l in line.split(" ")]
         return Goal(line[0], line[1])
 
-    def fill_path_with_way_points(self, way_points):
+    def fill_path_with_waypoints(self, waypoints):
         """
         """
-        prev_wp = way_points[0]
+        prev_wp = waypoints[0]
 
-        for next_wp in way_points[1:]:
+        for next_wp in waypoints[1:]:
 
-            line_along_y_axis = self.is_line_along_y_axis(prev_wp, next_wp)
-            if not line_along_y_axis:
+            line_along_yaxis = self.is_line_along_yaxis(prev_wp, next_wp)
+
+            if not line_along_yaxis:
                 k, b = self.calculate_line_coefficients(prev_wp, next_wp)
 
             x = prev_wp.x
-            y = prev_wp.y if line_along_y_axis else k * x + b
-            yaw_quat = self.calculate_yaw_quat_for_points((prev_wp, next_wp))
+            y = prev_wp.y if line_along_yaxis else k * x + b
+            yaw_quat = self.calculate_yaw_quat_for_points(prev_wp, next_wp)
             self.add_point_to_path(x, y, yaw_quat)
 
-            step = min(abs(next_wp.x - prev_wp.x), self.step)
-            if not line_along_y_axis:
+            if not line_along_yaxis:
                 if next_wp.x > prev_wp.x:
-                    while (x < next_wp.x-step):
-                        x += step
+                    while (x < next_wp.x):
+                        x += self.step_
                         y = k * x + b
                         self.add_point_to_path(x, y, yaw_quat)
                 else:
-                    while (x > next_wp.x+step):
-                        x -= step
+                    while (x > next_wp.x):
+                        x -= self.step_
                         y = k * x + b
                         self.add_point_to_path(x, y, yaw_quat)
             else:
                 if next_wp.y > prev_wp.y:
-                    while (y < next_wp.y-step):
-                        y += step
+                    while (y < next_wp.y):
+                        y = y + self.step_
                         self.add_point_to_path(x, y, yaw_quat)
                 else:
-                    while (y > next_wp.y+step):
-                        y -= step
+                    while (y > next_wp.y):
+                        y = y - self.step_
                         self.add_point_to_path(x, y, yaw_quat)
-
             prev_wp = next_wp
 
     def add_point_to_path(self, x, y, yaw_quat):
         """
         """
         point = PoseStamped()
-        point.header = self.msg.header
+        point.header = self.points_.header
         point.pose.position.x = x
         point.pose.position.y = y
         point.pose.position.z = 0.0
@@ -130,7 +129,7 @@ class Trajectory():
         point.pose.orientation.w = yaw_quat[3]
         self.points_.poses.append(point)
 
-    def calculate_line_coefficients(prev_point, next_point):
+    def calculate_line_coefficients(self, prev_point, next_point):
         """
         """
         k = (next_point.y - prev_point.y) / (next_point.x - prev_point.x)
@@ -148,22 +147,22 @@ class Trajectory():
         yaw_quat = list(yaw_quat.as_quat())
         return yaw_quat
 
-    def is_line_along_y_axis(self, prev_point, next_point):
+    def is_line_along_yaxis(self, prev_point, next_point):
         """
         """
         return next_point.x - prev_point.x == 0
 
-    def Set_polygonal_path(self, way_points_list=None):
+    def Set_polygonal_path(self, waypoints_list=None):
         """
         """
-        way_points = list()
-        if way_points_list is None:
-            way_points_list = self.default_polygonal_way_points
+        waypoints = list()
+        if waypoints_list is None:
+            waypoints_list = self.default_polygonal_waypoints
 
-        for point in way_points_list:
-            way_points.append(Goal(point[0], point[1]))
+        for point in waypoints_list:
+            waypoints.append(Goal(point[0], point[1]))
 
-        self.fill_path_with_way_points(way_points)
+        self.fill_path_with_waypoints(waypoints)
 
         # def SinTrajGenerator(self, a=1.0, f=1.0, reverse=False):
         #     """
@@ -176,14 +175,14 @@ class Trajectory():
         #     K = -1 if reverse == True else 1
         #     x_ar = np.arange(0, 2*np.pi * K, self.step * K,
         #                      dtype=float)   # start,stop,step
-        #     y_ar = float(a) * np.sin(float(f) * x_ar)
+        #     yar = float(a) * np.sin(float(f) * x_ar)
         #     yaw_arr = float(a) * float(f) * np.cos(float(f) * x_ar)
 
         #     for i in range(len(x_ar)):
         #         ps = PoseStamped()
         #         ps.header = self.msg.header
         #         ps.pose.position.x = x_ar[i]
-        #         ps.pose.position.y = y_ar[i]
+        #         ps.pose.position.y = yar[i]
         #         ps.pose.position.z = 0.0
         #         goal_quaternion = list(Rotation.from_euler(
         #             'z', math.atan(yaw_arr[i]), degrees=False
@@ -201,7 +200,7 @@ class Trajectory():
         #         amplitude: amplitude of spiral
 
         #     """
-        #     key_points = []
+        #     keypoints = []
         #     if amplitude > 0:
         #         k = 1
         #     else:
@@ -213,7 +212,7 @@ class Trajectory():
         #         x = k * r * math.cos(f)
         #         y = r * math.sin(f)
         #         if abs(x) > amplitude or abs(y) > amplitude:
-        #             points = self.edges_to_points(key_points)
+        #             points = self.edges_to_points(keypoints)
         #             for p in points:
         #                 ps = PoseStamped()
         #                 ps.header = self.msg.header
@@ -223,7 +222,7 @@ class Trajectory():
         #                 self.msg.poses.append(ps)
         #             return
         #         else:
-        #             key_points.append([x, y])
+        #             keypoints.append([x, y])
         #             f += 0.1
 
         # def parse_sin_traj(self):

@@ -77,8 +77,7 @@ class TrajPublish(Node):
 
         while self.path_pub.get_subscription_count() < self.num_of_subs:
             time.sleep(self.dt)
-
-        self.path_pub.publish(self.msg)
+        self.path_pub.publish(self.trajectory.get_path())
         self.destroy_node()
         rclpy.shutdown()
 
