@@ -20,7 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.5.2 EXACT REQUIRED)
 find_package(dogm REQUIRED)
 find_package(dogm_msgs REQUIRED)
 

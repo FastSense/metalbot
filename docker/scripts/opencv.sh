@@ -38,9 +38,20 @@ sudo cmake \
 sudo make -j4
 sudo make install
 
-# create bash file to activate opencv 4.5
-echo "\
-export PATH=\"/usr/local/opencv4.5+cuda/bin:\$PATH\" \n\
-export PKG_CONFIG_PATH=\"/usr/local/opencv4.5+cuda/lib/pkgconfig:\$PKG_CONFIG_PATH\" \n\
-export LD_LIBRARY_PATH=\"/usr/local/opencv4.5+cuda/lib:\$LD_LIBRARY_PATH\"" > /home/user/activate_opencv4.5.bash
+# create bash script to activate opencv 4.5
+# echo "\
+# export PATH=\"/usr/local/opencv4.5+cuda/bin:\$PATH\" \n\
+# export PKG_CONFIG_PATH=\"/usr/local/opencv4.5+cuda/lib/pkgconfig:\$PKG_CONFIG_PATH\" \n\
+# export LD_LIBRARY_PATH=\"/usr/local/opencv4.5+cuda/lib:\$LD_LIBRARY_PATH\"" > /home/${ROSUSER}/activate_opencv4.5.bash
+
+# add opencv 4.5 libraries to ldconfig
+echo /usr/local/opencv4.5+cuda/lib > /home/${ROSUSER}/opencv4.5+cuda.conf
+sudo mv /home/${ROSUSER}/opencv4.5+cuda.conf /etc/ld.so.conf.d
+sudo ldconfig
+
+# modify .zshrc to activate opencv 4.5
+# echo "\n\
+# export PATH=\"/usr/local/opencv4.5+cuda/bin:\$PATH\" \n\
+# export PKG_CONFIG_PATH=\"/usr/local/opencv4.5+cuda/lib/pkgconfig:\$PKG_CONFIG_PATH\" \n\
+# export LD_LIBRARY_PATH=\"/usr/local/opencv4.5+cuda/lib:\$LD_LIBRARY_PATH\"" >> /home/${ROSUSER}/.zshrc
 
