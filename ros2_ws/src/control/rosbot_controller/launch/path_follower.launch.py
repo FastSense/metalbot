@@ -14,8 +14,8 @@ def generate_launch_description():
     default_cmd_freq = "30.0"
     default_kill_follower = "True"
     default_use_odom = "False"
-    default_parent_frame = "odom"
-    default_robot_frame = "base_link"
+    default_parent_frame = "odom_frame"
+    default_robot_frame = "camera_pose_frame"
 
     control_topic = LaunchConfiguration("control_topic", default=default_control_topic)
     odom_topic = LaunchConfiguration("odom_topic", default=default_odom_topic)
