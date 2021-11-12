@@ -53,8 +53,9 @@ class TrajFollower(Node):
         self.declare_parameter('parent_frame', 'odom_frame')
         self.declare_parameter('robot_frame', 'camera_pose_frame')
         self.declare_parameter('control_topic', '/cmd_vel')
-        self.declare_parameter('v_max', 2.5)
-        self.declare_parameter('w_max', 2.5)
+        self.declare_parameter('v_max', 2.0)
+        self.declare_parameter('w_max', 1.0)
+        self.declare_parameter('vel_coeff', 1.0)
         self.declare_parameter('cmd_freq', 30.0)
         self.declare_parameter('kill_follower', True)
 
@@ -76,6 +77,8 @@ class TrajFollower(Node):
             'v_max').get_parameter_value().double_value
         self.w_max = self.get_parameter(
             'w_max').get_parameter_value().double_value
+        self.vel_coeff = self.get_parameter(
+            'vel_coeff').get_parameter_value().double_value
         self.cmd_freq = self.get_parameter(
             'cmd_freq').get_parameter_value().double_value
         self.kill_follower = self.get_parameter(
@@ -184,9 +187,7 @@ class TrajFollower(Node):
             return
 
         if self.robot.goal_reached(self.current_goal):
-            # if self.goal_queue:
             if self.path_index < len(self.path):
-                # self.current_goal = self.goal_queue.pop(0)
                 x, y = self.path[self.path_index][0], self.path[self.path_index][1]
                 self.current_goal = Goal(x, y)
                 self.path_index += 1
@@ -199,7 +200,10 @@ class TrajFollower(Node):
                 return
 
         self.path_deviation += self.get_min_dist_to_path()
-        control = self.robot.calculate_contol(self.current_goal)
+        control = self.robot.calculate_contol(
+            self.current_goal,
+            k=self.vel_coeff
+        )
         self.publish_control(control)
         return
 

@@ -33,9 +33,10 @@ class TrajPublish(Node):
         self.declare_and_get_parameters()
 
         self.trajectory = Trajectory(
-            step=0.1,
-            frame=self.path_frame
+            step=self.step_size,
+            frame=self.path_frame,
         )
+        print("STEP SIZE = ", self.step_size)
         self.path_pub = self.create_publisher(Path, self.path_topic, 5)
         self.dt = 0.2
         self.prepare_trajectory()
@@ -47,6 +48,7 @@ class TrajPublish(Node):
         self.declare_parameter('traj_type')
         self.declare_parameter('move_plan')
         self.declare_parameter('num_of_subs', 1)
+        self.declare_parameter('step_size', 0.1)
         self.declare_parameter('path_topic', '/path')
         self.declare_parameter('path_frame', 'odom')
 
@@ -58,6 +60,8 @@ class TrajPublish(Node):
             'path_frame').get_parameter_value().string_value
         self.path_topic = self.get_parameter(
             'path_topic').get_parameter_value().string_value
+        self.step_size = self.get_parameter(
+            'step_size').get_parameter_value().double_value
         self.num_of_subs = self.get_parameter(
             'num_of_subs').get_parameter_value().double_value
 

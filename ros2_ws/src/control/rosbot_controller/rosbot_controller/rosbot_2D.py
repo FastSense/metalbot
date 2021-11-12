@@ -106,7 +106,7 @@ class Rosbot:
 
         return dist < self.params.xy_margin_squared
 
-    def calculate_contol(self, goal):
+    def calculate_contol(self, goal, k=1):
         """
         Given state calculate control towards goal
         Args:
@@ -121,7 +121,7 @@ class Rosbot:
         if (abs(alpha) > math.pi):
             alpha -= np.sign(alpha) * 2 * math.pi
 
-        v = self.params.v_max * math.cos(alpha) * math.tanh(r)
+        v = self.params.v_max * math.cos(alpha) * math.tanh(r) * k
         # print(self.params.v_max, math.tanh(r), math.cos(alpha))
         if r > self.eps_r:
             w = self.params.w_max * alpha + \
