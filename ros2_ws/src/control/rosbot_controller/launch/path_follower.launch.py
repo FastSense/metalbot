@@ -13,7 +13,7 @@ def generate_launch_description():
     default_vel_coeff = "1.0"
     default_cmd_freq = "30.0"
     default_kill_follower = "True"
-    default_use_odom = "False"
+    default_use_odom = "True"
     default_parent_frame = "odom_frame"
     default_robot_frame = "camera_pose_frame"
 

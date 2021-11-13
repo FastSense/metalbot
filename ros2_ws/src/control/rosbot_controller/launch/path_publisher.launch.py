@@ -8,7 +8,7 @@ def generate_launch_description():
 
     default_traj_type = "1.0sin1.0"
     default_move_plan = ""
-    default_num_of_subs = "1"
+    default_num_of_subs = "1.0"
     default_step_size = "0.1"
     default_path_topic = "/path"
 
