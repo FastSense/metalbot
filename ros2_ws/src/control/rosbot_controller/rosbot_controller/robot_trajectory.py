@@ -6,6 +6,7 @@ import math
 import time
 import errno
 import os
+from enum import Enum
 from scipy.spatial.transform import Rotation
 from rosbot_controller.rosbot_2D import Goal
 
@@ -13,8 +14,11 @@ from rosbot_controller.rosbot_2D import Goal
 # https://nerdparadise.com/programming/parsemathexpr
 
 
-class TrajectoryType():
-    pass
+class TrajectoryTypes(Enum):
+    sin = 'sin'
+    polygon = 'polygon'
+    spiral = 'spiral'
+    points = 'points'
 
 
 class Trajectory():
@@ -22,16 +26,17 @@ class Trajectory():
 
     """
 
-    def __init__(self, path=Path(), step=0.1, frame="odom"):
+    def __init__(self, path=Path(), step=0.1, frame="odom", length=4.0):
         """
         """
         self.points_ = path
         self.step_ = step
         self.points_.header.frame_id = frame
+        self.length = length
+        self.valid_trajectories = TrajectoryTypes
         self.default_polygonal_waypoints = [
-            (2.0, 0.0), (2.0, 2.0),  (0.0, 2.0), (0, 0)
+            (0, 0), (1.5, 0.0), (1.5, 1.5),  (0.0, 1.5), (0, 0)
         ]
-        self.default_sin = "1.0sin1.0"
 
     def set_step(self, new_step: float):
         """
@@ -56,7 +61,40 @@ class Trajectory():
     def parse_string(self, input_str):
         """
         """
-        pass
+        traj_type = self.get_traj_type(input_str)
+        if traj_type is None:
+            print("!!!!!!!!!!!!")
+
+        if traj_type == self.valid_trajectories.polygon:
+            self.create_polygon_trajectory(input_str)
+        elif traj_type == self.valid_trajectories.sin:
+            self.create_sin_trajectory(input_str)
+        elif traj_type == self.valid_trajectories.spiral:
+            self.create_spiral_trajectory(input_str)
+        elif traj_type == self.valid_trajectories.spiral:
+            self.create_trajectory_from_points(input_str)
+
+    def get_traj_type(self, input_string):
+        """
+        """
+        for traj in self.valid_trajectories:
+            if traj.value in input_string:
+                return traj
+        return None
+
+    def create_sin_trajectory(self, input_str):
+        """
+        """
+        input_str = input_str.split(self.valid_trajectories.sin.value)
+
+        ampl, freq = [float(k) if k != '' else 1.0 for k in input_str]
+
+        x_seq = np.arange(0, self.length + self.step_, self.step_, dtype=float)
+        y_seq = ampl * np.sin(freq * x_seq)
+        yaw_seq = ampl * freq * np.cos(freq * x_seq)
+
+        for i in range(x_seq.size):
+            self.add_point_to_path(x_seq[i], y_seq[i], yaw_seq[i])
 
     def parse_move_plan(self, mp_path):
         """
@@ -118,6 +156,10 @@ class Trajectory():
     def add_point_to_path(self, x, y, yaw_quat):
         """
         """
+        if isinstance(yaw_quat, float):
+            yaw_quat = Rotation.from_euler('z', yaw_quat, degrees=False)
+            yaw_quat = list(yaw_quat.as_quat())
+
         point = PoseStamped()
         point.header = self.points_.header
         point.pose.position.x = x
