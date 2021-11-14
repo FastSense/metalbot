@@ -9,7 +9,7 @@ def generate_launch_description():
     default_control_topic = "/cmd_vel"
     default_odom_topic = "/odom"
     default_v_max = "2.5"
-    default_w_max = "1.0"
+    default_w_max = "2.5"
     default_vel_coeff = "1.0"
     default_cmd_freq = "30.0"
     default_kill_follower = "True"
@@ -30,25 +30,16 @@ def generate_launch_description():
 
     return LaunchDescription([
 
-        DeclareLaunchArgument('control_topic', default_value=default_control_topic,
-                              description='Topic in which we publish a control information'),
-        DeclareLaunchArgument('odom_topic', default_value=default_odom_topic,
-                              description="Topic in which information about the current position is published"),
+        DeclareLaunchArgument('control_topic', default_value=default_control_topic, description='Topic in which we publish a control information'),
+        DeclareLaunchArgument('odom_topic', default_value=default_odom_topic, description="Topic in which information about the current position is published"),
         DeclareLaunchArgument('v_max', default_value=default_v_max, description='Maximum forward speed'),
-        DeclareLaunchArgument('w_max', default_value=default_w_max,
-                              description='Maximum value of a rotation speed around axe z'),
-        DeclareLaunchArgument('vel_coeff', default_value=default_vel_coeff,
-                              description='linear velocity coefficient'),
-        DeclareLaunchArgument('cmd_freq', default_value=default_cmd_freq,
-                              description='Frequency of publishing control of a rosbot'),
-        DeclareLaunchArgument('kill_follower', default_value=default_kill_follower,
-                              description='Signal, that we have to kill the follower process'),
-        DeclareLaunchArgument('use_odom', default_value=default_use_odom,
-                              description='If true - use /odom topic for position, else use - tf topic'),
-        DeclareLaunchArgument('parent_frame', default_value=default_parent_frame,
-                              description='Static TF frame'),
-        DeclareLaunchArgument('robot_frame', default_value=default_robot_frame,
-                              description='Robot TF frame'),
+        DeclareLaunchArgument('w_max', default_value=default_w_max, description='Maximum value of a rotation speed around axe z'),
+        DeclareLaunchArgument('vel_coeff', default_value=default_vel_coeff, description='linear velocity coefficient'),
+        DeclareLaunchArgument('cmd_freq', default_value=default_cmd_freq, description='Frequency of publishing control of a rosbot'),
+        DeclareLaunchArgument('kill_follower', default_value=default_kill_follower, description='Signal, that we have to kill the follower process'),
+        DeclareLaunchArgument('use_odom', default_value=default_use_odom, description='If true - use /odom topic for position, else use - tf topic'),
+        DeclareLaunchArgument('parent_frame', default_value=default_parent_frame, description='Static TF frame'),
+        DeclareLaunchArgument('robot_frame', default_value=default_robot_frame, description='Robot TF frame'),
 
         Node(
             package='rosbot_controller',

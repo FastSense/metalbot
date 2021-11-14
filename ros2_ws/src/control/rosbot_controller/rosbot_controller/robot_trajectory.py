@@ -1,21 +1,17 @@
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path
+import math
 import pathlib
 import numpy as np
-import math
-import time
-import errno
-import os
 from enum import Enum
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped
 from scipy.spatial.transform import Rotation
 from rosbot_controller.rosbot_2D import Goal
-
-# https://axiacore.com/blog/mathematical-expression-evaluator-python-524/
-# https://nerdparadise.com/programming/parsemathexpr
 
 
 class TrajectoryTypes(Enum):
     """
+    Class for representing all
+    possible types of trajectories
     """
     sin = 'sin'
     polygon = 'polygon'
@@ -25,11 +21,22 @@ class TrajectoryTypes(Enum):
 
 class Trajectory():
     """
-
+    Class for representing and creating trajectories
+    :fields:
+        :points_: (Path) - trajectory
+        :step_: (float) - step between points in trajectory
+        :length: (float) - trajectory length (only for sin)
+        :valid_trajectories: (TrajectoryTypes) - all possible trajectories
+        :default_polygonal_points: (numpy array) - default edges for polygonal trajectory
     """
 
-    def __init__(self, path=Path(), step=0.1, frame="odom", length=4.0):
+    def __init__(self, path=Path(), step=0.1, frame="odom", length=3.0):
         """
+        : Args:
+            : path: - default path
+            : step: - step between points in trajectory
+            : frame: - TF frame of th trajectory
+            : length: - trajectory length (only for sin)
         """
         self.points_ = path
         self.step_ = step
@@ -41,26 +48,40 @@ class Trajectory():
 
     def set_step(self, new_step: float):
         """
+        Set the step size of the trajectory
+        : Args:
+            : new_step: - new value of the step
         """
         self.step_ = new_step
 
     def set_frame(self, frame_name: str):
         """
+        Set the TF frame of the trajectory
+        : Args:
+            : frame_name: - new name of the TF frame
         """
         self.points_.header.frame_id = frame_name
-
-    def get_path(self):
-        """
-        """
-        return self.points_
 
     def set_path(self, path: Path):
         """
         """
         self.points_ = path
 
-    def parse_string(self, input_str):
+    def get_path(self):
         """
+        Return the trajectory
+        : Return:
+            : points_: - (Path), trajectory points
+        """
+        return self.points_
+
+    def from_string(self, input_str: str):
+        """
+        Gets the type of trajectory from the passed string.
+        Depending on the type of trajectory,
+        calls the required method to fill the trajectory with points.
+        : Args:
+            : input_str: - trajectory name with parameters
         """
         traj_type = self.get_traj_type(input_str)
         if traj_type is None:
@@ -77,14 +98,24 @@ class Trajectory():
 
     def get_traj_type(self, input_string):
         """
+        Return one of the possible trajectories.
+        If the trajectory is unknown, returns None
+        : Return:
+            : traj: one of the types of trajectories from TrajectoryTypes
         """
         for traj in self.valid_trajectories:
             if traj.value in input_string:
                 return traj
         return None
 
-    def create_polygon_trajectory(self, input_str):
+    def create_polygon_trajectory(self, input_str: str):
         """
+        Parse string with "polygon" trajectory.
+        Fills the path with points
+        : Args:
+            : input_str: - trajectory type with parameters.
+            For exmaple: polygon, 1.5polygon or 3.0polygon,
+            format: $SIDE_SIZE + polygon
         """
         side_size = input_str.split(self.valid_trajectories.polygon.value)[0]
         side_size = float(side_size) if side_size != '' else 1.0
@@ -98,6 +129,12 @@ class Trajectory():
 
     def create_sin_trajectory(self, input_str):
         """
+        Parse string with "sin" trajectory.
+        Fills the path with points
+        : Args:
+            : input_str: - trajectory type with parameters.
+            For exmaple: sin, 1.5sin or 3.0sin0.5,
+            format: $Amplitude + sin + frequency
         """
         input_str = input_str.split(self.valid_trajectories.sin.value)
         ampl, freq = [float(k) if k != '' else 1.0 for k in input_str]
@@ -111,6 +148,12 @@ class Trajectory():
 
     def create_spiral_trajectory(self, input_str):
         """
+        Parse string with "spiral" trajectory.
+        Fills the path with points
+        : Args:
+            : input_str: - trajectory type with parameters.
+            For exmaple: spiral, 1.0spiral or 3.0spiral,
+            format: $Amplitude + spiral
         """
         ampl = input_str.split(self.valid_trajectories.spiral.value)[0]
         ampl = float(ampl) if ampl != '' else 1.0
@@ -120,11 +163,15 @@ class Trajectory():
             r = self.step_ * math.exp(f*0.1)
             x = r * math.cos(f)
             y = r * math.sin(f)
-            self.add_point_to_path(x, y, 0.)
             f += 0.2
+            self.add_point_to_path(x, y, 0.)
 
-    def parse_move_plan(self, mp_path):
+    def from_move_plan(self, mp_path):
         """
+        Parse move plan (.txt doc with waypoints)
+        Fills the path with points
+        : Args:
+            :mp_path: - absolute path to the file
         """
         waypoints = list()
         with (pathlib.Path(mp_path)).open() as f:
@@ -137,19 +184,25 @@ class Trajectory():
 
     def str_to_waypoint(self, line):
         """
+        Convert string to waypoint(type=Goal)
+        : Args:
+            : line: input string 'x y'
+        : Return:
+            : Goal(x, y):
         """
         line = [float(l) for l in line.split(" ")]
         return Goal(line[0], line[1])
 
     def fill_path_with_waypoints(self, waypoints):
         """
+        Fill trajectory from a list with waypoints.
+        Also add extra helpful points between waypoints.
+        : Args:
+            : waypoints: (List[Goal]) - list with waypoints
         """
         prev_wp = waypoints[0]
-
         for next_wp in waypoints[1:]:
-
-            line_along_yaxis = self.is_line_along_yaxis(prev_wp, next_wp)
-
+            line_along_yaxis = self.is_line_along_y_axis(prev_wp, next_wp)
             if not line_along_yaxis:
                 k, b = self.calculate_line_coefficients(prev_wp, next_wp)
 
@@ -182,6 +235,11 @@ class Trajectory():
 
     def add_point_to_path(self, x, y, yaw_quat):
         """
+        Add one point to the path
+        : Args:
+            : x: - (float) x coord
+            : y: - (float) y coord
+            : yaw_quat: - (float or list[qaternion]) yaw angle
         """
         if isinstance(yaw_quat, float):
             yaw_quat = Rotation.from_euler('z', yaw_quat, degrees=False)
@@ -200,6 +258,14 @@ class Trajectory():
 
     def calculate_line_coefficients(self, prev_point, next_point):
         """
+        Сalculate line coefficients K and B
+        y = K*x + B
+        : Args:
+            : prev_point: (Goal) - previous waypoint
+            : next_point: (Goal) - next waypoint
+        : Return:
+            : k: (float) - slope
+            : b: (float) - some number
         """
         k = (next_point.y - prev_point.y) / (next_point.x - prev_point.x)
 
@@ -209,6 +275,13 @@ class Trajectory():
 
     def calculate_yaw_quat_for_points(self, prev_point, next_point):
         """
+        Calculates the yaw angle that the robot
+        must roll over to move between waypoints
+        : Args:
+            : prev_point: (Goal) - previous waypoint
+            : next_point: (Goal) - next waypoint
+        : Return:
+            : yaw_quat: (quaternion) - yaw angle
         """
         yaw = math.atan2(next_point.y - prev_point.y,
                          next_point.x - prev_point.x)
@@ -216,19 +289,12 @@ class Trajectory():
         yaw_quat = list(yaw_quat.as_quat())
         return yaw_quat
 
-    def is_line_along_yaxis(self, prev_point, next_point):
+    def is_line_along_y_axis(self, prev_point, next_point):
         """
+        Returns true if a straight line through
+        two points lies along the Y-axis
+        : Args:
+            : prev_point: (Goal) - previous waypoint
+            : next_point: (Goal) - next waypoin
         """
         return next_point.x - prev_point.x == 0
-
-    def Set_polygonal_path(self, waypoints_list=None):
-        """
-        """
-        waypoints = list()
-        if waypoints_list is None:
-            waypoints_list = self.default_polygonal_waypoints
-
-        for point in waypoints_list:
-            waypoints.append(Goal(point[0], point[1]))
-
-        self.fill_path_with_waypoints(waypoints)
