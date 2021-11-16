@@ -1,13 +1,10 @@
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path
-from rclpy.node import Node
-import pathlib
-import numpy as np
-import rclpy
-import math
 import time
-from scipy.spatial.transform import Rotation
+import rclpy
+from rclpy.node import Node
+from nav_msgs.msg import Path
 from .robot_trajectory import Trajectory
+from rosbot_controller.rosbot_2D import RobotState
+import tf2_ros
 
 
 class TrajPublish(Node):
@@ -31,14 +28,22 @@ class TrajPublish(Node):
         rclpy.init(args=None)
         super().__init__(node_name)
         self.declare_and_get_parameters()
+        self.parent_frame = "odom"
+        self.robot_frame = "base_link"
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        self.dt = 0.2
+
+        self.path_pub = self.create_publisher(Path, self.path_topic, 5)
+
+        self.initial_pose = self.get_robot_pose()
 
         self.trajectory = Trajectory(
+            start_point=self.initial_pose,
             step=self.step_size,
             frame=self.path_frame,
             length=self.length
         )
-        self.path_pub = self.create_publisher(Path, self.path_topic, 5)
-        self.dt = 0.2
         self.prepare_trajectory()
 
     def declare_and_get_parameters(self):
@@ -67,6 +72,21 @@ class TrajPublish(Node):
             'length').get_parameter_value().double_value
         self.num_of_subs = self.get_parameter(
             'num_of_subs').get_parameter_value().double_value
+
+    def get_robot_pose(self):
+        """
+        """
+        # print(self.tf_buffer.all_frames_as_yaml())
+        # try:
+        robot_pose_tf = self.tf_buffer.lookup_transform(
+            self.parent_frame,
+            self.robot_frame,
+            rclpy.time.Time()
+        )
+        # except:
+        #     print("!!!!!")
+        # print(robot_pose_tf)
+        return RobotState()
 
     def prepare_trajectory(self):
         """

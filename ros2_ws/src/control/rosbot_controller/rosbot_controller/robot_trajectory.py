@@ -6,6 +6,7 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from scipy.spatial.transform import Rotation
 from rosbot_controller.rosbot_2D import Goal
+from rosbot_controller.rosbot_2D import RobotState
 
 
 class TrajectoryTypes(Enum):
@@ -30,7 +31,8 @@ class Trajectory():
         :default_polygonal_points: (numpy array) - default edges for polygonal trajectory
     """
 
-    def __init__(self, path=Path(), step=0.1, frame="odom", length=3.0):
+    def __init__(self, start_point=RobotState(),
+                 path=Path(), step=0.1, frame="odom", length=3.0):
         """
         : Args:
             : path: - default path
@@ -38,6 +40,7 @@ class Trajectory():
             : frame: - TF frame of th trajectory
             : length: - trajectory length (only for sin)
         """
+        self.start_point = RobotState()
         self.points_ = path
         self.step_ = step
         self.points_.header.frame_id = frame
@@ -119,7 +122,8 @@ class Trajectory():
         """
         side_size = input_str.split(self.valid_trajectories.polygon.value)[0]
         side_size = float(side_size) if side_size != '' else 1.0
-        polygon_points = self.default_polygonal_points * side_size
+        polygon_points = self.default_polygonal_points * \
+            side_size + [self.start_point.x, self.start_point.y]
         waypoints = list()
         for point in polygon_points:
             wp = Goal(point[0], point[1])
@@ -143,6 +147,9 @@ class Trajectory():
         y_seq = ampl * np.sin(freq * x_seq)
         yaw_seq = ampl * freq * np.cos(freq * x_seq)
 
+        x_seq = x_seq + self.start_point.x
+        y_seq = y_seq + self.start_point.y
+        yaw_seq = yaw_seq + self.start_point.yaw
         for i in range(x_seq.size):
             self.add_point_to_path(x_seq[i], y_seq[i], yaw_seq[i])
 
@@ -158,12 +165,14 @@ class Trajectory():
         ampl = input_str.split(self.valid_trajectories.spiral.value)[0]
         ampl = float(ampl) if ampl != '' else 1.0
 
-        f, x, y, r = 0., 0., 0., 0.
-        while (ampl > abs(x) and ampl > abs(y)):
+        f = 0.
+        x, y = self.start_point.x, self.start_point.y
+        ampl_x = ampl + abs(x)
+        while (ampl_x > abs(x)):
             r = self.step_ * math.exp(f*0.1)
             x = r * math.cos(f)
             y = r * math.sin(f)
-            f += 0.2
+            f += 0.1
             self.add_point_to_path(x, y, 0.)
 
     def from_move_plan(self, mp_path):
@@ -191,7 +200,9 @@ class Trajectory():
             : Goal(x, y):
         """
         line = [float(l) for l in line.split(" ")]
-        return Goal(line[0], line[1])
+        x = line[0] + self.start_point.x
+        y = line[1] + self.start_point.y
+        return Goal(x, y)
 
     def fill_path_with_waypoints(self, waypoints):
         """
