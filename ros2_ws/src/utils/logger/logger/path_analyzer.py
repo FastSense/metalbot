@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from nav_msgs.msg import Path
 from logger.logger import Logger
+from logger.utils import calculate_ATE
 from scipy.spatial.transform import Rotation
 
 
@@ -68,6 +69,13 @@ class PathAnalyzer(Logger):
         print(self.robot_state)
         print("PATH")
         print(self.path)
+        print("PATH X Y")
+        print(self.path[0:2])
+
+        ate = calculate_ATE(
+            self.path.to_numpy(),
+            self.robot_state.to_numpy()
+        )
 
 
 def main():

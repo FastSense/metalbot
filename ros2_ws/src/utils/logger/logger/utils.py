@@ -1,5 +1,5 @@
-import os
 import math
+import numpy as np
 import pandas as pd
 
 TIME_CONVERSION_CONST_ = 10 ** 9
@@ -79,4 +79,16 @@ def parse_logger_output_data(folder_path):
 def calculate_ATE(reference_path, robot_path):
     """
     """
-    pass
+    mse_x = np.square(reference_path[:, 0] - robot_path[:, 0])
+    mse_y = np.square(reference_path[:, 1] - robot_path[:, 1])
+    ate = np.sqrt(mse_x + mse_y)
+    return ate
+
+
+# def calculate_ATE(reference_path, robot_path):
+#     """
+#     """
+#     mse_x = np.square(reference_path[:, 0] - robot_path[:, 0])
+#     mse_y = np.square(reference_path[:, 1] - robot_path[:, 1])
+#     ate = np.sqrt(mse_x + mse_y)
+#     return ate
