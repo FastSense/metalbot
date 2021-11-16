@@ -21,7 +21,7 @@
         </inertia>
         <pose>0 0 0.03 0 0 0</pose>
       </inertial>
-      <collision name='collision'>
+      <collision name='robot_collision'>
         <pose>0 0 0.03 0 0 0</pose>
         <geometry>
           <box>
@@ -29,6 +29,19 @@
           </box>
         </geometry>
       </collision>
+      <sensor type="contact" name="bumper">
+        <update_rate>30</update_rate>
+        <contact>
+          <collision>robot_collision</collision>
+        </contact>
+        <plugin name="contact_sensor" filename="libgazebo_ros_bumper.so">
+          <ros>
+            <!-- <namespace>metalbot</namespace> -->
+            <remapping>bumper_states:=collisions</remapping>
+          </ros>
+          <frame_name>base_link</frame_name>
+        </plugin>
+      </sensor>
       <visual name='visual'>
         <pose>0 0 0 1.5707 0 1.5707</pose>
         <geometry>
@@ -107,6 +120,7 @@
         <transparency>0</transparency>
         <cast_shadows>false</cast_shadows>
       </visual>
+
       <sensor name="imu_sensor" type="imu">
         <always_on>true</always_on>
         <update_rate>10</update_rate>
@@ -432,7 +446,6 @@
 
     </plugin>
     <!-- END: Motors controller -->
-
     <!-- BEGIN: Orbbec Astra RGBD Camera -->
     <joint type="fixed" name="camera_joint">
       <pose>0 0 0 0 0 0</pose>
