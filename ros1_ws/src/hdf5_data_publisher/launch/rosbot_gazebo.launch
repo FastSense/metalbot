@@ -1,0 +1,18 @@
+<launch>
+  <arg name="path_to_hdf5" default="default.hdf5"/>
+  
+  <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_points" args="0 0 0.25 -1.5707963267948966 0 -1.5707963267948966 base_link points 100">
+  </node>
+
+  <node pkg="hdf5_data_publisher" type="hdf5_data_publisher.py" name="data_publisher" output="screen">
+    <param name="publish_pcd" value="true"/>
+    <param name="pcd_with_rgb" value="false"/>
+    <param name="publish_depth" value="false"/>
+    <param name="publish_rgb" value="false"/>
+    <param name="publish_pose" value="true"/>
+    <param name="publish_tf" value="true"/>
+    <param name="camera_info_file" value="$(find hdf5_data_publisher)/config/rosbot_gazebo_params.yaml"/>
+    <param name="fps" value="20"/>
+    <param name="path_to_hdf5" value="$(arg path_to_hdf5)"/>
+  </node>
+</launch>
