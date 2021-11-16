@@ -171,7 +171,7 @@ class StateEstimation2D(Node):
         """
         z_odom = np.zeros(2)
         z_odom[0] = odom.linear.x
-        z_odom[1] = odom.angular.z
+        z_odom[1] = odom.angular.z / 2
         return z_odom
 
     def imu_accel_callback(self, msg):
@@ -199,7 +199,7 @@ class StateEstimation2D(Node):
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
             # self.filter.update_imu_accel(self.z_accel, self.R_accel)
-            self.filter.update_imu_gyro(self.z_gyro, self.R_gyro)
+            # self.filter.update_imu_gyro(self.z_gyro, self.R_gyro)
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             self.pose_pub.publish(self.odom_filtered)
@@ -218,7 +218,7 @@ class StateEstimation2D(Node):
                 # t = self.get_clock().now()
                 # rclpy.spin_once(self)
                 t = Namespace(seconds=0, nanoseconds=0)
-                trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=10))
+                trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=20))
                 # print(f"Got transform! {frame1} -> {frame2}")
                 break
             except tf2_ros.LookupException:

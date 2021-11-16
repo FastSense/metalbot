@@ -95,8 +95,10 @@ class Filter2D:
         self.predict()
 
     def predict_by_naive_model(self, control):
-        self.v = control[0]
-        self.w = control[1]
+        gamma_v = 0.8
+        gamma_w = 0.8
+        self.v = gamma_v * control[0] + (1 - gamma_v) * self.v
+        self.w = gamma_w * control[0] + (1 - gamma_w) * self.w
         self.predict()
 
     def predict(self):
