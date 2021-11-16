@@ -32,7 +32,6 @@ class TrajFollower(Node):
         self.declare_and_get_parametrs()
         self.robot = Rosbot(self.v_max, self.w_max)
         self.current_goal = Goal()
-        # self.goal_queue = []
         self.path = []
         self.dt = 1.0 / self.cmd_freq
         self.path_deviation = 0.0
@@ -56,6 +55,7 @@ class TrajFollower(Node):
         self.declare_parameter('v_max', 2.0)
         self.declare_parameter('w_max', 1.0)
         self.declare_parameter('vel_coeff', 1.0)
+        self.declare_parameter('ang_vel_coeff', 1.0)
         self.declare_parameter('cmd_freq', 30.0)
         self.declare_parameter('kill_follower', True)
 
@@ -79,6 +79,8 @@ class TrajFollower(Node):
             'w_max').get_parameter_value().double_value
         self.vel_coeff = self.get_parameter(
             'vel_coeff').get_parameter_value().double_value
+        self.ang_vel_coeff = self.get_parameter(
+            'ang_vel_coeff').get_parameter_value().double_value
         self.cmd_freq = self.get_parameter(
             'cmd_freq').get_parameter_value().double_value
         self.kill_follower = self.get_parameter(
@@ -202,7 +204,8 @@ class TrajFollower(Node):
         self.path_deviation += self.get_min_dist_to_path()
         control = self.robot.calculate_contol(
             self.current_goal,
-            k=self.vel_coeff
+            kv=self.vel_coeff,
+            kw=self.ang_vel_coeff
         )
         self.publish_control(control)
         return
