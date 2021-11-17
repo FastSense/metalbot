@@ -144,6 +144,9 @@ class TrajFollower(Node):
         """
         self.wait_for_path = False
         self.path = [(p.pose.position.x, p.pose.position.y) for p in msg.poses]
+        x, y = self.path[self.path_index][0], self.path[self.path_index][1]
+        self.path_index += 1
+        self.current_goal = Goal(x, y)
 
     def get_min_dist_to_path(self):
 

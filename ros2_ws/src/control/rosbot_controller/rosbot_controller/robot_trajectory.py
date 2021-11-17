@@ -40,7 +40,8 @@ class Trajectory():
             : frame: - TF frame of th trajectory
             : length: - trajectory length (only for sin)
         """
-        self.start_point = RobotState()
+        self.start_point = start_point
+        # print("START POINT", self.start_point)
         self.points_ = path
         self.step_ = step
         self.points_.header.frame_id = frame
@@ -87,7 +88,9 @@ class Trajectory():
             : input_str: - trajectory name with parameters
         """
         traj_type = self.get_traj_type(input_str)
+        print("traj_type", traj_type)
         if traj_type is None:
+            print("!!!!!!!!!!!!!!!!!!!!!!!ALARM!!!!!!!!!!!!!!!!!!!!!1")
             raise Exception("Unknown trajectory!")
 
         if traj_type == self.valid_trajectories.polygon:
@@ -108,6 +111,7 @@ class Trajectory():
         """
         for traj in self.valid_trajectories:
             if traj.value in input_string:
+                print(traj)
                 return traj
         return None
 
@@ -124,9 +128,11 @@ class Trajectory():
         side_size = float(side_size) if side_size != '' else 1.0
         polygon_points = self.default_polygonal_points * \
             side_size + [self.start_point.x, self.start_point.y]
+        print("NEW POLYGON POINTS!!!!")
+        print(polygon_points)
         waypoints = list()
         for point in polygon_points:
-            wp = Goal(point[0], point[1])
+            wp = Goal(point[0], point[1], self.start_point.yaw)
             waypoints.append(wp)
 
         self.fill_path_with_waypoints(waypoints)
@@ -221,26 +227,30 @@ class Trajectory():
             y = prev_wp.y if line_along_yaxis else k * x + b
             yaw_quat = self.calculate_yaw_quat_for_points(prev_wp, next_wp)
             self.add_point_to_path(x, y, yaw_quat)
-
+            # print(x, y)
             if not line_along_yaxis:
                 if next_wp.x > prev_wp.x:
                     while (x < next_wp.x):
                         x += self.step_
                         y = k * x + b
+                        # print(x, y)
                         self.add_point_to_path(x, y, yaw_quat)
                 else:
                     while (x > next_wp.x):
                         x -= self.step_
                         y = k * x + b
+                        print(x, y)
                         self.add_point_to_path(x, y, yaw_quat)
             else:
                 if next_wp.y > prev_wp.y:
                     while (y < next_wp.y):
                         y = y + self.step_
+                        # print(x, y)
                         self.add_point_to_path(x, y, yaw_quat)
                 else:
                     while (y > next_wp.y):
                         y = y - self.step_
+                        # print(x, y)
                         self.add_point_to_path(x, y, yaw_quat)
             prev_wp = next_wp
 

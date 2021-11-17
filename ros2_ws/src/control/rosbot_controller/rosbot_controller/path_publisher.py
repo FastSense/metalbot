@@ -4,7 +4,13 @@ from rclpy.node import Node
 from nav_msgs.msg import Path
 from .robot_trajectory import Trajectory
 from rosbot_controller.rosbot_2D import RobotState
-import tf2_ros
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+from argparse import Namespace
+from scipy.spatial.transform import Rotation
+from nav_msgs.msg import Odometry
+import numpy as np
 
 
 class TrajPublish(Node):
@@ -25,26 +31,19 @@ class TrajPublish(Node):
 
     def __init__(self, node_name):
 
-        rclpy.init(args=None)
         super().__init__(node_name)
         self.declare_and_get_parameters()
         self.parent_frame = "odom"
         self.robot_frame = "base_link"
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
         self.dt = 0.2
-
         self.path_pub = self.create_publisher(Path, self.path_topic, 5)
-
-        self.initial_pose = self.get_robot_pose()
-
-        self.trajectory = Trajectory(
-            start_point=self.initial_pose,
-            step=self.step_size,
-            frame=self.path_frame,
-            length=self.length
-        )
-        self.prepare_trajectory()
+        rclpy.spin_once(self)
+        self.initial_pose = None
+        self.timer = self.create_timer(1, self.get_robot_pose)
+        # self.run()
 
     def declare_and_get_parameters(self):
         """
@@ -76,24 +75,39 @@ class TrajPublish(Node):
     def get_robot_pose(self):
         """
         """
-        # print(self.tf_buffer.all_frames_as_yaml())
+        # print("!!!!!1")
         # try:
-        robot_pose_tf = self.tf_buffer.lookup_transform(
+        trans = self.tf_buffer.lookup_transform(
             self.parent_frame,
             self.robot_frame,
-            rclpy.time.Time()
-        )
+            rclpy.time.Time())
+        x = trans.transform.translation.x
+        y = trans.transform.translation.y
+        yaw = Rotation.from_quat([
+            np.float(trans.transform.rotation.x),
+            np.float(trans.transform.rotation.y),
+            np.float(trans.transform.rotation.z),
+            np.float(trans.transform.rotation.w)]
+        ).as_euler('xyz')[2]
+        print("POSE", x, y, yaw)
+        print(self.path_pub.get_subscription_count(), self.num_of_subs)
+        self.initial_pose = RobotState(x, y, yaw)
+        if self.initial_pose is not None and self.path_pub.get_subscription_count() >= self.num_of_subs:
+            print("GO IN")
+            self.run()
+            self.timer.destroy()
+            self.timer.cancel()
         # except:
-        #     print("!!!!!")
-        # print(robot_pose_tf)
-        return RobotState()
+        #    print("JOPA")
 
     def prepare_trajectory(self):
         """
         """
         if self.traj_type == "from_file":
+            print(4)
             self.trajectory.from_move_plan(self.move_plan)
         else:
+            print(3)
             self.trajectory.from_string(self.traj_type)
 
     def run(self):
@@ -101,18 +115,30 @@ class TrajPublish(Node):
         Main function. Check the correctness of a type_traj, generate message
         and publish it in topic
         """
-
-        while self.path_pub.get_subscription_count() < self.num_of_subs:
-            time.sleep(self.dt)
-
+        print("1")
+        self.trajectory = Trajectory(
+            start_point=self.initial_pose,
+            step=self.step_size,
+            frame=self.path_frame,
+            length=self.length
+        )
+        print("2")
+        self.prepare_trajectory()
+        # print("TRAJECTORY", self.trajectory.get_path())
         self.path_pub.publish(self.trajectory.get_path())
         self.destroy_node()
         rclpy.shutdown()
+        return
 
 
 def main():
+
+    rclpy.init()
     traj_publ = TrajPublish("path_pub")
-    traj_publ.run()
+    try:
+        rclpy.spin(traj_publ)
+    except:
+        pass
     return
 
 
