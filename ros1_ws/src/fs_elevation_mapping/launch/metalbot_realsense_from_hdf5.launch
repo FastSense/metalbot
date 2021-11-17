@@ -5,7 +5,9 @@
     <rosparam command="load" file="$(find elevation_mapping_demos)/config/postprocessing/postprocessor_pipeline.yaml" />
   </node>
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find fs_elevation_mapping)/rviz/elevation_mapping.rviz">
-  </node>
+  <group if="$(arg open_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(find fs_elevation_mapping)/rviz/elevation_mapping.rviz"/>
+  </group>
 
 </launch>
