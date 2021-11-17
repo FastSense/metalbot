@@ -10,7 +10,7 @@ def generate_launch_description():
     default_move_plan = ""
     default_num_of_subs = "1.0"
     default_step_size = "0.1"
-    default_length = "3.0"
+    default_length = "4.0"
     default_path_topic = "/path"
 
     traj_type = LaunchConfiguration('traj_type', default=default_traj_type)
@@ -28,7 +28,7 @@ def generate_launch_description():
         DeclareLaunchArgument('num_of_subs', default_value=default_num_of_subs, description="Number of subcribers to the path_topic which is necessary to start publishing a message"),
         DeclareLaunchArgument('path_topic', default_value=default_path_topic, description="Name of the path topic"),
         DeclareLaunchArgument('step_size', default_value=default_step_size, description="path step length"),
-        DeclareLaunchArgument('length', default_value=default_step_size, description="path length"),
+        DeclareLaunchArgument('length', default_value=default_length, description="path length"),
 
         Node(
             package='rosbot_controller',

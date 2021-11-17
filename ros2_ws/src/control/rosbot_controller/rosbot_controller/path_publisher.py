@@ -75,8 +75,6 @@ class TrajPublish(Node):
     def get_robot_pose(self):
         """
         """
-        # print("!!!!!1")
-        # try:
         trans = self.tf_buffer.lookup_transform(
             self.parent_frame,
             self.robot_frame,
@@ -89,25 +87,18 @@ class TrajPublish(Node):
             np.float(trans.transform.rotation.z),
             np.float(trans.transform.rotation.w)]
         ).as_euler('xyz')[2]
-        print("POSE", x, y, yaw)
-        print(self.path_pub.get_subscription_count(), self.num_of_subs)
         self.initial_pose = RobotState(x, y, yaw)
         if self.initial_pose is not None and self.path_pub.get_subscription_count() >= self.num_of_subs:
-            print("GO IN")
             self.run()
             self.timer.destroy()
             self.timer.cancel()
-        # except:
-        #    print("JOPA")
 
     def prepare_trajectory(self):
         """
         """
         if self.traj_type == "from_file":
-            print(4)
             self.trajectory.from_move_plan(self.move_plan)
         else:
-            print(3)
             self.trajectory.from_string(self.traj_type)
 
     def run(self):
@@ -115,19 +106,16 @@ class TrajPublish(Node):
         Main function. Check the correctness of a type_traj, generate message
         and publish it in topic
         """
-        print("1")
         self.trajectory = Trajectory(
             start_point=self.initial_pose,
             step=self.step_size,
             frame=self.path_frame,
             length=self.length
         )
-        print("2")
         self.prepare_trajectory()
-        # print("TRAJECTORY", self.trajectory.get_path())
         self.path_pub.publish(self.trajectory.get_path())
         self.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
         return
 
 
