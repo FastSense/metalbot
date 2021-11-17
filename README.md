@@ -276,12 +276,6 @@ r1
 roscore
 ```
 
-Терминал 2
-```bash
-r1
-rosrun rviz rviz -d ~/ros1_ws/src/fs_elevation_mapping/rviz/elevation_mapping.rviz
-```
-
 Терминал 3
 ```bash
 r1
@@ -289,7 +283,15 @@ roslaunch hdf5_data_publisher realsense_pcd_only.launch path_to_hdf5:=/path/to/r
 ```
 
 Терминал 4
+
+Запуск Elevation Mapping вместе с rviz:
 ```bash
 r1
-roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch
+roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=true
+```
+
+Запуск Elevation Mapping без rviz:
+```bash
+r1
+roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=false
 ```
