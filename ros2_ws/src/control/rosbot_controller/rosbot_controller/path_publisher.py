@@ -36,10 +36,8 @@ class TrajPublish(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.dt = 0.2
         self.path_pub = self.create_publisher(Path, self.path_topic, 5)
-        rclpy.spin_once(self)
         self.initial_pose = None
         self.timer = self.create_timer(1, self.get_robot_pose)
-        # self.run()
 
     def declare_and_get_parameters(self):
         """

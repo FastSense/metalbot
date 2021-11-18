@@ -1,23 +1,11 @@
 import math
 import pathlib
 import numpy as np
-from enum import Enum
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from scipy.spatial.transform import Rotation
 from rosbot_controller.rosbot_2D import Goal
 from rosbot_controller.rosbot_2D import RobotState
-
-
-class TrajectoryTypes(Enum):
-    """
-    Class for representing all
-    possible types of trajectories
-    """
-    sin = 'sin'
-    polygon = 'polygon'
-    spiral = 'spiral'
-    points = 'points'
 
 
 class Trajectory():
@@ -27,8 +15,6 @@ class Trajectory():
         :points_: (Path) - trajectory
         :step_: (float) - step between points in trajectory
         :length: (float) - trajectory length (only for sin)
-        :valid_trajectories: (TrajectoryTypes) - all possible trajectories
-        :default_polygonal_points: (numpy array) - default edges for polygonal trajectory
     """
 
     def __init__(self, start_point=RobotState(),
@@ -47,9 +33,12 @@ class Trajectory():
         self.points_.header.frame_id = frame
         self.length = length
         self.reverse = reverse
-        self.valid_trajectories = TrajectoryTypes
-        self.default_polygonal_points = np.array(
-            [(0, 0), (1.0, 0.0), (1.0, 1.0),  (0.0, 1.0), (0, 0)])
+
+        self.trajectory_generator = {
+            'sin': self.create_sin_trajectory,
+            'polygon': self.create_polygon_trajectory,
+            'spiral': self.create_spiral_trajectory
+        }
 
     def set_step(self, new_step: float):
         """
@@ -80,6 +69,33 @@ class Trajectory():
         """
         return self.points_
 
+    def from_move_plan(self, mp_path):
+        """
+        Parse move plan (.txt doc with waypoints)
+        Fills the path with points
+        : Args:
+            :mp_path: - absolute path to the file
+        """
+        waypoints = list()
+        with (pathlib.Path(mp_path)).open() as f:
+            for line in f:
+                waypoints.append(
+                    self.str_to_waypoint(line)
+                )
+        self.fill_path_with_waypoints(waypoints)
+
+    def get_traj_type(self, input_string):
+        """
+        Return one of the possible trajectories.
+        If the trajectory is unknown, returns None
+        : Return:
+            : traj: one of the types of trajectories from TrajectoryTypes
+        """
+        for traj in self.trajectory_generator.keys():
+            if traj in input_string:
+                return traj
+        return None
+
     def from_string(self, input_str: str):
         """
         Gets the type of trajectory from the passed string.
@@ -91,27 +107,7 @@ class Trajectory():
         traj_type = self.get_traj_type(input_str)
         if traj_type is None:
             raise Exception("Unknown trajectory!")
-
-        if traj_type == self.valid_trajectories.polygon:
-            self.create_polygon_trajectory(input_str)
-        elif traj_type == self.valid_trajectories.sin:
-            self.create_sin_trajectory(input_str)
-        elif traj_type == self.valid_trajectories.spiral:
-            self.create_spiral_trajectory(input_str)
-        elif traj_type == self.valid_trajectories.spiral:
-            self.create_trajectory_from_points(input_str)
-
-    def get_traj_type(self, input_string):
-        """
-        Return one of the possible trajectories.
-        If the trajectory is unknown, returns None
-        : Return:
-            : traj: one of the types of trajectories from TrajectoryTypes
-        """
-        for traj in self.valid_trajectories:
-            if traj.value in input_string:
-                return traj
-        return None
+        self.trajectory_generator[traj_type](input_str)
 
     def create_polygon_trajectory(self, input_str: str):
         """
@@ -122,14 +118,16 @@ class Trajectory():
             For exmaple: polygon, 1.5polygon or 3.0polygon,
             format: $SIDE_SIZE + polygon
         """
+        default_polygonal_points = np.array(
+            [(0, 0), (1.0, 0.0), (1.0, 1.0),  (0.0, 1.0), (0, 0)])
         if self.reverse:
-            self.default_polygonal_points = np.flipud(
-                self.default_polygonal_points)
+            default_polygonal_points = np.flipud(
+                default_polygonal_points)
 
-        side_size = input_str.split(self.valid_trajectories.polygon.value)[0]
+        side_size = input_str.split('polygon')[0]
         side_size = float(side_size) if side_size != '' else 1.0
 
-        polygon_points = self.default_polygonal_points * \
+        polygon_points = default_polygonal_points * \
             side_size + [self.start_point.x, self.start_point.y]
         waypoints = list()
         for point in polygon_points:
@@ -147,7 +145,7 @@ class Trajectory():
             For exmaple: sin, 1.5sin or 3.0sin0.5,
             format: $Amplitude + sin + frequency
         """
-        input_str = input_str.split(self.valid_trajectories.sin.value)
+        input_str = input_str.split('sin')
         ampl, freq = [float(k) if k != '' else 1.0 for k in input_str]
 
         k = -1 if self.reverse else 1
@@ -170,7 +168,7 @@ class Trajectory():
             For exmaple: spiral, 1.0spiral or 3.0spiral,
             format: $Amplitude + spiral
         """
-        ampl = input_str.split(self.valid_trajectories.spiral.value)[0]
+        ampl = input_str.split('spiral')[0]
         ampl = float(ampl) if ampl != '' else 1.0
 
         f = 0.
@@ -186,22 +184,6 @@ class Trajectory():
                 y = r * math.cos(f) + self.start_point.y
             f += 0.1
             self.add_point_to_path(x, y, 0.)
-
-    def from_move_plan(self, mp_path):
-        """
-        Parse move plan (.txt doc with waypoints)
-        Fills the path with points
-        : Args:
-            :mp_path: - absolute path to the file
-        """
-        waypoints = list()
-        with (pathlib.Path(mp_path)).open() as f:
-            for line in f:
-                waypoints.append(
-                    self.str_to_waypoint(line)
-                )
-
-        self.fill_path_with_waypoints(waypoints)
 
     def str_to_waypoint(self, line):
         """
