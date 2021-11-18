@@ -10,7 +10,7 @@ def generate_launch_description():
     default_move_plan = ""
     default_num_of_subs = "1.0"
     default_step_size = "0.1"
-    default_length = "3.0"
+    default_length = "3.2"
     default_path_topic = "/path"
     default_reverse = "False"
 
