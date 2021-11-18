@@ -10,8 +10,9 @@ def generate_launch_description():
     default_move_plan = ""
     default_num_of_subs = "1.0"
     default_step_size = "0.1"
-    default_length = "4.0"
+    default_length = "3.0"
     default_path_topic = "/path"
+    default_reverse = "False"
 
     traj_type = LaunchConfiguration('traj_type', default=default_traj_type)
     move_plan = LaunchConfiguration('move_plan', default=default_move_plan)
@@ -19,6 +20,7 @@ def generate_launch_description():
     path_topic = LaunchConfiguration('path_topic', default=default_path_topic)
     step_size = LaunchConfiguration('step_size', default=default_step_size)
     length = LaunchConfiguration('length', default=default_length)
+    reverse = LaunchConfiguration('reverse', default=default_reverse)
     
     
     return LaunchDescription([
@@ -29,6 +31,8 @@ def generate_launch_description():
         DeclareLaunchArgument('path_topic', default_value=default_path_topic, description="Name of the path topic"),
         DeclareLaunchArgument('step_size', default_value=default_step_size, description="path step length"),
         DeclareLaunchArgument('length', default_value=default_length, description="path length"),
+        DeclareLaunchArgument('reverse', default_value=default_reverse, description="is trajectory reversed"),
+
 
         Node(
             package='rosbot_controller',
@@ -42,6 +46,7 @@ def generate_launch_description():
                 {"path_topic": path_topic},
                 {"step_size": step_size},
                 {"length": length},
+                {"reverse": reverse},
             ]
         ),
 

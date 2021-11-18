@@ -32,7 +32,8 @@ class Trajectory():
     """
 
     def __init__(self, start_point=RobotState(),
-                 path=Path(), step=0.1, frame="odom", length=3.0):
+                 path=Path(), step=0.1, frame="odom",
+                 length=3.0, reverse=False):
         """
         : Args:
             : path: - default path
@@ -45,6 +46,7 @@ class Trajectory():
         self.step_ = step
         self.points_.header.frame_id = frame
         self.length = length
+        self.reverse = reverse
         self.valid_trajectories = TrajectoryTypes
         self.default_polygonal_points = np.array(
             [(0, 0), (1.0, 0.0), (1.0, 1.0),  (0.0, 1.0), (0, 0)])
@@ -120,8 +122,13 @@ class Trajectory():
             For exmaple: polygon, 1.5polygon or 3.0polygon,
             format: $SIDE_SIZE + polygon
         """
+        if self.reverse:
+            self.default_polygonal_points = np.flipud(
+                self.default_polygonal_points)
+
         side_size = input_str.split(self.valid_trajectories.polygon.value)[0]
         side_size = float(side_size) if side_size != '' else 1.0
+
         polygon_points = self.default_polygonal_points * \
             side_size + [self.start_point.x, self.start_point.y]
         waypoints = list()
@@ -143,11 +150,12 @@ class Trajectory():
         input_str = input_str.split(self.valid_trajectories.sin.value)
         ampl, freq = [float(k) if k != '' else 1.0 for k in input_str]
 
+        k = -1 if self.reverse else 1
         x_seq = np.arange(0, self.length + self.step_, self.step_, dtype=float)
         y_seq = ampl * np.sin(freq * x_seq)
         yaw_seq = ampl * freq * np.cos(freq * x_seq)
 
-        x_seq = x_seq + self.start_point.x
+        x_seq = k*x_seq + self.start_point.x
         y_seq = y_seq + self.start_point.y
         yaw_seq = yaw_seq + self.start_point.yaw
         for i in range(x_seq.size):
@@ -170,8 +178,12 @@ class Trajectory():
         ampl_x = ampl + abs(x)
         while (ampl_x > abs(x)):
             r = self.step_ * math.exp(f*0.1)
-            x = r * math.cos(f) + self.start_point.x
-            y = r * math.sin(f) + self.start_point.y
+            if self.reverse:
+                x = r * math.cos(f) + self.start_point.x
+                y = r * math.sin(f) + self.start_point.y
+            else:
+                x = r * math.sin(f) + self.start_point.x
+                y = r * math.cos(f) + self.start_point.y
             f += 0.1
             self.add_point_to_path(x, y, 0.)
 

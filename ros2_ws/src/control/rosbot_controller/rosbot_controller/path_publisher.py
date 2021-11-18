@@ -1,16 +1,12 @@
-import time
 import rclpy
+import numpy as np
 from rclpy.node import Node
 from nav_msgs.msg import Path
-from .robot_trajectory import Trajectory
-from rosbot_controller.rosbot_2D import RobotState
-from tf2_ros import TransformException
+from scipy.spatial.transform import Rotation
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from argparse import Namespace
-from scipy.spatial.transform import Rotation
-from nav_msgs.msg import Odometry
-import numpy as np
+from rosbot_controller.rosbot_2D import RobotState
+from rosbot_controller.robot_trajectory import Trajectory
 
 
 class TrajPublish(Node):
@@ -56,6 +52,7 @@ class TrajPublish(Node):
         self.declare_parameter('step_size', 0.1)
         self.declare_parameter('path_topic', '/path')
         self.declare_parameter('path_frame', 'odom')
+        self.declare_parameter('reverse', 'False')
 
         self.traj_type = self.get_parameter(
             'traj_type').get_parameter_value().string_value
@@ -71,6 +68,8 @@ class TrajPublish(Node):
             'length').get_parameter_value().double_value
         self.num_of_subs = self.get_parameter(
             'num_of_subs').get_parameter_value().double_value
+        self.reverse = self.get_parameter(
+            'reverse').get_parameter_value().bool_value
 
     def get_robot_pose(self):
         """
@@ -110,7 +109,8 @@ class TrajPublish(Node):
             start_point=self.initial_pose,
             step=self.step_size,
             frame=self.path_frame,
-            length=self.length
+            length=self.length,
+            reverse=self.reverse
         )
         self.prepare_trajectory()
         self.path_pub.publish(self.trajectory.get_path())
