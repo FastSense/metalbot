@@ -8,9 +8,10 @@ from launch.substitutions import LaunchConfiguration
 import xacro
 import os
 
+
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-    use_tf_static = LaunchConfiguration('use_tf_static', default='true')
+    use_tf_static = LaunchConfiguration('use_tf_static', default='false')
 
     description_pkg = get_package_share_directory('metalbot_description')
 
@@ -30,7 +31,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument('use_tf_static', default_value='true', description='Use static transforms'),
+        DeclareLaunchArgument('use_sim_time', default_value='true',
+                              description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument(
+            'use_tf_static', default_value='true', description='Use static transforms'),
         robot_state_publisher,
     ])
