@@ -30,6 +30,8 @@
       - [Micro-ROS](#micro-ros)
       - [State Estimation 2D](#state-estimation-2d)
       - [ros1_bridge](#ros1_bridge)
+      - [Rosbag2 to ROS1](#rosbag2-to-ros1)
+      - [pointcloud_filter](#pointcloud-filter)
 
 ## Настройка среды
 
@@ -262,3 +264,20 @@ roslaunch hdf5_data_publisher oakd.launch path_to_hdf5:=/path/to/save.hdf5 (дл
 roslaunch hdf5_data_publisher realsense.launch path_to_hdf5:=/path/to/save.hdf5 (для данных с realsense)
 roslaunch hdf5_data_publisher rosbot_gazebo.launch path_to_hdf5:=/path/to/save.hdf5 (для данных из Gazebo)
 ```
+
+#### Pointcloud filter
+
+Сборка пакета
+```bash
+r2
+cd ~/ros2_ws
+cb_selected pointcloud_filter_cpp
+```
+
+Запуск на Realsense D455
+```bash
+r2
+ros2 launch pointcloud_filter_cpp realsense_pcd_filter.launch.py
+```
+
+Публикация фильтрованного поинтклауда - в топик `/points_filtered`
