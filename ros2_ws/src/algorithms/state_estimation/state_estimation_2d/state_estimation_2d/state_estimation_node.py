@@ -124,8 +124,8 @@ class StateEstimation2D(Node):
         self.dt = 0.1
         self.R_odom = np.array([[0.5, 0],
                                 [0, 0.1]])
-        self.R_accel = np.array([[0.5]])
-        self.R_gyro = np.array([[0.5]])
+        self.R_accel = np.array([[200]])
+        self.R_gyro = np.array([[200]])
         
         self.filter = Filter2D(
             x_init=np.zeros(5), 
@@ -172,27 +172,30 @@ class StateEstimation2D(Node):
         """
         z_odom = np.zeros(2)
         z_odom[0] = odom.linear.x
-        z_odom[1] = odom.angular.z / 2
+        z_odom[1] = odom.angular.z
         return z_odom
 
     def imu_accel_callback(self, msg):
-        self.imu = msg
-        self.z_accel = np.array([self.imu.linear_acceleration.x])
+        self.imu_accel = msg
+        if self.rot_extrinsic is not None:
+            accel = self.rot_extrinsic.T @ np.array([self.imu_accel.linear_acceleration.x,
+                                            self.imu_accel.linear_acceleration.y,
+                                            self.imu_accel.linear_acceleration.z])
+            self.z_accel = accel[1]
     
     def imu_gyro_callback(self, msg):
         # print(self.imu_extrinsic)
-        # if self.imu_extrinsic is None:
-        #     print("Finding imu extrinsics")
-        #     self.imu_extrinsic = self.get_extrinsic("camera_gyro_optical_frame", "base_link")
-        #     if self.imu_extrinsic is not None:
-        #         self.rot_extrinsic = np.ascontiguousarray(self.imu_extrinsic[:3,:3])
-        self.imu = msg
-        # if self.rot_extrinsic is not None:
-        #     gyro =  self.rot_extrinsic.T @ np.array([self.imu.angular_velocity.x,
-        #                                         self.imu.angular_velocity.y,
-        #                                         self.imu.angular_velocity.z])
-        self.z_gyro = np.array([self.imu.angular_velocity.z])
-            # print(gyro)
+        if self.imu_extrinsic is None:
+            print("Finding imu extrinsics")
+            self.imu_extrinsic = self.get_extrinsic("camera_gyro_optical_frame", "base_link")
+        if self.imu_extrinsic is not None and self.rot_extrinsic is None:
+            self.rot_extrinsic = np.ascontiguousarray(self.imu_extrinsic[:3,:3])
+        self.imu_gyro = msg
+        if self.rot_extrinsic is not None:
+            gyro = self.rot_extrinsic.T @ np.array([self.imu_gyro.angular_velocity.x,
+                                            self.imu_gyro.angular_velocity.y,
+                                            self.imu_gyro.angular_velocity.z])
+            self.z_gyro = gyro[2]
     
     def step_filter(self):
         """
@@ -205,10 +208,11 @@ class StateEstimation2D(Node):
             self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
-            # self.filter.update_imu_accel(self.z_accel, self.R_accel)
             # if self.z_gyro is not None:
             if self.z_gyro is not None:
                 self.filter.update_imu_gyro(self.z_gyro, self.R_gyro)
+            if self.z_accel is not None:
+                self.filter.update_imu_accel(self.z_accel, self.R_accel)
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             self.pose_pub.publish(self.odom_filtered)
