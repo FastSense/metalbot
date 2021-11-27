@@ -54,10 +54,12 @@ void DogmLayer::onInitialize() {
     robot_y_ = 0;
     is_first_measurement_ = true;
 
-    // publisher_ = node_->create_publisher<dogm_msgs::msg::DynamicOccupancyGrid>("dogm_map", 10);
+    publisher_ = node_->create_publisher<dogm_msgs::msg::DynamicOccupancyGrid>("dogm_map", 10);
+    publisher_->on_activate();
 }
 
 DogmLayer::~DogmLayer() {
+    // TODO: Do this in a function for shutdown, because memory is allocated in function onInitialize()
     CHECK_ERROR(cudaFree(measurement_grid_));
 }
 
@@ -95,6 +97,7 @@ void DogmLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
         dogm_map_->updateGrid(measurement_grid_, robot_x, robot_y, 0, 0);
         is_first_measurement_ = false;
     }
+    publishDynamicGrid();
     last_time_stamp_ = time_stamp;
 
     if (opencv_visualization_) {
@@ -157,7 +160,8 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
 void DogmLayer::publishDynamicGrid() {
     auto message = std::make_unique<dogm_msgs::msg::DynamicOccupancyGrid>();
     message->header.stamp = node_->now();
-    message->header.frame_id = "abc";
+    // TODO: set correct frame id
+    message->header.frame_id = "map";
     message->info.resolution = dogm_map_->getResolution();
     message->info.length = dogm_map_->getGridSize() * dogm_map_->getResolution();
     message->info.size = dogm_map_->getGridSize();

@@ -35,7 +35,7 @@ private:
     float normalized_threshold_;
     std::unique_ptr<dogm::DOGM> dogm_map_;
     dogm::MeasurementCell* measurement_grid_;
-    rclcpp::Publisher<dogm_msgs::msg::DynamicOccupancyGrid>::SharedPtr publisher_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<dogm_msgs::msg::DynamicOccupancyGrid>> publisher_;
 
     double robot_x_;
     double robot_y_;
