@@ -182,7 +182,7 @@ class Logger(Node):
             self.upate_robot_state_container(robot_pose, self.curr_velocity)
         except tf2_ros.TransformException as ex:
             self.get_logger().info(
-                f'Could not transform {self.robot_frame} to {self.robot_frame}: {ex}')
+                f'Could not transform {self.robot_frame} to {self.parent_frame}: {ex}')
             return
 
     def odom_callback(self, odom_msg):
