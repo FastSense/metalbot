@@ -40,7 +40,7 @@ class Filter2D:
     R_imu: np.array
         Imu measurement noise covariance matrix
     Q: np.array
-        Model noise covariance matrix
+        Model noise covariance matrix dim(state)*dim(state)
     x_opt: np.array
         Computed optimal state vector
     P_opt: np.array
@@ -144,6 +144,24 @@ class Filter2D:
         H = get_jacobian_imu(self.x_opt) 
         y = z_imu - imu(self.x_opt)
         G = H @ self.P_opt @ H.T + R_imu
+        K = self.P_opt @ H.T @ inv(G)
+        I = np.eye(5)
+        self.P_opt = (I - K @ H) @ self.P_opt
+        self.x_opt = self.x_opt + K @ y
+
+    def update_imu_accel(self, z_accel, R_accel):
+        H = get_jacobian_accel(self.x_opt) 
+        y = z_accel - accel(self.x_opt)
+        G = H @ self.P_opt @ H.T + R_accel
+        K = self.P_opt @ H.T @ inv(G)
+        I = np.eye(5)
+        self.P_opt = (I - K @ H) @ self.P_opt
+        self.x_opt = self.x_opt + K @ y
+    
+    def update_imu_gyro(self, z_gyro, R_gyro):
+        H = get_jacobian_gyro(self.x_opt) 
+        y = z_gyro - accel(self.x_opt)
+        G = H @ self.P_opt @ H.T + R_gyro
         K = self.P_opt @ H.T @ inv(G)
         I = np.eye(5)
         self.P_opt = (I - K @ H) @ self.P_opt
