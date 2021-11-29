@@ -267,17 +267,16 @@ roslaunch hdf5_data_publisher rosbot_gazebo.launch path_to_hdf5:=/path/to/save.h
 
 #### Pointcloud filter
 
-Сборка пакета
+Запуск с дефолтным конфигом (под Realsense D455):
 ```bash
 r2
-cd ~/ros2_ws
-cb_selected pointcloud_filter_cpp
+ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py
 ```
 
-Запуск на Realsense D455
+Запуск с другим конфигом:
 ```bash
 r2
-ros2 launch pointcloud_filter_cpp realsense_pcd_filter.launch.py
+ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py config_file:=/path/to/config.yaml
 ```
 
 Публикация фильтрованного поинтклауда - в топик `/points_filtered`
