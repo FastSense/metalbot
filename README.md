@@ -278,5 +278,3 @@ ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py
 r2
 ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py config_file:=/path/to/config.yaml
 ```
-
-Публикация фильтрованного поинтклауда - в топик `/points_filtered`
