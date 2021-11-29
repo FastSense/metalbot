@@ -1,0 +1,6 @@
+voxel_grid_filter:
+  ros__parameters:
+    input_topic: camera/depth/color/points
+    output_topic: points_filtered
+    resolution: 0.02
+    verbose: false

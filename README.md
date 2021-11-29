@@ -31,7 +31,8 @@
       - [State Estimation 2D](#state-estimation-2d)
       - [ros1_bridge](#ros1_bridge)
       - [Rosbag2 to ROS1](#rosbag2-to-ros1)
-      - [Elevation mapping](#elevation-mapping)
+      - [pointcloud_filter](#pointcloud-filter)
+
 
 ## Настройка среды
 
@@ -265,6 +266,19 @@ roslaunch hdf5_data_publisher realsense.launch path_to_hdf5:=/path/to/save.hdf5 
 roslaunch hdf5_data_publisher rosbot_gazebo.launch path_to_hdf5:=/path/to/save.hdf5 (для данных из Gazebo)
 ```
 
+#### Pointcloud filter
+
+Запуск с дефолтным конфигом (под Realsense D455):
+```bash
+r2
+ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py
+```
+
+Запуск с другим конфигом:
+```bash
+r2
+ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py config_file:=/path/to/config.yaml
+
 #### Elevation Mapping
 
 Для запуска Elevation Mapping на бэгах с Realsense в ROS1 нужно сначала перегнать данные из бэга в hdf5 (как описано в разделе [Rosbag2 to ROS1](#rosbag2-to-ros1). Затем запустить публикацию данных из hdf5 и Elevation Mapping с нужным конфигом:
@@ -294,4 +308,5 @@ roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=tru
 ```bash
 r1
 roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=false
+
 ```
