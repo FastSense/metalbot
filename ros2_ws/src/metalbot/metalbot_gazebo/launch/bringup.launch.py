@@ -21,7 +21,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value=[world, ''], description='SDF world file'),
-        DeclareLaunchArgument('gui', default_value='true'),
+        DeclareLaunchArgument('gui', default_value='false'),
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('verbose', default_value='true',description='Set "true" to increase messages written to terminal.'),
         DeclareLaunchArgument('gdb', default_value='false', description='Set "true" to run gzserver with gdb'),

@@ -10,6 +10,7 @@ import numpy as np
 from filterpy.common import Q_discrete_white_noise
 from scipy.spatial.transform import Rotation as R
 import tf2_ros
+from argparse import Namespace
 
 from state_estimation_2d.filter import *
 from state_estimation_2d.ate import *
@@ -91,7 +92,20 @@ class StateEstimation2D(Node):
             'cmd_vel',
             self.control_callback,
             15)
+        self.imu_accel_sub = self.create_subscription(
+            Imu,
+            '/camera/accel/sample',
+            self.imu_accel_callback,
+            15)
+        self.imu_gyro_sub = self.create_subscription(
+            Imu,
+            '/camera/gyro/sample',
+            self.imu_gyro_callback,
+            15)
         self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
+        self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
         # ROS variables
         self.odom_noised = Odometry()
         self.odom_gt = Odometry()
@@ -99,7 +113,10 @@ class StateEstimation2D(Node):
         self.got_measurements = 0
         self.control = np.zeros(2)
         self.z_odom = np.zeros(2)
-        self.z_imu = np.zeros(2)
+        self.z_accel = np.zeros(1)
+        self.z_gyro = None
+        self.imu_extrinsic = None
+        self.rot_extrinsic = None
         # Upload NN control model
         self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
         self.model = nnio.ONNXModel(self.model_path)
@@ -107,8 +124,8 @@ class StateEstimation2D(Node):
         self.dt = 0.1
         self.R_odom = np.array([[0.5, 0],
                                 [0, 0.1]])
-        self.R_imu = np.array([[0.1, 0],
-                               [0, 0.1]])
+        self.R_accel = np.array([[200]])
+        self.R_gyro = np.array([[200]])
         
         self.filter = Filter2D(
             x_init=np.zeros(5), 
@@ -127,10 +144,6 @@ class StateEstimation2D(Node):
             self.dt,
             self.step_filter
         )
-
-        self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
     
     def control_callback(self, msg):
         """
@@ -161,6 +174,28 @@ class StateEstimation2D(Node):
         z_odom[0] = odom.linear.x
         z_odom[1] = odom.angular.z
         return z_odom
+
+    def imu_accel_callback(self, msg):
+        self.imu_accel = msg
+        if self.rot_extrinsic is not None:
+            accel = self.rot_extrinsic.T @ np.array([self.imu_accel.linear_acceleration.x,
+                                            self.imu_accel.linear_acceleration.y,
+                                            self.imu_accel.linear_acceleration.z])
+            self.z_accel = accel[1]
+    
+    def imu_gyro_callback(self, msg):
+        # print(self.imu_extrinsic)
+        if self.imu_extrinsic is None:
+            print("Finding imu extrinsics")
+            self.imu_extrinsic = self.get_extrinsic("camera_gyro_optical_frame", "base_link")
+        if self.imu_extrinsic is not None and self.rot_extrinsic is None:
+            self.rot_extrinsic = np.ascontiguousarray(self.imu_extrinsic[:3,:3])
+        self.imu_gyro = msg
+        if self.rot_extrinsic is not None:
+            gyro = self.rot_extrinsic.T @ np.array([self.imu_gyro.angular_velocity.x,
+                                            self.imu_gyro.angular_velocity.y,
+                                            self.imu_gyro.angular_velocity.z])
+            self.z_gyro = gyro[2]
     
     def step_filter(self):
         """
@@ -173,9 +208,51 @@ class StateEstimation2D(Node):
             self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
+            # if self.z_gyro is not None:
+            if self.z_gyro is not None:
+                self.filter.update_imu_gyro(self.z_gyro, self.R_gyro)
+            if self.z_accel is not None:
+                self.filter.update_imu_accel(self.z_accel, self.R_accel)
             # Transfer vectors to odometry messages
             self.state_to_odometry(self.filter.x_opt, self.filter.P_opt)
             self.pose_pub.publish(self.odom_filtered)
+
+    def get_extrinsic(self, frame1, frame2):
+        '''
+        Parameters:
+        frame1 (str): tf frame
+        frame2 (str): tf frame
+
+        Returns:
+        np.array of shape [3, 4]: rotation-translation matrix between two tf frames.
+        '''
+        extrinsic = None
+        try:
+            # t = self.get_clock().now()
+            # rclpy.spin_once(self)
+            t = Namespace(seconds=0, nanoseconds=0)
+            trans = self.tf_buffer.lookup_transform(frame1, frame2, t, rclpy.duration.Duration(seconds=0.5))
+            # print(f"Got transform! {frame1} -> {frame2}")
+            # break
+            tr = np.array([
+                [trans.transform.translation.x],
+                [trans.transform.translation.y],
+                [trans.transform.translation.z],
+            ])
+            rot_q = np.array([
+                trans.transform.rotation.x,
+                trans.transform.rotation.y,
+                trans.transform.rotation.z,
+                trans.transform.rotation.w,
+            ])
+            rot = R.from_quat(rot_q).as_matrix()
+            extrinsic = np.concatenate([rot, tr], 1)
+        except tf2_ros.LookupException:
+            # rclpy.spin_once(self)
+            print(f"Retrying to get transform {frame1} -> {frame2}", self.get_clock().now())
+        
+        return extrinsic
+
 
     def state_to_odometry(self, x, P):
         """

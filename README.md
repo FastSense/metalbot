@@ -33,6 +33,7 @@
       - [Rosbag2 to ROS1](#rosbag2-to-ros1)
       - [pointcloud_filter](#pointcloud-filter)
 
+
 ## Настройка среды
 
 Для начала необходимо создать воркспейс и склонировать репозиторий
@@ -277,4 +278,35 @@ ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py
 ```bash
 r2
 ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py config_file:=/path/to/config.yaml
+
+#### Elevation Mapping
+
+Для запуска Elevation Mapping на бэгах с Realsense в ROS1 нужно сначала перегнать данные из бэга в hdf5 (как описано в разделе [Rosbag2 to ROS1](#rosbag2-to-ros1). Затем запустить публикацию данных из hdf5 и Elevation Mapping с нужным конфигом:
+
+Терминал 1
+
+```bash
+r1
+roscore
+```
+
+Терминал 3
+```bash
+r1
+roslaunch hdf5_data_publisher realsense_pcd_only.launch path_to_hdf5:=/path/to/realsense_data.hdf5
+```
+
+Терминал 4
+
+Запуск Elevation Mapping вместе с rviz:
+```bash
+r1
+roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=true
+```
+
+Запуск Elevation Mapping без rviz:
+```bash
+r1
+roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=false
+
 ```

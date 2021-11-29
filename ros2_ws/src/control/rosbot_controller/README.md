@@ -68,11 +68,15 @@ cd scripts
 
 Пример запуска:
 ```
-ros2 launch rosbot_controller simple_controller.launch.py traj_type:=@param1 move_plan:=@param2
+ros2 launch rosbot_controller simple_controller.launch.py traj_type:=@param1 move_plan:=@param2 vel_coeff:=@param3 ang_vel_coeff:=@param3 reverse=param4
 ```
 Aргументы:
-* traj_type --- тип траектории (2.0sin2.0, 4.0spiral, polygon, from_file)
-* move_plan --- путь к файлу, если traj_type=from_file
+* traj_type --- (Str) тип траектории (2.0sin2.0, 4.0spiral, polygon, from_file)
+* move_plan --- (Str) путь к файлу, если traj_type=from_file
+* vel_coeff --- (Float) множитель линейной скорости робота (1.0 2.0 1.5)
+* ang_vel_coeff --- (Float) множитель угловой скорости робота (1.0 2.0 1.5)
+* reverse --- (Bool) если True траектория будет обратной
+* use_odom --- (Bool)если True поза робота берется из топика одометрии, если False - из топика TF
 
 
 ## model_runner
