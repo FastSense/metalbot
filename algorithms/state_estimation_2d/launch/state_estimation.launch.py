@@ -103,11 +103,19 @@ def generate_launch_description():
             emulate_tty=True
         ),
         Node(
-            package="state_estimation_25d",
-            executable="state_estimation_25d",
+            package="state_estimation_2d",
+            executable="state_estimation_2d",
             output='screen',
             emulate_tty=True,
-            parameters=[{"use_sim_time": True}],
+            parameters=[
+                {"use_sim_time": True},
+                {"odom_topic": "odom"},
+                {"imu_topic": "imu"},
+                {"cmd_topic": "cmd"},
+                {"publish_topic": "odom_filtered"},
+                {"imu_frame": "camera_gyro_optical_frame"},
+                {"robot_base_frame": "base_link"}
+            ],
         ),
         Node(
             package="path_visualizer",

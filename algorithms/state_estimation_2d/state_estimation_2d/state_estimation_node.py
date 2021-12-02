@@ -80,10 +80,13 @@ class StateEstimation2D(Node):
     """
     def __init__(self):
         super().__init__('state_estimation_2d')
+
+        self.init_parameters()
+        self.update_parameters()
         # ROS Subscribers
         self.odom_gt_sub = self.create_subscription(
             Odometry,
-            'odom',
+            self.odom_topic,
             self.odometry_gt_callback,
             10)
         self.odom_sub = self.create_subscription(
@@ -93,15 +96,15 @@ class StateEstimation2D(Node):
             10)
         self.imu_sub = self.create_subscription(
             Imu,
-            'imu',
+            self.imu_topic,
             self.imu_callback,
             15)
         self.cmd_vel_sub = self.create_subscription(
             Twist,
-            'cmd_vel',
+            self.cmd_topic,
             self.control_callback,
             15)
-        self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
+        self.pose_pub = self.create_publisher(Odometry, self.publish_topic, 10)
         # ROS variables
         self.odom_noised = Odometry()
         self.odom_gt = Odometry()
@@ -138,6 +141,27 @@ class StateEstimation2D(Node):
             self.dt,
             self.step_filter
         )
+
+    def init_parameters(self):
+        self.declare_parameters(
+            namespace="",
+            parameters=[
+                ("odom_topic", "odom"),
+                ("imu_topic", "imu"),
+                ("cmd_topic", "cmd"),
+                ("publish_topic", "odom_filtered"),
+                ("imu_frame", "camera_gyro_optical_frame"),
+                ("robot_base_frame", "base_link"),
+            ]
+        )
+
+    def update_parameters(self):
+        self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
+        self.imu_topic = self.get_parameter('imu_topic').get_parameter_value().string_value
+        self.cmd_topic = self.get_parameter('cmd_topic').get_parameter_value().string_value
+        self.publish_topic = self.get_parameter('publish_topic').get_parameter_value().string_value
+        self.imu_frame = self.get_parameter('imu_frame').get_parameter_value().string_value
+        self.robot_base_frame = self.get_parameter('robot_base_frame').get_parameter_value().string_value
     
     def control_callback(self, msg):
         """
