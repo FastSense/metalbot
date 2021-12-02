@@ -1,15 +1,11 @@
 #include "dogm_plugin/dogm_layer.h"
-
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/cuda.hpp>
 #include <opencv2/cudawarping.hpp>
-
 #include <iostream>
 
 namespace dogm_plugin {
 
-__global__ void setUnknownAsFree(cv::cuda::PtrStepSzb master_array);
-__global__ void fillMeasurementGrid(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
+__global__ void setUnknownAsFreeKernel(cv::cuda::PtrStepSzb master_array);
+__global__ void fillMeasurementGridKernel(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
                                     float occupancy_threshold);
 
 DogmLayer::DogmLayer() {}
@@ -112,15 +108,8 @@ void DogmLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
     }
 }
 
-void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
-                                         int min_i, int min_j, int max_i, int max_j) {
-    unsigned int size_x = master_grid.getSizeInCellsX();
-    unsigned int size_y = master_grid.getSizeInCellsY();
-    min_i = std::max(0, min_i);
-    min_j = std::max(0, min_j);
-    max_i = std::min(static_cast<int>(size_x), max_i);
-    max_j = std::min(static_cast<int>(size_y), max_j);
-
+cv::Mat DogmLayer::getTransformFromMeasurementGridToCostMap(nav2_costmap_2d::Costmap2D& master_grid,
+                                                            int min_i, int min_j, int max_i, int max_j) {
     float measurement_grid_resolution = dogm_map_->params.resolution;
     float costmap_resolution = master_grid.getResolution();
     cv::Mat scale_measurement_grid(cv::Mat::eye(cv::Size(3, 3), CV_32F));
@@ -137,22 +126,54 @@ void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid
     scaled_measurement_grid_to_costmap.at<float>(1, 2) = (costmap_origin_y - measurement_grid_origin_y) / costmap_resolution;
 
     cv::Mat measurement_grid_to_costmap = scale_measurement_grid * scaled_measurement_grid_to_costmap;
+    return measurement_grid_to_costmap;
+}
 
-    dim3 blocks(1, 1);
-    dim3 threads(16, 16);
+cv::cuda::GpuMat DogmLayer::getMasterArrayDevice(nav2_costmap_2d::Costmap2D& master_grid,
+                                                 int min_i, int min_j, int max_i, int max_j) {
     unsigned char* master_array = master_grid.getCharMap();
-    cv::Mat master_array_host(cv::Size(max_i - min_i, max_j - min_j), CV_8U, master_array + master_grid.getIndex(min_i, min_j), size_x * sizeof(unsigned char));
+    cv::Mat master_array_host(cv::Size(max_i - min_i, max_j - min_j), CV_8U,
+        master_array + master_grid.getIndex(min_i, min_j), master_grid.getSizeInCellsX() * sizeof(unsigned char));
     cv::cuda::GpuMat master_array_device;
     master_array_device.upload(master_array_host);
-    setUnknownAsFree<<<blocks, threads>>>(master_array_device);
-    master_array_device.convertTo(master_array_device, CV_32S);
+    return master_array_device;
+}
 
-    cv::Mat measurement_grid;
+void DogmLayer::setUnknownAsFree(cv::cuda::GpuMat master_array_device) {
+    dim3 blocks(1, 1);
+    dim3 threads(16, 16);
+    setUnknownAsFreeKernel<<<blocks, threads>>>(master_array_device);
+}
+
+cv::cuda::GpuMat DogmLayer::transformCostMapToMeasurementGrid(cv::cuda::GpuMat master_array_device, cv::Mat measurement_grid_to_costmap) {
     cv::cuda::GpuMat measurement_grid_device;
+    master_array_device.convertTo(master_array_device, CV_32S);
     cv::cuda::warpAffine(master_array_device, measurement_grid_device, measurement_grid_to_costmap(cv::Range(0, 2), cv::Range(0, 3)),
         cv::Size(dogm_map_->grid_size, dogm_map_->grid_size), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(nav2_costmap_2d::FREE_SPACE));
-    fillMeasurementGrid<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, normalized_threshold_);
+    return measurement_grid_device;
+}
 
+void DogmLayer::fillMeasurementGrid(cv::cuda::GpuMat measurement_grid_device) {
+    dim3 blocks(1, 1);
+    dim3 threads(16, 16);
+    fillMeasurementGridKernel<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, normalized_threshold_);
+}
+
+void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
+                                         int min_i, int min_j, int max_i, int max_j) {
+    unsigned int size_x = master_grid.getSizeInCellsX();
+    unsigned int size_y = master_grid.getSizeInCellsY();
+    min_i = std::max(0, min_i);
+    min_j = std::max(0, min_j);
+    max_i = std::min(static_cast<int>(size_x), max_i);
+    max_j = std::min(static_cast<int>(size_y), max_j);
+
+    cv::Mat measurement_grid_to_costmap = getTransformFromMeasurementGridToCostMap(master_grid, min_i, min_j, max_i, max_j);
+    cv::cuda::GpuMat master_array_device = getMasterArrayDevice(master_grid, min_i, min_j, max_i, max_j);
+    setUnknownAsFree(master_array_device);
+    cv::cuda::GpuMat measurement_grid_device = transformCostMapToMeasurementGrid(master_array_device, measurement_grid_to_costmap);
+    fillMeasurementGrid(measurement_grid_device);
+    
     CHECK_ERROR(cudaGetLastError());
     CHECK_ERROR(cudaDeviceSynchronize());
 }
@@ -198,7 +219,7 @@ void DogmLayer::reset() {
     return;
 }
 
-__global__ void setUnknownAsFree(cv::cuda::PtrStepSzb master_array)
+__global__ void setUnknownAsFreeKernel(cv::cuda::PtrStepSzb master_array)
 {
     int start_row = blockIdx.y * blockDim.y + threadIdx.y;
     int start_col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -224,7 +245,7 @@ __device__ float clip(float x, float min, float max)
     return x;
 }
 
-__global__ void fillMeasurementGrid(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
+__global__ void fillMeasurementGridKernel(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
                                     float occupancy_threshold)
 {
     int start_row = blockIdx.y * blockDim.y + threadIdx.y;
