@@ -66,7 +66,7 @@ private:
     bool opencv_visualization_;
     bool motion_compensation_;
     dogm::DOGM::Params params_;
-    float normalized_threshold_;
+    float normalized_occupancy_threshold_;
     std::unique_ptr<dogm::DOGM> dogm_map_;
     dogm::MeasurementCell* measurement_grid_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<dogm_msgs::msg::DynamicOccupancyGrid>> publisher_;

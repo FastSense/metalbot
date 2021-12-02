@@ -19,7 +19,7 @@ void DogmLayer::onInitialize() {
     declareParameter("motion_compensation", rclcpp::ParameterValue(true));
     node_->get_parameter(name_ + "." + "motion_compensation", motion_compensation_);
 
-    declareParameter("size", rclcpp::ParameterValue(50.0f));
+    declareParameter("size", rclcpp::ParameterValue(5.0f));
     node_->get_parameter(name_ + "." + "size", params_.size);
     declareParameter("resolution", rclcpp::ParameterValue(0.2f));
     node_->get_parameter(name_ + "." + "resolution", params_.resolution);
@@ -40,8 +40,8 @@ void DogmLayer::onInitialize() {
     declareParameter("init_max_velocity", rclcpp::ParameterValue(30.0f));
     node_->get_parameter(name_ + "." + "init_max_velocity", params_.init_max_velocity);
 
-    declareParameter("normalized_threshold", rclcpp::ParameterValue(0.5f));
-    node_->get_parameter(name_ + "." + "normalized_threshold", normalized_threshold_);
+    declareParameter("normalized_occupancy_threshold", rclcpp::ParameterValue(0.5f));
+    node_->get_parameter(name_ + "." + "normalized_occupancy_threshold", normalized_occupancy_threshold_);
 
     dogm_map_ = std::make_unique<dogm::DOGM>(params_);
     CHECK_ERROR(cudaMalloc(&measurement_grid_, dogm_map_->grid_cell_count * sizeof(dogm::MeasurementCell)));
@@ -156,7 +156,7 @@ cv::cuda::GpuMat DogmLayer::transformCostMapToMeasurementGrid(cv::cuda::GpuMat m
 void DogmLayer::fillMeasurementGrid(cv::cuda::GpuMat measurement_grid_device) {
     dim3 blocks(1, 1);
     dim3 threads(16, 16);
-    fillMeasurementGridKernel<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, normalized_threshold_);
+    fillMeasurementGridKernel<<<blocks, threads>>>(measurement_grid_, measurement_grid_device, normalized_occupancy_threshold_);
 }
 
 void DogmLayer::costMapToMeasurementGrid(nav2_costmap_2d::Costmap2D& master_grid,
@@ -246,7 +246,7 @@ __device__ float clip(float x, float min, float max)
 }
 
 __global__ void fillMeasurementGridKernel(dogm::MeasurementCell* __restrict__ measurement_grid, const cv::cuda::PtrStepSzi source,
-                                    float occupancy_threshold)
+                                          float occupancy_threshold)
 {
     int start_row = blockIdx.y * blockDim.y + threadIdx.y;
     int start_col = blockIdx.x * blockDim.x + threadIdx.x;

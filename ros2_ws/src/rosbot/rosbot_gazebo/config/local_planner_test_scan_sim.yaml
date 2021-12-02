@@ -118,7 +118,7 @@ local_costmap:
         birth_prob: 0.02
         stddev_velocity: 30.0
         init_max_velocity: 30.0
-        normalized_threshold: 0.5
+        normalized_occupancy_threshold: 0.5
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
