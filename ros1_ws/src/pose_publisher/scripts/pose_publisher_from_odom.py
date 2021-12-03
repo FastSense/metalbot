@@ -7,13 +7,6 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from rosgraph_msgs.msg import Clock
 
-publish_clock = rospy.get_param('~clock', default=False)
-odom_topic = rospy.get_param('odom_topic', default='odom')
-clock_publisher = rospy.Publisher('/clock', Clock, latch=True, queue_size=100)
-clock_msg = Clock()
-pose_publisher = rospy.Publisher('/pose_with_covariance', PoseWithCovarianceStamped, latch=True, queue_size=100)
-pose_msg = PoseWithCovarianceStamped()
-
 
 def odom_callback(msg):
     pose_msg.header = msg.header
@@ -30,5 +23,12 @@ def odom_callback(msg):
 
 if __name__ == '__main__':
     rospy.init_node('pose_publisher')
+    publish_clock = rospy.get_param('~clock', default=False)
+    odom_topic = rospy.get_param('~odom_topic', default='odom')
+    print(odom_topic)
+    clock_publisher = rospy.Publisher('/clock', Clock, latch=True, queue_size=100)
+    clock_msg = Clock()
+    pose_publisher = rospy.Publisher('/pose_with_covariance', PoseWithCovarianceStamped, latch=True, queue_size=100)
+    pose_msg = PoseWithCovarianceStamped()
     odom_subscriber = rospy.Subscriber(odom_topic, Odometry, odom_callback)
     rospy.spin()

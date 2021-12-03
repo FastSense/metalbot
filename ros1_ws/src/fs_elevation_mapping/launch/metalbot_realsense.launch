@@ -12,7 +12,7 @@
     <rosparam command="load" file="$(find elevation_mapping_demos)/config/postprocessing/postprocessor_pipeline.yaml" />
   </node>
 
-  <node pkg="pose_publisher" type="pose_publisher_from_odom.py" name="pwc_from_odom">
+  <node pkg="pose_publisher" type="pose_publisher_from_odom.py" name="pwc_from_odom" output="screen">
     <param name="odom_topic" value="$(arg odom_topic)"/>
     <param name="publish_clock" value="$(arg publish_clock"/>
   </node>
