@@ -84,6 +84,7 @@ class StateEstimation2D(Node):
         # ROS Subscribers
         self.init_parameters()
         self.update_parameters()
+
         self.odom_sub = self.create_subscription(
             Twist,
             self.odom_topic,
@@ -114,10 +115,12 @@ class StateEstimation2D(Node):
             self.imu_topic,
             self.imu_callback,
             15)
+
         self.pose_pub = self.create_publisher(Odometry, self.publish_topic, 10)
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
         # ROS variables
         self.odom_noised = Odometry()
         self.odom_gt = Odometry()
@@ -130,10 +133,12 @@ class StateEstimation2D(Node):
         self.z_gyro = None
         self.imu_extrinsic = None
         self.rot_extrinsic = None
+
         # Upload NN control model
-        self.model = nnio.ONNXModel(self.model_path)
+        if self.use_nn_model:
+            self.model = nnio.ONNXModel(self.model_path)
+
         # Filter parameters
-        
         self.filter = Filter2D(
             x_init=np.zeros(5), 
             P_init=np.eye(5) * 0.01,                          
@@ -141,11 +146,13 @@ class StateEstimation2D(Node):
             v_var=self.R_odom[0][0]**2,
             w_var=self.R_odom[1][1]**2,
         )
+
         self.distance = 0
         self.x_prev = 0
         self.y_prev = 0
         self.odom_gt_prev = Odometry()
         self.ate = ErrorEstimator()
+
         # Timer for update function
         self.predict_timer = self.create_timer(
             self.dt,
@@ -156,6 +163,7 @@ class StateEstimation2D(Node):
         self.declare_parameters(
             namespace="",
             parameters=[
+                ("use_nn_model", False),
                 ("odom_topic", "odom"),
                 ("imu_topic", "imu"),
                 ("imu_accel_topic", "/camera/accel/sample"),
@@ -178,6 +186,7 @@ class StateEstimation2D(Node):
         )
 
     def update_parameters(self):
+        self.use_nn_model = self.get_parameter('use_nn_model').get_parameter_value().bool_value
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
         self.imu_topic = self.get_parameter('imu_topic').get_parameter_value().string_value
         self.imu_accel_topic = self.get_parameter('imu_accel_topic').get_parameter_value().string_value
@@ -194,6 +203,7 @@ class StateEstimation2D(Node):
         R_imu_vec = self.get_parameter('imu_sim_covariance').get_parameter_value().double_array_value
         self.R_accel = np.array(self.get_parameter('accel_robot_covariance').get_parameter_value().double_value)
         self.R_gyro = np.array(self.get_parameter('gyro_robot_covariance').get_parameter_value().double_value)
+
         self.R_odom = np.array(R_odom_vec).reshape(len(R_odom_vec)//2, len(R_odom_vec)//2)
         self.R_imu = np.array(R_imu_vec).reshape(len(R_imu_vec)//2, len(R_imu_vec)//2)
     
@@ -244,7 +254,6 @@ class StateEstimation2D(Node):
             self.z_accel = accel[1]
     
     def imu_gyro_callback(self, msg):
-        # print(self.imu_extrinsic)
         if self.imu_extrinsic is None:
             print("Finding imu extrinsics")
             self.imu_extrinsic = self.get_extrinsic(self.imu_frame, self.robot_base_frame)
@@ -280,8 +289,10 @@ class StateEstimation2D(Node):
         """
         if self.got_measurements:
             # Predict step
-            # self.filter.predict_by_nn_model(self.model, self.control)
-            self.filter.predict_by_naive_model(self.control)
+            if self.use_nn_model:
+                self.filter.predict_by_nn_model(self.model, self.control)
+            else:
+                self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
             if self.z_imu is not None:
@@ -387,8 +398,8 @@ class StateEstimation2D(Node):
         Transfer filter computed pose covariance matrix to vector
         http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovariance.html
         @ parameters
-        P: np.array
-            Covariance matrix
+        P: np.array of shape (dim(x), dim(x))
+            Covariance matrix for corresponding variables of state vector
         """
         cov_vector = self.odom_noised.pose.covariance
         cov_vector[14] = 0.1
@@ -410,8 +421,8 @@ class StateEstimation2D(Node):
         Transfer filter computed twist covariance matrix to vector
         http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/TwistWithCovariance.html
         @ parameters
-        P: np.array
-            Covariance matrix
+        P: np.array of shape (dim(x), dim(x))
+            Covariance matrix for corresponding variables of state vector
         """
         cov_vector = self.odom_noised.twist.covariance
         cov_vector[0] = P[2,2]

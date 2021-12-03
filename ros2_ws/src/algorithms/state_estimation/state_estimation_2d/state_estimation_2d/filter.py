@@ -145,7 +145,7 @@ class Filter2D:
     def update_imu(self, z_imu, R_imu):
         """ Update state vector using imu measurements"""
         H = get_jacobian_imu(self.x_opt) 
-        y = z_imu - imu(self.x_opt)
+        y = z_imu - h_imu(self.x_opt)
         self.x_opt, self.P_opt = kalman_update(
             self.x_opt,
             self.P_opt,
@@ -157,7 +157,7 @@ class Filter2D:
     def update_imu_accel(self, z_accel, R_accel):
         """ Update state vector using imu measurements"""
         H = get_jacobian_accel(self.x_opt) 
-        y = z_accel - accel(self.x_opt)
+        y = z_accel - h_accel(self.x_opt)
         self.x_opt, self.P_opt = kalman_update(
             self.x_opt,
             self.P_opt,
@@ -169,7 +169,7 @@ class Filter2D:
     def update_imu_gyro(self, z_gyro, R_gyro):
         """ Update state vector using imu measurements"""
         H = get_jacobian_gyro(self.x_opt) 
-        y = z_gyro - gyro(self.x_opt)
+        y = z_gyro - h_gyro(self.x_opt)
         self.x_opt, self.P_opt = kalman_update(
             self.x_opt,
             self.P_opt,

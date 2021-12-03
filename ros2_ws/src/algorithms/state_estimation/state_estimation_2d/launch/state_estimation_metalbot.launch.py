@@ -19,11 +19,17 @@ from launch_ros.actions import Node
 enable_viz = 'true'
 
 def generate_launch_description():
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             'viz',
             default_value=enable_viz,
             description='enable_visualization'
+        ),
+        launch.actions.DeclareLaunchArgument(
+            name='use_sim_time',
+            default_value='true'
         ),
         Node(
             package="state_estimation_2d",
@@ -31,7 +37,8 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True,
             parameters=[
-                {"use_sim_time": False},
+                {"use_sim_time": use_sim_time},
+                {"use_nn_model": False},
                 {"odom_topic": "velocity"},
                 {"imu_topic": "imu"},
                 {"imu_accel_topic": "/camera/accel/sample"},
@@ -50,6 +57,12 @@ def generate_launch_description():
                 {"gyro_robot_covariance": 200.0},
                 {"accel_robot_covariance": 200.0},
             ],
+        ),
+        Node(
+            package="odom_noiser",
+            executable="odom_noiser",
+            output='screen',
+            emulate_tty=True
         ),
         Node(
             package="path_visualizer",
