@@ -31,7 +31,8 @@
       - [State Estimation 2D](#state-estimation-2d)
       - [ros1_bridge](#ros1_bridge)
       - [Rosbag2 to ROS1](#rosbag2-to-ros1)
-      - [pointcloud_filter](#pointcloud-filter)
+      - [Pointcloud Filter](#pointcloud-filter)
+      - [Elevation Mapping](#elevation-mapping)
 
 
 ## Настройка среды
@@ -278,9 +279,11 @@ ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py
 ```bash
 r2
 ros2 launch pointcloud_filter_cpp voxel_grid_filter.launch.py config_file:=/path/to/config.yaml
+```
 
 #### Elevation Mapping
 
+**Запуск в ROS1 с росбэга**
 Для запуска Elevation Mapping на бэгах с Realsense в ROS1 нужно сначала перегнать данные из бэга в hdf5 (как описано в разделе [Rosbag2 to ROS1](#rosbag2-to-ros1). Затем запустить публикацию данных из hdf5 и Elevation Mapping с нужным конфигом:
 
 Терминал 1
@@ -298,15 +301,32 @@ roslaunch hdf5_data_publisher realsense_pcd_only.launch path_to_hdf5:=/path/to/r
 
 Терминал 4
 
-Запуск Elevation Mapping вместе с rviz:
 ```bash
 r1
-roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=true
+roslaunch fs_elevation_mapping metalbot_realsense.launch open_rviz:=true config_file:=metalbot_realsense_from_hdf5.yaml odom_topic:=camera/odom/sample publish_clock:=true
 ```
 
-Запуск Elevation Mapping без rviz:
+**Запуск в ROS2 через ros1_bridge**
+
+Терминал 1
 ```bash
 r1
-roslaunch fs_elevation_mapping metalbot_realsense_from_hdf5.launch use_rviz:=false
+roscore
+```
 
+Терминал 2
+```bash
+r1
+r2
+ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
+```
+
+Терминал 3
+```bash
+r1
+# Для запуска в Gazebo
+roslaunch fs_elevation_mapping metalbot_realsense.launch open_rviz:=true config_file:=metalbot_gazebo.yaml odom_topic:=odom publish_clock:=false
+
+# Для запуска с росбэга, записанного на роботе
+roslaunch fs_elevation_mapping metalbot_realsense.launch open_rviz:=true config_file:=metalbot_realsense_rosbridge.yaml odom_topic:=camera/odom/sample publish_clock:=true
 ```
