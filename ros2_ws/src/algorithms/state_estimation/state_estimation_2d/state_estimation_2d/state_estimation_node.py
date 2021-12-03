@@ -82,27 +82,39 @@ class StateEstimation2D(Node):
     def __init__(self):
         super().__init__('state_estimation_2d')
         # ROS Subscribers
+        self.init_parameters()
+        self.update_parameters()
         self.odom_sub = self.create_subscription(
             Twist,
-            'velocity',
+            self.odom_topic,
             self.odometry_callback,
+            10)
+        self.odom_sim_sub = self.create_subscription(
+            Odometry,
+            self.odom_sim_topic,
+            self.odom_sim_callback,
             10)
         self.cmd_vel_sub = self.create_subscription(
             Twist,
-            'cmd_vel',
+            self.cmd_topic,
             self.control_callback,
             15)
         self.imu_accel_sub = self.create_subscription(
             Imu,
-            '/camera/accel/sample',
+            self.imu_accel_topic,
             self.imu_accel_callback,
             15)
         self.imu_gyro_sub = self.create_subscription(
             Imu,
-            '/camera/gyro/sample',
+            self.imu_gyro_topic,
             self.imu_gyro_callback,
             15)
-        self.pose_pub = self.create_publisher(Odometry, '/odom_filtered', 10)
+        self.imu_sub = self.create_subscription(
+            Imu,
+            self.imu_topic,
+            self.imu_callback,
+            15)
+        self.pose_pub = self.create_publisher(Odometry, self.publish_topic, 10)
         self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -113,26 +125,21 @@ class StateEstimation2D(Node):
         self.got_measurements = 0
         self.control = np.zeros(2)
         self.z_odom = np.zeros(2)
-        self.z_accel = np.zeros(1)
+        self.z_imu = np.zeros(2)
+        self.z_accel = None
         self.z_gyro = None
         self.imu_extrinsic = None
         self.rot_extrinsic = None
         # Upload NN control model
-        self.model_path = 'http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx'
         self.model = nnio.ONNXModel(self.model_path)
         # Filter parameters
-        self.dt = 0.1
-        self.R_odom = np.array([[0.5, 0],
-                                [0, 0.1]])
-        self.R_accel = np.array([[200]])
-        self.R_gyro = np.array([[200]])
         
         self.filter = Filter2D(
             x_init=np.zeros(5), 
             P_init=np.eye(5) * 0.01,                          
             dt=self.dt,
-            v_var=0.25,
-            w_var=0.01,
+            v_var=self.R_odom[0][0]**2,
+            w_var=self.R_odom[1][1]**2,
         )
         self.distance = 0
         self.x_prev = 0
@@ -144,6 +151,51 @@ class StateEstimation2D(Node):
             self.dt,
             self.step_filter
         )
+    
+    def init_parameters(self):
+        self.declare_parameters(
+            namespace="",
+            parameters=[
+                ("odom_topic", "odom"),
+                ("imu_topic", "imu"),
+                ("imu_accel_topic", "/camera/accel/sample"),
+                ("imu_gyro_topic", "/camera/gyro/sample"),
+                ("cmd_topic", "cmd"),
+                ("odom_sim_topic", "odom_noised"),
+                ("publish_topic", "odom_filtered"),
+                ("imu_frame", "camera_gyro_optical_frame"),
+                ("robot_base_frame", "base_link"),
+                ("path_to_nn_model", "http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx"),
+                ("odom_noised_sim_topic", "odom_noised"),
+                ("time_step", 0.1),
+                ("odom_sim_covariance", [0.5, 0,
+                                        0, 0.1]),
+                ("imu_sim_covariance", [0.5, 0,
+                                        0, 0.1]),
+                ("gyro_robot_covariance", 200.0),
+                ("accel_robot_covariance", 200.0),
+            ]
+        )
+
+    def update_parameters(self):
+        self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
+        self.imu_topic = self.get_parameter('imu_topic').get_parameter_value().string_value
+        self.imu_accel_topic = self.get_parameter('imu_accel_topic').get_parameter_value().string_value
+        self.imu_gyro_topic = self.get_parameter('imu_gyro_topic').get_parameter_value().string_value
+        self.cmd_topic = self.get_parameter('cmd_topic').get_parameter_value().string_value
+        self.odom_sim_topic = self.get_parameter('odom_sim_topic').get_parameter_value().string_value
+        self.publish_topic = self.get_parameter('publish_topic').get_parameter_value().string_value
+        self.imu_frame = self.get_parameter('imu_frame').get_parameter_value().string_value
+        self.robot_base_frame = self.get_parameter('robot_base_frame').get_parameter_value().string_value
+        self.model_path = self.get_parameter('path_to_nn_model').get_parameter_value().string_value
+        self.odom_noised_topic = self.get_parameter('odom_noised_sim_topic').get_parameter_value().string_value
+        self.dt = self.get_parameter('time_step').get_parameter_value().double_value
+        R_odom_vec = self.get_parameter('odom_sim_covariance').get_parameter_value().double_array_value
+        R_imu_vec = self.get_parameter('imu_sim_covariance').get_parameter_value().double_array_value
+        self.R_accel = np.array(self.get_parameter('accel_robot_covariance').get_parameter_value().double_value)
+        self.R_gyro = np.array(self.get_parameter('gyro_robot_covariance').get_parameter_value().double_value)
+        self.R_odom = np.array(R_odom_vec).reshape(len(R_odom_vec)//2, len(R_odom_vec)//2)
+        self.R_imu = np.array(R_imu_vec).reshape(len(R_imu_vec)//2, len(R_imu_vec)//2)
     
     def control_callback(self, msg):
         """
@@ -163,6 +215,14 @@ class StateEstimation2D(Node):
         self.z_odom = self.odometry_to_vector(msg)
         self.got_measurements = 1
 
+    def odom_sim_callback(self, msg):
+        self.odom_sim = msg
+        self.z_odom = np.array([
+            msg.twist.twist.linear.x,
+            msg.twist.twist.angular.z,
+        ])
+        self.got_measurements = 1
+
     def odometry_to_vector(self, odom):
         """
         Transfer odometry message to measurement vector for filter
@@ -172,7 +232,7 @@ class StateEstimation2D(Node):
         """
         z_odom = np.zeros(2)
         z_odom[0] = odom.linear.x
-        z_odom[1] = odom.angular.z
+        z_odom[1] = odom.angular.z * 2
         return z_odom
 
     def imu_accel_callback(self, msg):
@@ -187,7 +247,7 @@ class StateEstimation2D(Node):
         # print(self.imu_extrinsic)
         if self.imu_extrinsic is None:
             print("Finding imu extrinsics")
-            self.imu_extrinsic = self.get_extrinsic("camera_gyro_optical_frame", "base_link")
+            self.imu_extrinsic = self.get_extrinsic(self.imu_frame, self.robot_base_frame)
         if self.imu_extrinsic is not None and self.rot_extrinsic is None:
             self.rot_extrinsic = np.ascontiguousarray(self.imu_extrinsic[:3,:3])
         self.imu_gyro = msg
@@ -196,6 +256,22 @@ class StateEstimation2D(Node):
                                             self.imu_gyro.angular_velocity.y,
                                             self.imu_gyro.angular_velocity.z])
             self.z_gyro = gyro[2]
+
+    def imu_callback(self, msg):
+        """
+        Callback from /imu topic
+        @ parameters
+        msg: Imu
+        """
+        self.z_imu = self.imu_to_vector(msg)
+        self.got_measurements = 1
+    
+    def imu_to_vector(self, imu):
+        """Transfer imu message to measurement vector for filter"""
+        z_imu = np.zeros(2)
+        z_imu[0] = imu.linear_acceleration.y
+        z_imu[1] = imu.angular_velocity.z
+        return z_imu
     
     def step_filter(self):
         """
@@ -208,6 +284,8 @@ class StateEstimation2D(Node):
             self.filter.predict_by_naive_model(self.control)
             # Measurement update step
             self.filter.update_odom(self.z_odom, self.R_odom)
+            if self.z_imu is not None:
+                self.filter.update_imu(self.z_imu, self.R_imu)
             # if self.z_gyro is not None:
             if self.z_gyro is not None:
                 self.filter.update_imu_gyro(self.z_gyro, self.R_gyro)
@@ -278,10 +356,16 @@ class StateEstimation2D(Node):
         self.odom_filtered.pose.pose.orientation.z = q[2]
         self.odom_filtered.pose.pose.orientation.w = q[3]
         self.odom_filtered.twist.twist.linear.x = x[2]
-        self.odom_filtered.twist.twist.linear.y = self.odom_noised.linear.y
-        self.odom_filtered.twist.twist.linear.z = self.odom_noised.linear.z
-        self.odom_filtered.twist.twist.angular.x = self.odom_noised.angular.x
-        self.odom_filtered.twist.twist.angular.y = self.odom_noised.angular.y
+        if self.z_accel is not None:
+            self.odom_filtered.twist.twist.linear.y = self.odom_noised.linear.y
+            self.odom_filtered.twist.twist.linear.z = self.odom_noised.linear.z
+            self.odom_filtered.twist.twist.angular.x = self.odom_noised.angular.x
+            self.odom_filtered.twist.twist.angular.y = self.odom_noised.angular.y
+        else:
+            self.odom_filtered.twist.twist.linear.y = self.odom_noised.twist.twist.linear.y
+            self.odom_filtered.twist.twist.linear.z = self.odom_noised.twist.twist.linear.z
+            self.odom_filtered.twist.twist.angular.x = self.odom_noised.twist.twist.angular.x
+            self.odom_filtered.twist.twist.angular.y = self.odom_noised.twist.twist.angular.y
         self.odom_filtered.twist.twist.angular.z = x[4]
         # Fill the odometry message covariance matrix with computed KF covariance
 
