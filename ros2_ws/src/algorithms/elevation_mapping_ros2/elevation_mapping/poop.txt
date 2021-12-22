@@ -1,0 +1,852 @@
+
+
+
+.
+
+
+
+./include
+
+
+
+./include/elevation_mapping
+
+
+
+./include/elevation_mapping/sensor_processors
+
+
+
+./include/elevation_mapping/sensor_processors/LaserSensorProcessor.hpp
+   * @param nodeHandle the ROS node handle.
+  LaserSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters);
+
+
+
+./include/elevation_mapping/sensor_processors/StructuredLightSensorProcessor.hpp
+   * @param nodeHandle the ROS node handle.
+  StructuredLightSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters);
+
+
+
+./include/elevation_mapping/sensor_processors/SensorProcessorBase.hpp
+// ROS
+#include <ros/ros.h>
+   * @param nodeHandle the ROS node handle.
+  SensorProcessorBase(ros::NodeHandle& nodeHandle, const GeneralParameters& generalConfig);
+  bool updateTransformations(const ros::Time& timeStamp);
+  //! ROS nodehandle.
+  ros::NodeHandle& nodeHandle_;
+
+
+
+./include/elevation_mapping/sensor_processors/PerfectSensorProcessor.hpp
+   * @param nodeHandle the ROS node handle.
+  PerfectSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters);
+
+
+
+./include/elevation_mapping/sensor_processors/StereoSensorProcessor.hpp
+ * "Localization and Path Planning of a Climbing Robot for Corrosion Monitoring", Hannes Keller, Semester Project, ETH Zurich, 2014.
+   * @param nodeHandle the ROS node handle.
+  StereoSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters);
+
+
+
+./include/elevation_mapping/input_sources
+
+
+
+./include/elevation_mapping/input_sources/Input.hpp
+#include <ros/ros.h>
+  explicit Input(ros::NodeHandle nh);
+  // ROS connection.
+  ros::Subscriber subscriber_;
+  ros::NodeHandle nodeHandle_;
+  ROS_INFO("Subscribing to %s: %s, queue_size: %i.", type_.c_str(), topic_.c_str(), queueSize_);
+
+
+
+./include/elevation_mapping/input_sources/InputSourceManager.hpp
+#include <ros/ros.h>
+  explicit InputSourceManager(const ros::NodeHandle& nodeHandle);
+  bool configureFromRos(const std::string& inputSourcesNamespace);
+  ros::NodeHandle nodeHandle_;
+    ROS_WARN("Not registering any callbacks, no input sources given. Did you configure the InputSourceManager?");
+      ROS_WARN("The configuration contains input sources of an unknown type: %s", source.getType().c_str());
+      ROS_WARN("Available types are:");
+        ROS_WARN("- %s", callback.first);
+
+
+
+./include/elevation_mapping/ElevationMap.hpp
+#include <grid_map_ros/grid_map_ros.hpp>
+// ROS
+#include <ros/ros.h>
+  explicit ElevationMap(ros::NodeHandle nodeHandle);
+  bool add(const PointCloudType::Ptr pointCloud, Eigen::VectorXf& pointCloudVariances, const ros::Time& timeStamp,
+              const grid_map::Matrix& horizontalVarianceUpdateY, const grid_map::Matrix& horizontalVarianceUpdateXY, const ros::Time& time);
+  void visibilityCleanup(const ros::Time& updatedTime);
+  ros::Time getTimeOfLastUpdate();
+  ros::Time getTimeOfLastFusion();
+  void setTimestamp(ros::Time timestamp);
+  //! ROS nodehandle.
+  ros::NodeHandle nodeHandle_;
+  //! ROS publishers. Publishing of the raw elevation map is handled by the postprocessing pool.
+  ros::Publisher elevationMapFusedPublisher_;
+  ros::Publisher visibilityCleanupMapPublisher_;
+  ros::Subscriber underlyingMapSubscriber_;
+  //! Initial ros time
+  ros::Time initialTime_;
+
+
+
+./include/elevation_mapping/buffer.hpp
+  void mapUpdateTimerCallback(const ros::TimerEvent& timerEvent);
+  void publishFusedMapCallback(const ros::TimerEvent& timerEvent);
+  void visibilityCleanupCallback(const ros::TimerEvent& timerEvent);
+   * ROS service callback function to return a submap of the fused elevation map.
+   * @param request     The ROS service request defining the location and size of the fused submap.
+   * @param response    The ROS service response containing the requested fused submap.
+   * ROS service callback function to return a submap of the raw elevation map.
+   * @param request     The ROS service request defining the location and size of the raw submap.
+   * @param response    The ROS service response containing the requested raw submap.
+   * ROS service callback function to enable updates of the elevation map.
+   * @param request     The ROS service request.
+   * @param response    The ROS service response.
+   * ROS service callback function to disable updates of the elevation map.
+   * @param request     The ROS service request.
+   * @param response    The ROS service response.
+   * ROS service callback function to clear all data of the elevation map.
+   * @param request     The ROS service request.
+   * @param response    The ROS service response.
+   * ROS service callback function to allow for setting the individual layers of the elevation map through a service call.
+   * @param request    The ROS service request.
+   * @param response   The ROS service response.
+   * ROS service callback function to save the grid map with all layers to a ROS bag file.
+   * @param request   The ROS service request.
+   * @param response  The ROS service response.
+   * ROS service callback function to load the grid map with all layers from a ROS bag file.
+   * @param request     The ROS service request.
+   * @param response    The ROS service response.
+   * Reads and verifies the ROS parameters.
+  bool updatePrediction(const ros::Time& time);
+  //! ROS nodehandle.
+  ros::NodeHandle nodeHandle_;
+  //! ROS subscribers.
+  ros::Subscriber pointCloudSubscriber_;  //!< Deprecated, use input_source instead.
+  //! ROS service servers.
+  ros::ServiceServer fusionTriggerService_;
+  ros::ServiceServer fusedSubmapService_;
+  ros::ServiceServer rawSubmapService_;
+  ros::ServiceServer enableUpdatesService_;
+  ros::ServiceServer disableUpdatesService_;
+  ros::ServiceServer clearMapService_;
+  ros::ServiceServer maskedReplaceService_;
+  ros::ServiceServer saveMapService_;
+  ros::ServiceServer loadMapService_;
+  ros::CallbackQueue fusionServiceQueue_;
+  //! ROS topics for subscriptions.
+  ros::Time lastPointCloudUpdateTime_;
+  ros::Timer mapUpdateTimer_;
+  ros::Duration maxNoUpdateDuration_;
+  ros::Duration timeTolerance_;
+  ros::Timer fusedMapPublishTimer_;
+  ros::Duration fusedMapPublishTimerDuration_;
+  ros::Timer visibilityCleanupTimer_;
+  ros::Duration visibilityCleanupTimerDuration_;
+  ros::CallbackQueue visibilityCleanupQueue_;
+
+
+
+./include/elevation_mapping/RobotMotionMapUpdater.hpp
+// ROS
+#include <ros/ros.h>
+  explicit RobotMotionMapUpdater(ros::NodeHandle nodeHandle);
+   * Reads and verifies the ROS parameters.
+  bool update(ElevationMap& map, const Pose& robotPose, const PoseCovariance& robotPoseCovariance, const ros::Time& time);
+  //! ROS nodehandle.
+  ros::NodeHandle nodeHandle_;
+  ros::Time previousUpdateTime_;
+
+
+
+./include/elevation_mapping/ElevationMapping.hpp
+// ROS
+#include <ros/ros.h>
+ * The elevation mapping main class. Coordinates the ROS interfaces, the timing,
+   * @param nodeHandle the ROS node handle.
+   * ROS service callback function to trigger the fusion of the entire
+   * @param request     The ROS service request.
+   * @param response    The ROS service response.
+  //! ROS service servers.
+
+
+
+./include/elevation_mapping/PointXYZRGBConfidenceRatio.hpp
+#include <pcl/pcl_macros.h>
+
+
+
+./include/elevation_mapping/ElevationMapFunctors.hpp
+
+
+
+./include/elevation_mapping/WeightedEmpiricalCumulativeDistributionFunction.hpp
+
+
+
+./include/elevation_mapping/postprocessing
+
+
+
+./include/elevation_mapping/postprocessing/PostprocessorPool.hpp
+  PostprocessorPool(std::size_t poolSize, ros::NodeHandle nodeHandle);
+
+
+
+./include/elevation_mapping/postprocessing/PostprocessingWorker.hpp
+  explicit PostprocessingWorker(ros::NodeHandle nodeHandle);
+
+
+
+./include/elevation_mapping/postprocessing/PostprocessingPipelineFunctor.hpp
+#include <ros/ros.h>
+ *   // Create the functor, it will configure the postprocessing pipeline from the ros parameters.
+  explicit PostprocessingPipelineFunctor(ros::NodeHandle& nodeHandle);
+   * @brief Reads in the parameters from the ROS parameter server.
+  //! ROS nodehandle.
+  ros::NodeHandle& nodeHandle_;
+  ros::Publisher publisher_;
+
+
+
+./.gitignore
+
+
+
+./CMakeLists.txt
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+rosidl_target_interfaces(elevation_mapping_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
+ament_export_dependencies(rosidl_default_runtime)
+
+
+
+./config
+
+
+
+./config/sensor_processors
+
+
+
+./config/sensor_processors/primesense_carmine_109_short_range_uncalibrated.yaml
+
+
+
+./config/sensor_processors/hokuyo_utm-30lx.yaml
+
+
+
+./config/sensor_processors/realsense_d435.yaml
+
+
+
+./config/sensor_processors/kinect_nguyen_et_al.yaml
+
+
+
+./config/sensor_processors/velodyne_HDL-32E.yaml
+
+
+
+./config/sensor_processors/realsense_ZR300.yaml
+
+
+
+./config/sensor_processors/perfect.yaml
+
+
+
+./config/sensor_processors/primesense_carmine_109_short_range_datasheet.yaml
+
+
+
+./config/sensor_processors/fotonic_g45.yaml
+
+
+
+./config/sensor_processors/aslam.yaml
+# "Localization and Path Planning of a Climbing Robot for Corrosion Monitoring",
+
+
+
+./srv
+
+
+
+./srv/FusionTrigger.srv
+
+
+
+./test
+
+
+
+./test/input_sources
+
+
+
+./test/input_sources/test_input_sources.cpp
+#include <ros/ros.h>
+  ros::init(argc, argv, "Tests");
+
+
+
+./test/input_sources/config
+
+
+
+./test/input_sources/config/rosconsole.config
+# Set the level of the ROS logger and all its children to DEBUG.
+# log4j.logger.ros=WARN
+# Set the level of the logger in the elevation_mapping_benchmark_ros package to DEBUG.
+log4j.logger.ros.elevation_mapping=DEBUG
+
+
+
+./test/input_sources/config/TestConfigurations.yaml
+
+
+
+./test/input_sources/InputSourcesTest.cpp
+#include <ros/ros.h>
+  elevation_mapping::InputSourceManager inputSourceManager(ros::NodeHandle("~"));
+  bool success = inputSourceManager.configureFromRos(inputConfiguration);
+                                      << ros::NodeHandle("~").param<XmlRpc::XmlRpcValue>(inputConfiguration, "not set").toXml() << "\n";
+  ros::NodeHandle nodeHandle("~");
+  inputSourceManager.configureFromRos("unknown_type");
+  ros::NodeHandle nodeHandle("~");
+  ros::NodeHandle nodeHandle("~");
+    ElevationMappingWithInputSourcesAccessor(ros::NodeHandle nodeHandle) : elevation_mapping::ElevationMapping(nodeHandle) {}
+  ros::spinOnce();
+  ros::Duration(1.0).sleep();
+  ros::spinOnce();
+  ros::NodeHandle nh("");
+  ros::Publisher firstLidarPublisher = nh.advertise<sensor_msgs::PointCloud2>("/lidar_1/depth/points", 1, false);
+  ros::Publisher secondLidarPublisher = nh.advertise<sensor_msgs::PointCloud2>("/lidar_2/depth/points", 1, false);
+
+
+
+./test/input_sources/input_sources.test
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find elevation_mapping)/test/input_sources/config/rosconsole.config"/>
+    <rosparam command="load"  file="$(find elevation_mapping)/test/input_sources/config/TestConfigurations.yaml"/>
+
+
+
+./test/WeightedEmpiricalCumulativeDistributionFunctionTest.cpp
+
+
+
+./test/test_elevation_mapping.cpp
+
+
+
+./test/ElevationMapTest.cpp
+#include <ros/ros.h>
+  //  ros::M_string remappings;
+  //  ros::init(remappings, "test_elevation_mapping");
+  //  ros::NodeHandle nodeHandle("~");
+
+
+
+./test/elevation_mapping.test
+
+
+
+./test/postprocessing
+
+
+
+./test/postprocessing/postprocessor.test
+  <!-- Launch the testing counterpart ROS node -->
+    <rosparam command="load" file="$(find elevation_mapping)/test/postprocessing/postprocessor_pipeline.yaml" />
+
+
+
+./test/postprocessing/PostprocessorTest.cpp
+#include <ros/ros.h>
+class RosFixture : public ::testing::Test {
+    ros::init(remappings, "post_processor_ros_test");
+    ros::start();
+  void TearDown() override { ros::shutdown(); }
+    // Set up ROS node handle.
+    ros::NodeHandle nodeHandle("~");
+TEST_F(RosFixture, FiveTasksOneThreadSimultaneously) {  // NOLINT
+TEST_F(RosFixture, FiveTasksTwoThreadSimultaneously) {  // NOLINT
+TEST_F(RosFixture, EnoughTimeToProcess) {  // NOLINT
+TEST_F(RosFixture, EnoughTimeToProcessWithTwoThreads) {  // NOLINT
+TEST_F(RosFixture, ProcessEverySecond) {  // NOLINT
+TEST_F(RosFixture, TwoThreadsWithMiss) {  // NOLINT
+
+
+
+./test/postprocessing/main.cpp
+#include <ros/ros.h>
+  ros::init(argc, argv, "elevation_mapping");
+  ros::start();  // To make use of ROS time in output macros.
+  ros::shutdown();
+
+
+
+./test/postprocessing/postprocessor_pipeline.yaml
+
+
+
+./package.xml
+  <member_of_group>rosidl_interface_packages</member_of_group>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <depend>grid_map_ros</depend>
+  <depend>kindr_ros</depend>
+  <depend>pcl_ros</depend>
+  <test_depend>roslaunch</test_depend>
+  <test_depend>rostest</test_depend -->
+
+
+
+./src
+
+
+
+./src/sensor_processors
+
+
+
+./src/sensor_processors/StructuredLightSensorProcessor.cpp
+StructuredLightSensorProcessor::StructuredLightSensorProcessor(ros::NodeHandle& nodeHandle,
+
+
+
+./src/sensor_processors/PerfectSensorProcessor.cpp
+PerfectSensorProcessor::PerfectSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+
+
+
+./src/sensor_processors/LaserSensorProcessor.cpp
+LaserSensorProcessor::LaserSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+
+
+
+./src/sensor_processors/StereoSensorProcessor.cpp
+StereoSensorProcessor::StereoSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+
+
+
+./src/sensor_processors/SensorProcessorBase.cpp
+SensorProcessorBase::SensorProcessorBase(ros::NodeHandle& nodeHandle, const GeneralParameters& generalConfig)
+  ROS_DEBUG(
+  ROS_DEBUG("Sensor Processor processing for frame %s", sensorFrameId_.c_str());
+  ros::Time timeStamp;
+bool SensorProcessorBase::updateTransformations(const ros::Time& timeStamp) {
+    transformListener_.waitForTransform(sensorFrameId_, generalParameters_.mapFrameId_, timeStamp, ros::Duration(1.0));
+    ROS_ERROR("%s", ex.what());
+  ros::Time timeStamp;
+    transformListener_.waitForTransform(targetFrame, inputFrameId, timeStamp, ros::Duration(1.0), ros::Duration(0.001));
+    ROS_ERROR("%s", ex.what());
+  ROS_DEBUG_THROTTLE(5, "Point cloud transformed to frame %s for time stamp %f.", targetFrame.c_str(),
+  ROS_DEBUG("Limiting point cloud to the height interval of [%f, %f] relative to the robot base.", ignorePointsLowerThreshold_,
+  ROS_DEBUG("removePointsOutsideLimits() reduced point cloud to %i points.", (int)pointClouds[0]->size());
+  ROS_DEBUG_THROTTLE(2, "cleanPointCloud() reduced point cloud to %i points.", static_cast<int>(pointCloud->size()));
+
+
+
+./src/input_sources
+
+
+
+./src/input_sources/Input.cpp
+Input::Input(ros::NodeHandle nh) : nodeHandle_(nh), queueSize_(0), publishOnUpdate_(true) {}
+    ROS_ERROR(
+      ROS_ERROR("Could not configure input source %s because no %s was given.", name.c_str(), member.first.c_str());
+      ROS_ERROR(
+    ROS_ERROR("The specified queue_size is negative.");
+  ROS_DEBUG("Configured %s:%s @ %s (publishing_on_update: %s), using %s to process data.\n", type_.c_str(), name_.c_str(),
+    ROS_ERROR("Could not configure sensor processor of input source %s because no type was given.", name.c_str());
+    ROS_ERROR(
+    ROS_ERROR("The sensor type %s is not available.", sensorType.c_str());
+
+
+
+./src/input_sources/InputSourceManager.cpp
+InputSourceManager::InputSourceManager(const ros::NodeHandle& nodeHandle) : nodeHandle_(nodeHandle) {}
+bool InputSourceManager::configureFromRos(const std::string& inputSourcesNamespace) {
+    ROS_WARN(
+    ROS_ERROR(
+    ROS_ERROR("The xml passed in is formatted as follows:\n %s", config.toXml().c_str());
+    Input source = Input(ros::NodeHandle(nodeHandle_.resolveName(sourceConfigurationName + "/" + inputConfig.first)));
+      ROS_WARN(
+
+
+
+./src/poop.txt
+PostprocessingWorker::PostprocessingWorker(ros::NodeHandle nodeHandle)
+StructuredLightSensorProcessor::StructuredLightSensorProcessor(ros::NodeHandle& nodeHandle,
+PerfectSensorProcessor::PerfectSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+LaserSensorProcessor::LaserSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+StereoSensorProcessor::StereoSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+SensorProcessorBase::SensorProcessorBase(ros::NodeHandle& nodeHandle, const GeneralParameters& generalConfig)
+  ROS_DEBUG(
+  ROS_DEBUG("Sensor Processor processing for frame %s", sensorFrameId_.c_str());
+  ros::Time timeStamp;
+bool SensorProcessorBase::updateTransformations(const ros::Time& timeStamp) {
+    transformListener_.waitForTransform(sensorFrameId_, generalParameters_.mapFrameId_, timeStamp, ros::Duration(1.0));
+    ROS_ERROR("%s", ex.what());
+  ros::Time timeStamp;
+    transformListener_.waitForTransform(targetFrame, inputFrameId, timeStamp, ros::Duration(1.0), ros::Duration(0.001));
+    ROS_ERROR("%s", ex.what());
+  ROS_DEBUG_THROTTLE(5, "Point cloud transformed to frame %s for time stamp %f.", targetFrame.c_str(),
+  ROS_DEBUG("Limiting point cloud to the height interval of [%f, %f] relative to the robot base.", ignorePointsLowerThreshold_,
+  ROS_DEBUG("removePointsOutsideLimits() reduced point cloud to %i points.", (int)pointClouds[0]->size());
+  ROS_DEBUG_THROTTLE(2, "cleanPointCloud() reduced point cloud to %i points.", static_cast<int>(pointCloud->size()));
+Input::Input(ros::NodeHandle nh) : nodeHandle_(nh), queueSize_(0), publishOnUpdate_(true) {}
+    ROS_ERROR(
+      ROS_ERROR("Could not configure input source %s because no %s was given.", name.c_str(), member.first.c_str());
+      ROS_ERROR(
+    ROS_ERROR("The specified queue_size is negative.");
+  ROS_DEBUG("Configured %s:%s @ %s (publishing_on_update: %s), using %s to process data.\n", type_.c_str(), name_.c_str(),
+    ROS_ERROR("Could not configure sensor processor of input source %s because no type was given.", name.c_str());
+    ROS_ERROR(
+    ROS_ERROR("The sensor type %s is not available.", sensorType.c_str());
+InputSourceManager::InputSourceManager(const ros::NodeHandle& nodeHandle) : nodeHandle_(nodeHandle) {}
+bool InputSourceManager::configureFromRos(const std::string& inputSourcesNamespace) {
+    ROS_WARN(
+    ROS_ERROR(
+    ROS_ERROR("The xml passed in is formatted as follows:\n %s", config.toXml().c_str());
+    Input source = Input(ros::NodeHandle(nodeHandle_.resolveName(sourceConfigurationName + "/" + inputConfig.first)));
+      ROS_WARN(
+RobotMotionMapUpdater::RobotMotionMapUpdater(ros::NodeHandle nodeHandle) : nodeHandle_(nodeHandle), covarianceScale_(1.0) {
+  previousUpdateTime_ = ros::Time::now();
+                                   const ros::Time& time) {
+  const bool configuredInputSources = inputSources_.configureFromRos("input_sources");
+    ROS_WARN("Parameter 'point_cloud_topic' is deprecated, please use 'input_sources' instead.");
+  ros::AdvertiseServiceOptions advertiseServiceOptionsForTriggerFusion = ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
+      "trigger_fusion", boost::bind(&ElevationMapping::fuseEntireMapServiceCallback, this, _1, _2), ros::VoidConstPtr(),
+  ros::AdvertiseServiceOptions advertiseServiceOptionsForGetFusedSubmap = ros::AdvertiseServiceOptions::create<grid_map_msgs::GetGridMap>(
+      "get_submap", boost::bind(&ElevationMapping::getFusedSubmapServiceCallback, this, _1, _2), ros::VoidConstPtr(), &fusionServiceQueue_);
+  ros::AdvertiseServiceOptions advertiseServiceOptionsForGetRawSubmap = ros::AdvertiseServiceOptions::create<grid_map_msgs::GetGridMap>(
+      "get_raw_submap", boost::bind(&ElevationMapping::getRawSubmapServiceCallback, this, _1, _2), ros::VoidConstPtr(),
+    ros::TimerOptions timerOptions =
+        ros::TimerOptions(fusedMapPublishTimerDuration_, boost::bind(&ElevationMapping::publishFusedMapCallback, this, _1),
+    ros::TimerOptions timerOptions =
+        ros::TimerOptions(visibilityCleanupTimerDuration_, boost::bind(&ElevationMapping::visibilityCleanupCallback, this, _1),
+  ROS_ASSERT(robotPoseCacheSize_ >= 0);
+    ROS_WARN("Rate for publishing the map is zero.");
+  ROS_ASSERT(!maxNoUpdateDuration_.isZero());
+    ROS_WARN(
+    ROS_WARN("Rate for visibility cleanup is zero and therefore disabled.");
+    ROS_ERROR("The sensor type %s is not available.", sensorType.c_str());
+  ROS_INFO("Elevation mapping node initializing ... ");
+  ros::Duration(1.0).sleep();  // Need this to get the TF caches fill up.
+  ros::Rate loopRate(20);
+  ros::Rate loopRate(20);
+  ROS_DEBUG("Processing data from: %s", pointCloudMsg->header.frame_id.c_str());
+    ROS_WARN_THROTTLE(10, "Updating of elevation map is disabled. (Warning message is throttled, 10s.)");
+      map_.setTimestamp(ros::Time::now());
+      ROS_WARN_THROTTLE(5, "No corresponding point cloud and pose are found. Waiting for first match. (Warning message is throttled, 5s.)");
+      ROS_INFO("First corresponding point cloud and pose found, elevation mapping started. ");
+  // TODO(max): Double check with http://wiki.ros.org/hydro/Migration
+  ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
+        ROS_ERROR("The oldest pose available is at %f, requested pose at %f", robotPoseCache_.getOldestTime().toSec(),
+        ROS_ERROR("Could not get pose information from robot for time %f. Buffer empty?", lastPointCloudUpdateTime_.toSec());
+      ROS_INFO_THROTTLE(10, "Waiting for tf transformation to be available. (Message is throttled, 10s.)");
+    ROS_ERROR("Point cloud could not be processed.");
+    ROS_ERROR("Updating process noise failed.");
+    ROS_DEBUG("Clearing elevation map before adding new point cloud.");
+    ROS_ERROR("Adding point cloud to elevation map failed.");
+void ElevationMapping::mapUpdateTimerCallback(const ros::TimerEvent&) {
+    ROS_WARN_THROTTLE(10, "Updating of elevation map is disabled. (Warning message is throttled, 10s.)");
+    map_.setTimestamp(ros::Time::now());
+  ros::Time time = ros::Time::now();
+  ROS_WARN_THROTTLE(5, "Elevation map is updated without data from the sensor. (Warning message is throttled, 5s.)");
+    ROS_ERROR("Updating process noise failed.");
+void ElevationMapping::publishFusedMapCallback(const ros::TimerEvent&) {
+  ROS_DEBUG("Elevation map is fused and published from timer.");
+void ElevationMapping::visibilityCleanupCallback(const ros::TimerEvent&) {
+  ROS_DEBUG("Elevation map is running visibility cleanup.");
+  map_.visibilityCleanup(ros::Time(lastPointCloudUpdateTime_));
+bool ElevationMapping::updatePrediction(const ros::Time& time) {
+  ROS_DEBUG("Updating map with latest prediction from time %f.", robotPoseCache_.getLatestTime().toSec());
+    ROS_ERROR("Requested update with time stamp %f, but time of last update was %f.", time.toSec(), map_.getTimeOfLastUpdate().toSec());
+    ROS_DEBUG("Requested update with time stamp %f, but time of last update was %f. Ignoring update.", time.toSec(),
+      ROS_ERROR("The oldest pose available is at %f, requested pose at %f", robotPoseCache_.getOldestTime().toSec(),
+      ROS_ERROR("Could not get pose information from robot for time %f. Buffer empty?", lastPointCloudUpdateTime_.toSec());
+  kindr_ros::convertFromRosGeometryMsg(poseMessage->pose.pose, robotPose);
+  // Covariance is stored in row-major in ROS: http://docs.ros.org/api/geometry_msgs/html/msg/PoseWithCovariance.html
+  ROS_DEBUG("Elevation map is checked for relocalization.");
+  trackPoint.header.stamp = ros::Time(0);
+  kindr_ros::convertToRosGeometryMsg(trackPoint_, trackPoint.point);
+    ROS_ERROR("%s", ex.what());
+  kindr_ros::convertFromRosGeometryMsg(trackPointTransformed.point, position3d);
+  ROS_DEBUG("Elevation submap request: Position x=%f, y=%f, Length x=%f, y=%f.", requestedSubmapPosition.x(), requestedSubmapPosition.y(),
+    grid_map::GridMapRosConverter::toMessage(subMap, response.map);
+    grid_map::GridMapRosConverter::toMessage(subMap, layers, response.map);
+  ROS_DEBUG("Elevation submap responded with timestamp %f.", map_.getTimeOfLastFusion().toSec());
+  ROS_DEBUG("Elevation raw submap request: Position x=%f, y=%f, Length x=%f, y=%f.", requestedSubmapPosition.x(),
+    grid_map::GridMapRosConverter::toMessage(subMap, response.map);
+    grid_map::GridMapRosConverter::toMessage(subMap, layers, response.map);
+  ROS_INFO("Disabling updates.");
+  ROS_INFO("Enabling updates.");
+        transformListener_.waitForTransform(mapFrameId_, targetFrameInitSubmap_, ros::Time(0), ros::Duration(5.0));
+        transformListener_.lookupTransform(mapFrameId_, targetFrameInitSubmap_, ros::Time(0), transform);
+        ROS_DEBUG_STREAM("Initializing with x: " << transform.getOrigin().x() << " y: " << transform.getOrigin().y()
+        ROS_DEBUG("%s", ex.what());
+        ROS_WARN("Could not initialize elevation map with constant height. (This warning can be ignored if TF tree is not available.)");
+  ROS_INFO("Clearing map...");
+  ROS_INFO("Map cleared.");
+  ROS_INFO("Masked replacing of map.");
+  grid_map::GridMapRosConverter::fromMessage(request.map, sourceMap);
+      ROS_ERROR("Masked replace service: Layer %s does not exist!", sourceLayerIterator->c_str());
+  ROS_INFO("Saving map to file.");
+  response.success = static_cast<unsigned char>(grid_map::GridMapRosConverter::saveToBag(map_.getFusedGridMap(), request.file_path, topic));
+      (grid_map::GridMapRosConverter::saveToBag(map_.getRawGridMap(), request.file_path + "_raw", topic + "_raw")) &&
+  ROS_WARN("Loading from bag file.");
+      static_cast<unsigned char>(grid_map::GridMapRosConverter::loadFromBag(request.file_path, topic, map_.getFusedGridMap()));
+      grid_map::GridMapRosConverter::loadFromBag(request.file_path + "_raw", topic + "_raw", map_.getRawGridMap()) &&
+  // Update timestamp for visualization in ROS
+  map_.setTimestamp(ros::Time::now());
+  ros::Duration periodSinceLastUpdate = ros::Time::now() - map_.getTimeOfLastUpdate();
+#include <ros/ros.h>
+ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
+  initialTime_ = ros::Time::now();
+  ROS_INFO_STREAM("Elevation map grid resized to " << rawMap_.getSize()(0) << " rows and " << rawMap_.getSize()(1) << " columns.");
+bool ElevationMap::add(const PointCloudType::Ptr pointCloud, Eigen::VectorXf& pointCloudVariances, const ros::Time& timestamp,
+    ROS_ERROR("ElevationMap::add: Size of point cloud (%i) and variances (%i) do not agree.", (int)pointCloud->size(),
+  const ros::WallTime methodStartTime(ros::WallTime::now());
+  const ros::Time currentTime(ros::Time::now());
+  rawMap_.setTimestamp(timestamp.toNSec());  // Point cloud stores time in microseconds.
+  const ros::WallDuration duration = ros::WallTime::now() - methodStartTime;
+  ROS_DEBUG("Raw map has been updated with a new point cloud in %f s.", duration.toSec());
+                          const ros::Time& time) {
+    ROS_ERROR("The size of the update matrices does not match.");
+  ROS_DEBUG("Requested to fuse entire elevation map.");
+  ROS_DEBUG("Requested to fuse an area of the elevation map with center at (%f, %f) and side lengths (%f, %f)", position[0], position[1],
+  ROS_DEBUG("Fusing elevation map...");
+  const ros::WallTime methodStartTime(ros::WallTime::now());
+      ROS_ERROR("Something went wrong when fusing the map: Mean = %f", mean);
+  const ros::WallDuration duration(ros::WallTime::now() - methodStartTime);
+  ROS_DEBUG("Elevation map has been fused in %f s.", duration.toSec());
+void ElevationMap::visibilityCleanup(const ros::Time& updatedTime) {
+  const ros::WallTime methodStartTime(ros::WallTime::now());
+  ros::WallDuration duration(ros::WallTime::now() - methodStartTime);
+  ROS_DEBUG("Visibility cleanup has been performed in %f s (%d points).", duration.toSec(), (int)cellPositionsToRemove.size());
+    ROS_WARN("Visibility cleanup duration is too high (current rate is %f).", 1.0 / duration.toSec());
+    ROS_DEBUG("Elevation map has been moved to position (%f, %f).", rawMap_.getPosition().x(), rawMap_.getPosition().y());
+  grid_map::GridMapRosConverter::toMessage(fusedMapCopy, message);
+  ROS_DEBUG("Elevation map (fused) has been published.");
+  grid_map::GridMapRosConverter::toMessage(visibilityCleanupMapCopy, message);
+  ROS_DEBUG("Visibility cleanup map has been published.");
+ros::Time ElevationMap::getTimeOfLastUpdate() {
+  return ros::Time().fromNSec(rawMap_.getTimestamp());
+ros::Time ElevationMap::getTimeOfLastFusion() {
+  return ros::Time().fromNSec(fusedMap_.getTimestamp());
+void ElevationMap::setTimestamp(ros::Time timestamp) {
+  ROS_INFO("Updating underlying map.");
+  grid_map::GridMapRosConverter::fromMessage(underlyingMap, underlyingMap_);
+    ROS_ERROR_STREAM("The underlying map does not have the same map frame ('" << underlyingMap_.getFrameId() << "') as the elevation map ('"
+    ROS_ERROR_STREAM("The underlying map does not have an 'elevation' layer.");
+#include <grid_map_ros/grid_map_ros.hpp>
+#include <kindr_ros/kindr_ros.hpp>
+#include <grid_map_ros/grid_map_ros.hpp>
+PostprocessingPipelineFunctor::PostprocessingPipelineFunctor(ros::NodeHandle& nodeHandle)
+    ROS_WARN("Could not configure the filter chain. Will publish the raw elevation map without postprocessing!");
+    ROS_WARN_ONCE("No postprocessing pipeline was configured. Forwarding the raw elevation map!");
+    ROS_ERROR("Could not perform the grid map filter chain! Forwarding the raw elevation map!");
+  grid_map::GridMapRosConverter::toMessage(gridMap, outputMessage);
+  ROS_DEBUG("Elevation map raw has been published.");
+PostprocessorPool::PostprocessorPool(std::size_t poolSize, ros::NodeHandle nodeHandle) {
+    ROS_ERROR_STREAM("Postprocessor pipeline, thread " << serviceIndex << " experienced an error: " << exception.what());
+PostprocessingWorker::PostprocessingWorker(ros::NodeHandle nodeHandle)
+
+
+
+./src/PointXYZRGBConfidenceRatio.cpp
+
+
+
+./src/RobotMotionMapUpdater.cpp
+RobotMotionMapUpdater::RobotMotionMapUpdater(ros::NodeHandle nodeHandle) : nodeHandle_(nodeHandle), covarianceScale_(1.0) {
+  previousUpdateTime_ = ros::Time::now();
+                                   const ros::Time& time) {
+
+
+
+./src/elevation_mapping_node.cpp
+
+
+
+./src/buffer.cpp
+  const bool configuredInputSources = inputSources_.configureFromRos("input_sources");
+    ROS_WARN("Parameter 'point_cloud_topic' is deprecated, please use 'input_sources' instead.");
+    ros::TimerOptions timerOptions =
+        ros::TimerOptions(fusedMapPublishTimerDuration_, boost::bind(&ElevationMapping::publishFusedMapCallback, this, _1),
+    ros::TimerOptions timerOptions =
+        ros::TimerOptions(visibilityCleanupTimerDuration_, boost::bind(&ElevationMapping::visibilityCleanupCallback, this, _1),
+  ROS_ASSERT(robotPoseCacheSize_ >= 0);
+    ROS_WARN("Rate for publishing the map is zero.");
+  ROS_ASSERT(!maxNoUpdateDuration_.isZero());
+    ROS_WARN(
+    ROS_WARN("Rate for visibility cleanup is zero and therefore disabled.");
+    ROS_ERROR("The sensor type %s is not available.", sensorType.c_str());
+  ROS_INFO("Elevation mapping node initializing ... ");
+  ros::Duration(1.0).sleep();  // Need this to get the TF caches fill up.
+  ros::Rate loopRate(20);
+  ros::Rate loopRate(20);
+  ROS_DEBUG("Processing data from: %s", pointCloudMsg->header.frame_id.c_str());
+    ROS_WARN_THROTTLE(10, "Updating of elevation map is disabled. (Warning message is throttled, 10s.)");
+      map_.setTimestamp(ros::Time::now());
+      ROS_WARN_THROTTLE(5, "No corresponding point cloud and pose are found. Waiting for first match. (Warning message is throttled, 5s.)");
+      ROS_INFO("First corresponding point cloud and pose found, elevation mapping started. ");
+  // TODO(max): Double check with http://wiki.ros.org/hydro/Migration
+  ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
+        ROS_ERROR("The oldest pose available is at %f, requested pose at %f", robotPoseCache_.getOldestTime().toSec(),
+        ROS_ERROR("Could not get pose information from robot for time %f. Buffer empty?", lastPointCloudUpdateTime_.toSec());
+      ROS_INFO_THROTTLE(10, "Waiting for tf transformation to be available. (Message is throttled, 10s.)");
+    ROS_ERROR("Point cloud could not be processed.");
+    ROS_ERROR("Updating process noise failed.");
+    ROS_DEBUG("Clearing elevation map before adding new point cloud.");
+    ROS_ERROR("Adding point cloud to elevation map failed.");
+void ElevationMapping::mapUpdateTimerCallback(const ros::TimerEvent&) {
+    ROS_WARN_THROTTLE(10, "Updating of elevation map is disabled. (Warning message is throttled, 10s.)");
+    map_.setTimestamp(ros::Time::now());
+  ros::Time time = ros::Time::now();
+  ROS_WARN_THROTTLE(5, "Elevation map is updated without data from the sensor. (Warning message is throttled, 5s.)");
+    ROS_ERROR("Updating process noise failed.");
+void ElevationMapping::publishFusedMapCallback(const ros::TimerEvent&) {
+  ROS_DEBUG("Elevation map is fused and published from timer.");
+void ElevationMapping::visibilityCleanupCallback(const ros::TimerEvent&) {
+  ROS_DEBUG("Elevation map is running visibility cleanup.");
+  map_.visibilityCleanup(ros::Time(lastPointCloudUpdateTime_));
+bool ElevationMapping::updatePrediction(const ros::Time& time) {
+  ROS_DEBUG("Updating map with latest prediction from time %f.", robotPoseCache_.getLatestTime().toSec());
+    ROS_ERROR("Requested update with time stamp %f, but time of last update was %f.", time.toSec(), map_.getTimeOfLastUpdate().toSec());
+    ROS_DEBUG("Requested update with time stamp %f, but time of last update was %f. Ignoring update.", time.toSec(),
+      ROS_ERROR("The oldest pose available is at %f, requested pose at %f", robotPoseCache_.getOldestTime().toSec(),
+      ROS_ERROR("Could not get pose information from robot for time %f. Buffer empty?", lastPointCloudUpdateTime_.toSec());
+  kindr_ros::convertFromRosGeometryMsg(poseMessage->pose.pose, robotPose);
+  // Covariance is stored in row-major in ROS: http://docs.ros.org/api/geometry_msgs/html/msg/PoseWithCovariance.html
+  ROS_DEBUG("Elevation map is checked for relocalization.");
+  trackPoint.header.stamp = ros::Time(0);
+  kindr_ros::convertToRosGeometryMsg(trackPoint_, trackPoint.point);
+    ROS_ERROR("%s", ex.what());
+  kindr_ros::convertFromRosGeometryMsg(trackPointTransformed.point, position3d);
+  ROS_DEBUG("Elevation submap request: Position x=%f, y=%f, Length x=%f, y=%f.", requestedSubmapPosition.x(), requestedSubmapPosition.y(),
+    grid_map::GridMapRosConverter::toMessage(subMap, response.map);
+    grid_map::GridMapRosConverter::toMessage(subMap, layers, response.map);
+  ROS_DEBUG("Elevation submap responded with timestamp %f.", map_.getTimeOfLastFusion().toSec());
+  ROS_DEBUG("Elevation raw submap request: Position x=%f, y=%f, Length x=%f, y=%f.", requestedSubmapPosition.x(),
+    grid_map::GridMapRosConverter::toMessage(subMap, response.map);
+    grid_map::GridMapRosConverter::toMessage(subMap, layers, response.map);
+  ROS_INFO("Disabling updates.");
+  ROS_INFO("Enabling updates.");
+        transformListener_.waitForTransform(mapFrameId_, targetFrameInitSubmap_, ros::Time(0), ros::Duration(5.0));
+        transformListener_.lookupTransform(mapFrameId_, targetFrameInitSubmap_, ros::Time(0), transform);
+        ROS_DEBUG_STREAM("Initializing with x: " << transform.getOrigin().x() << " y: " << transform.getOrigin().y()
+        ROS_DEBUG("%s", ex.what());
+        ROS_WARN("Could not initialize elevation map with constant height. (This warning can be ignored if TF tree is not available.)");
+  ROS_INFO("Clearing map...");
+  ROS_INFO("Map cleared.");
+  ROS_INFO("Masked replacing of map.");
+  grid_map::GridMapRosConverter::fromMessage(request.map, sourceMap);
+      ROS_ERROR("Masked replace service: Layer %s does not exist!", sourceLayerIterator->c_str());
+  ROS_INFO("Saving map to file.");
+  response.success = static_cast<unsigned char>(grid_map::GridMapRosConverter::saveToBag(map_.getFusedGridMap(), request.file_path, topic));
+      (grid_map::GridMapRosConverter::saveToBag(map_.getRawGridMap(), request.file_path + "_raw", topic + "_raw")) &&
+  ROS_WARN("Loading from bag file.");
+      static_cast<unsigned char>(grid_map::GridMapRosConverter::loadFromBag(request.file_path, topic, map_.getFusedGridMap()));
+      grid_map::GridMapRosConverter::loadFromBag(request.file_path + "_raw", topic + "_raw", map_.getRawGridMap()) &&
+  // Update timestamp for visualization in ROS
+  map_.setTimestamp(ros::Time::now());
+  ros::Duration periodSinceLastUpdate = ros::Time::now() - map_.getTimeOfLastUpdate();
+
+
+
+./src/ElevationMap.cpp
+#include <ros/ros.h>
+ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
+  initialTime_ = ros::Time::now();
+  ROS_INFO_STREAM("Elevation map grid resized to " << rawMap_.getSize()(0) << " rows and " << rawMap_.getSize()(1) << " columns.");
+bool ElevationMap::add(const PointCloudType::Ptr pointCloud, Eigen::VectorXf& pointCloudVariances, const ros::Time& timestamp,
+    ROS_ERROR("ElevationMap::add: Size of point cloud (%i) and variances (%i) do not agree.", (int)pointCloud->size(),
+  const ros::WallTime methodStartTime(ros::WallTime::now());
+  const ros::Time currentTime(ros::Time::now());
+  rawMap_.setTimestamp(timestamp.toNSec());  // Point cloud stores time in microseconds.
+  const ros::WallDuration duration = ros::WallTime::now() - methodStartTime;
+  ROS_DEBUG("Raw map has been updated with a new point cloud in %f s.", duration.toSec());
+                          const ros::Time& time) {
+    ROS_ERROR("The size of the update matrices does not match.");
+  ROS_DEBUG("Requested to fuse entire elevation map.");
+  ROS_DEBUG("Requested to fuse an area of the elevation map with center at (%f, %f) and side lengths (%f, %f)", position[0], position[1],
+  ROS_DEBUG("Fusing elevation map...");
+  const ros::WallTime methodStartTime(ros::WallTime::now());
+      ROS_ERROR("Something went wrong when fusing the map: Mean = %f", mean);
+  const ros::WallDuration duration(ros::WallTime::now() - methodStartTime);
+  ROS_DEBUG("Elevation map has been fused in %f s.", duration.toSec());
+void ElevationMap::visibilityCleanup(const ros::Time& updatedTime) {
+  const ros::WallTime methodStartTime(ros::WallTime::now());
+  ros::WallDuration duration(ros::WallTime::now() - methodStartTime);
+  ROS_DEBUG("Visibility cleanup has been performed in %f s (%d points).", duration.toSec(), (int)cellPositionsToRemove.size());
+    ROS_WARN("Visibility cleanup duration is too high (current rate is %f).", 1.0 / duration.toSec());
+    ROS_DEBUG("Elevation map has been moved to position (%f, %f).", rawMap_.getPosition().x(), rawMap_.getPosition().y());
+  grid_map::GridMapRosConverter::toMessage(fusedMapCopy, message);
+  ROS_DEBUG("Elevation map (fused) has been published.");
+  grid_map::GridMapRosConverter::toMessage(visibilityCleanupMapCopy, message);
+  ROS_DEBUG("Visibility cleanup map has been published.");
+ros::Time ElevationMap::getTimeOfLastUpdate() {
+  return ros::Time().fromNSec(rawMap_.getTimestamp());
+ros::Time ElevationMap::getTimeOfLastFusion() {
+  return ros::Time().fromNSec(fusedMap_.getTimestamp());
+void ElevationMap::setTimestamp(ros::Time timestamp) {
+  ROS_INFO("Updating underlying map.");
+  grid_map::GridMapRosConverter::fromMessage(underlyingMap, underlyingMap_);
+    ROS_ERROR_STREAM("The underlying map does not have the same map frame ('" << underlyingMap_.getFrameId() << "') as the elevation map ('"
+    ROS_ERROR_STREAM("The underlying map does not have an 'elevation' layer.");
+
+
+
+./src/ElevationMapping.cpp
+#include <grid_map_ros/grid_map_ros.hpp>
+#include <kindr_ros/kindr_ros.hpp>
+  /*ros::AdvertiseServiceOptions advertiseServiceOptionsForTriggerFusion = ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
+      "trigger_fusion", boost::bind(&ElevationMapping::fuseEntireMapServiceCallback, this, _1, _2), ros::VoidConstPtr(),
+  /*ros::AdvertiseServiceOptions advertiseServiceOptionsForGetFusedSubmap = ros::AdvertiseServiceOptions::create<grid_map_msgs::GetGridMap>(
+      "get_submap", boost::bind(&ElevationMapping::getFusedSubmapServiceCallback, this, _1, _2), ros::VoidConstPtr(), &fusionServiceQueue_);
+  ros::AdvertiseServiceOptions advertiseServiceOptionsForGetRawSubmap = ros::AdvertiseServiceOptions::create<grid_map_msgs::GetGridMap>(
+      "get_raw_submap", boost::bind(&ElevationMapping::getRawSubmapServiceCallback, this, _1, _2), ros::VoidConstPtr(),
+
+
+
+./src/postprocessing
+
+
+
+./src/postprocessing/PostprocessingPipelineFunctor.cpp
+#include <grid_map_ros/grid_map_ros.hpp>
+PostprocessingPipelineFunctor::PostprocessingPipelineFunctor(ros::NodeHandle& nodeHandle)
+    ROS_WARN("Could not configure the filter chain. Will publish the raw elevation map without postprocessing!");
+    ROS_WARN_ONCE("No postprocessing pipeline was configured. Forwarding the raw elevation map!");
+    ROS_ERROR("Could not perform the grid map filter chain! Forwarding the raw elevation map!");
+  grid_map::GridMapRosConverter::toMessage(gridMap, outputMessage);
+  ROS_DEBUG("Elevation map raw has been published.");
+
+
+
+./src/postprocessing/PostprocessorPool.cpp
+PostprocessorPool::PostprocessorPool(std::size_t poolSize, ros::NodeHandle nodeHandle) {
+    ROS_ERROR_STREAM("Postprocessor pipeline, thread " << serviceIndex << " experienced an error: " << exception.what());
+
+
+
+./src/postprocessing/PostprocessingWorker.cpp
+PostprocessingWorker::PostprocessingWorker(ros::NodeHandle nodeHandle)
