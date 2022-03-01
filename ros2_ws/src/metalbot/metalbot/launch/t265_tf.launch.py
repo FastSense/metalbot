@@ -11,7 +11,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         output='log',
-        arguments=['-0.14', '-0.01', '-0.215', '0.0', '0.0', '0.0', 'camera_pose_frame', 'base_link'],
+        arguments=['-0.14', '-0.01', '-0.215', '0.0', '0.', '0.0', 'camera_pose_frame', 'base_link'],
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
@@ -19,7 +19,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         output='log',
-        arguments=['0.14', '0.01', '0.215', '0.0', '0', '0.0', 'odom', 'odom_frame'],
+        arguments=['0.14', '0.01', '0.215', '0.0', '0.', '0.0', 'odom', 'odom_frame'],
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
