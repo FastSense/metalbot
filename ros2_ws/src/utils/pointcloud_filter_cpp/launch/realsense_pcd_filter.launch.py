@@ -12,7 +12,10 @@ def generate_launch_description():
             {'input_topic': 'camera/depth/color/points'},
             {'output_topic': 'points_filtered'},
             {'resolution': 0.02},
-            {'verbose': False}
+            {'filter_outliers': True},
+            {'search_radius': 0.15},
+            {'min_neighbors_in_radius': 5},
+            {'verbose': True}
         ]
         ),
     ])
