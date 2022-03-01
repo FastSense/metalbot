@@ -46,6 +46,7 @@ class PcdSubscriber : public rclcpp::Node
   private:
     void pcd_callback(const sensor_msgs::msg::PointCloud2::ConstPtr& msg) const
     {
+      auto t1 = std::chrono::high_resolution_clock::now();
       pcl::PCLPointCloud2::Ptr cloud (new pcl::PCLPointCloud2 ());
       pcl::PCLPointCloud2::Ptr cloud_reduced (new pcl::PCLPointCloud2 ());
       pcl_conversions::toPCL(*msg, *cloud);
@@ -53,6 +54,12 @@ class PcdSubscriber : public rclcpp::Node
       vg.setInputCloud (cloud);
       vg.setLeafSize (resolution_, resolution_, resolution_);
       vg.filter (*cloud_reduced);
+      auto t2 = std::chrono::high_resolution_clock::now();
+      if (verbose_)
+      {
+        std::chrono::duration<double> dt = t2 - t1;
+        RCLCPP_INFO(this->get_logger(), "Time to launch voxel grid: %f", dt.count());
+      }
 
       std::unique_ptr<sensor_msgs::msg::PointCloud2> cloud_filtered_msg(new sensor_msgs::msg::PointCloud2 ());
       if (filter_outliers_)
@@ -79,10 +86,13 @@ class PcdSubscriber : public rclcpp::Node
         cloud_resulting->width = cloud_resulting->points.size();
         cloud_resulting->height = 1;
         cloud_resulting->header = cloud_reduced->header;
+        auto t3 = std::chrono::high_resolution_clock::now();
         if (verbose_)
         {
           RCLCPP_INFO(this->get_logger(), "Full cloud width: %d; reduced cloud width: %d, width of cloud to filter: %d", 
                     cloud->width, cloud_reduced->width, cloud_for_filter->points.size());
+          std::chrono::duration<double> dt = t3 - t2;
+          RCLCPP_INFO(this->get_logger(), "Time to copy: %f", dt.count());
         }
 
         pcl::PCLPointCloud2::Ptr cloud_filtered (new pcl::PCLPointCloud2 ());
@@ -93,6 +103,12 @@ class PcdSubscriber : public rclcpp::Node
         sor.setRadiusSearch(search_radius_);
         sor.setMinNeighborsInRadius(min_neighbors_in_radius_);
         sor.filter(*cloud_filtered);
+        auto t4 = std::chrono::high_resolution_clock::now();
+        if (verbose_)
+        {
+          std::chrono::duration<double> dt = t4 - t3;
+          RCLCPP_INFO(this->get_logger(), "Time to launch radius filter: %f", dt.count());
+        }
         
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_pcd (new pcl::PointCloud<pcl::PointXYZRGB> ());
         pcl::fromPCLPointCloud2(*cloud_filtered, *cloud_filtered_pcd);
