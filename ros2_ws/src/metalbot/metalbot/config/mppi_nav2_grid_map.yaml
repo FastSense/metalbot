@@ -1,6 +1,6 @@
 bt_navigator:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     global_frame: odom
     robot_base_frame: base_link
     # odom_topic: /pose # ???
@@ -34,12 +34,12 @@ bt_navigator:
 
 bt_navigator_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 
 controller_server:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     controller_frequency: 10.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 1.0
@@ -61,32 +61,54 @@ controller_server:
 
     FollowPath:
       plugin: "mppi::Controller<float>"
-      time_steps: 15
+      grid_map_topic: "elevation_mapping/elevation_map"
+      time_steps: 30
+      lookahead_dist: 10.0
       model_dt: 0.1
-      batch_size: 200
+      batch_size: 300
       v_std: 0.1
-      w_std: 0.30
+      w_std: 0.7
       v_limit: 0.5
-      w_limit: 0.7
-      iteration_count: 2
+      w_limit: 1.3
+      max_lin_acc: 1.0
+      max_ang_acc: 2.0
+      iteration_count: 3
       temperature: 0.25
       backward_motion_cost_weight: 50.0
-      reference_cost_power: 1
-      reference_cost_weight: 5
-      goal_cost_power: 1
-      goal_cost_weight: 20
-      goal_angle_cost_power: 1
-      goal_angle_cost_weight: 5
-      obstacle_cost_power: 2
-      obstacle_cost_weight: 10 
+      reference_cost_power: 1.0
+      reference_cost_weight: 1.0
+      goal_cost_power: 1.0
+      goal_cost_weight: 20.0
+      goal_angle_cost_power: 1.0
+      goal_angle_cost_weight: 5.0
+      obstacle_cost_power: 2.0
+      obstacle_cost_weight: 10.0
       inflation_cost_scaling_factor: 3.0
-      inflation_radius: 0.3
-      threshold_to_consider_goal_angle: 0.20
+      inflation_radius: 0.4
+      threshold_to_consider_goal_angle: 0.15
       approx_reference_cost: false
       visualize: true
+      straight_trajectories_on_cold_start: true
+      
+      obstacle_avoidance_method: "costmap"
+      footprint_radius: 0.3
+      
+      slope_cost_power: 1.0
+      slope_cost_weight: 10.0
+      slope_crit: 0.2
+      roughness_cost_power: 1.0
+      roughness_cost_weight: 1000.0
+      roughness_crit: 0.01
+
+      slope_traversability_delta: 0.1
+      slope_traversability_alpha: 0.5
+      slope_traversability_lambda: 3.0
+      slope_traversability_cost_power: 1.0
+      slope_traversability_cost_weight: 20.0
+
 controller_server_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 local_costmap:
   local_costmap:
@@ -95,112 +117,123 @@ local_costmap:
       publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
-      use_sim_time: False
+      use_sim_time: True
       rolling_window: true
-      width: 6
-      height: 6
+      width: 3
+      height: 3
       resolution: 0.05
-      footprint: '[[0.14, 0.16], [0.24, -0.26], [-0.24, -0.26], [-0.24, 0.26]]'
+      footprint: '[[0.32, 0.25], [0.32, -0.25], [-0.32, -0.25], [-0.32, 0.25]]'
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.3
+        inflation_radius: 0.4
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
-        publish_voxel_map: False
+        publish_voxel_map: True
         origin_z: 0.0
         z_resolution: 0.05
         z_voxels: 16
+        max_obstacle_height: 1.0
         mark_threshold: 0
         observation_sources: point_cloud
         point_cloud:
           topic: /points_filtered
-          max_obstacle_height: 0.4
-          min_obstacle_height: 0.1
-          inf_is_valid: True
+          max_obstacle_height: 1.0
           clearing: True
           marking: True
           data_type: "PointCloud2"
-          raytrace_max_range: 6.0
-          raytrace_min_range: 0.1
-          obstacle_max_range: 6.0
-          obstacle_min_range: 0.1
+          raytrace_max_range: 2.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 1.5
+          obstacle_min_range: 0.0
+          min_obstacle_height: 0.1
+
+
       always_send_full_costmap: True
   local_costmap_client:
     ros__parameters:
-      use_sim_time: False
+      use_sim_time: True
   local_costmap_rclcpp_node:
     ros__parameters:
-      use_sim_time: False
+      use_sim_time: True
       
 
 global_costmap:
   global_costmap:
     ros__parameters:
       rolling_window: true
-      width: 6
-      height: 6
       update_frequency: 1.0
       publish_frequency: 1.0
       global_frame: odom
+      height: 5
+      width: 5
       robot_base_frame: base_link
-      use_sim_time: False
-      footprint: '[[0.24, 0.26], [0.24, -0.26], [-0.24, -0.26], [-0.24, 0.26]]'
+      use_sim_time: True
+      footprint: '[[0.32, 0.25], [0.32, -0.25], [-0.32, -0.25], [-0.32, 0.25]]'
       resolution: 0.05
       track_unknown_space: true
       plugins: ["voxel_layer", "inflation_layer"]
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
-        publish_voxel_map: False
+        publish_voxel_map: True
         origin_z: 0.0
         z_resolution: 0.05
         z_voxels: 16
+        max_obstacle_height: 2.0
         mark_threshold: 0
         observation_sources: point_cloud
         point_cloud:
           topic: /points_filtered
-          max_obstacle_height: 0.4
-          min_obstacle_height: 0.1
-          inf_is_valid: True
+          max_obstacle_height: 2.0
           clearing: True
           marking: True
           data_type: "PointCloud2"
-          raytrace_max_range: 6.0
-          raytrace_min_range: 0.1
-          obstacle_max_range: 6.0
-          obstacle_min_range: 0.1
+          raytrace_max_range: 2.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 1.5
+          obstacle_min_range: 0.0
+          min_obstacle_height: 0.2
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.3
+        inflation_radius: 0.4
       always_send_full_costmap: True
   global_costmap_client:
     ros__parameters:
-      use_sim_time: False
+      use_sim_time: True
   global_costmap_rclcpp_node:
     ros__parameters:
-      use_sim_time: False
+      use_sim_time: True
 
+# planner_server:
+#   ros__parameters:
+#     use_sim_time: True
+#     planner_plugins: ["GridBased"]
+#     GridBased:
+#       plugin: "nav2_navfn_planner/NavfnPlanner"
+#       tolerance: 0.5
+#       use_astar: false
+#       allow_unknown: true
 planner_server:
   ros__parameters:
-    use_sim_time: False
-    planner_plugins: ["GridBased"]
+    planner_plugin_types: ["nav2_straightline_planner/StraightLine"] # For Eloquent and earlier
+    planner_plugin_ids: ["GridBased"] # For Eloquent and earlier
+    plugins: ["GridBased"] # For Foxy and later
+    use_sim_time: True
     GridBased:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.5
-      use_astar: false
-      allow_unknown: true
+      plugin: nav2_straightline_planner/StraightLine # For Foxy and later
+      interpolation_resolution: 0.1
 
 planner_server_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 robot_state_publisher:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 recoveries_server:
   ros__parameters:
@@ -217,11 +250,13 @@ recoveries_server:
     global_frame: odom
     robot_base_frame: base_link
     transform_timeout: 0.1
-    use_sim_time: False
+    use_sim_time: True
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
     rotational_acc_lim: 3.2
+
+
 
 waypoint_follower:
   ros__parameters:

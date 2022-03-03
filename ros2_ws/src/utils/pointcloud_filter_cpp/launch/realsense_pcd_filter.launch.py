@@ -15,7 +15,7 @@ def generate_launch_description():
             {'filter_outliers': True},
             {'search_radius': 0.1},
             {'min_neighbors_in_radius': 10},
-            {'verbose': True}
+            {'verbose': False}
         ]
         ),
     ])
