@@ -33,7 +33,9 @@
       - [Rosbag2 to ROS1](#rosbag2-to-ros1)
       - [Pointcloud Filter](#pointcloud-filter)
       - [Elevation Mapping](#elevation-mapping)
-
+   - [Запуск стека Navigation2](#запуск-стека-navigation2)
+      - [На роботе](#на-роботе)
+      - [На хосте](#на-хосте)
 
 ## Настройка среды
 
@@ -329,4 +331,59 @@ roslaunch fs_elevation_mapping metalbot_realsense.launch open_rviz:=true config_
 
 # Для запуска с росбэга, записанного на роботе
 roslaunch fs_elevation_mapping metalbot_realsense.launch open_rviz:=true config_file:=metalbot_realsense_rosbridge.yaml odom_topic:=camera/odom/sample publish_clock:=true
+```
+
+## Запуск стека Navigation2
+
+Здесь описан запуск Navigation2 с использованием одометрии с камеры Realsense T265 и локального планировщика MPPI в 2D.
+
+### На роботе
+
+Терминал 1 - bringup (в нем запускается контроллер и статические трансформы робота)
+
+```bash
+r2
+ros2 launch metalbot bringup.launch.py use_tf_static:=true
+```
+
+Терминал 2 - realsense D455 (источник pointcloud-a)
+
+```bash
+r2
+ros2 launch fs-realsense rs_launch.py
+```
+
+Терминал 3 - pointcloud_filter (уменьшение размера pointcloud-a и фильтрация выбросов)
+```bash
+r2
+ros2 launch pointcloud_filter_cpp realsense_pcd_filter.launch.py
+```
+
+Терминал 4 - Realsense T265 (источник одометрии)
+
+```bash
+r2
+ros2 launch realsense2_camera rs_t265_launch.py
+```
+
+Терминал 5 - трансформы от T265 к роботу
+```bash
+r2
+ros2 launch metalbot t265_tf.launch.py
+```
+
+Терминал 6 - собственно Navigation2
+```bash
+r2
+ros2 launch metalbot nav2.launch.py
+```
+
+### На хосте
+
+Терминал 1 - rviz
+
+```bash
+export ROS_DOMAIN_ID=81
+r2
+ros2 run rviz2 rviz2
 ```
