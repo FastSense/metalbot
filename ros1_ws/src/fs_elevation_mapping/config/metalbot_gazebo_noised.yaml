@@ -1,0 +1,49 @@
+# Robot.
+map_frame_id:                               odom
+robot_base_frame_id:                        base_link_noised
+robot_pose_with_covariance_topic:           /pose_with_covariance_noised
+robot_pose_cache_size:                      200
+track_point_frame_id:                       camera_depth_frame_noised
+track_point_x:                              0.0
+track_point_y:                              0.0
+track_point_z:                              0.0
+min_update_rate:                            2.0
+time_tolerance:                             1.0
+time_offset_for_point_cloud:                0.0
+robot_motion_map_update/covariance_scale:   0.01
+
+# Input sources
+input_sources:
+    main:
+      sensor_processor:
+        type: perfect
+        ignore_points_above:                0.4
+      type: pointcloud
+      topic: /camera/points_noised
+      queue_size: 1
+      publish_on_update: true
+
+# Map.
+length_in_x:                                10.0
+length_in_y:                                10.0
+position_x:                                 0.0
+position_y:                                 0.0
+resolution:                                 0.05
+min_variance:                               0.0001
+max_variance:                               0.05
+mahalanobis_distance_threshold:             2.5
+multi_height_noise:                         0.001
+surface_normal_positive_axis:               z
+fused_map_publishing_rate:                  0.5
+enable_visibility_cleanup:                  true
+visibility_cleanup_rate:                    1.0
+scanning_duration:                          1.0
+
+# Init submap
+initialize_elevation_map:                   false
+initialization_method:                      0
+length_in_x_init_submap:                    1.0
+length_in_y_init_submap:                    1.0
+margin_init_submap:                         0.3
+init_submap_height_offset:                  0.01
+target_frame_init_submap:                   base_link_noised

@@ -1,9 +1,12 @@
 <launch>
   <node pkg="elevation_mapping" type="elevation_mapping" name="elevation_mapping" output="screen">
-    <rosparam command="load" file="$(find fs_elevation_mapping)/config/metalbot_realsense_from_hdf5.yaml" />
-    <rosparam command="load" file="$(find elevation_mapping)/config/sensor_processors/perfect.yaml" />
+    <rosparam command="load" file="$(find fs_elevation_mapping)/config/metalbot_gazebo.yaml" />
+    <!-- rosparam command="load" file="$(find elevation_mapping)/config/sensor_processors/perfect.yaml" / -->
     <rosparam command="load" file="$(find elevation_mapping_demos)/config/postprocessing/postprocessor_pipeline.yaml" />
   </node>
+
+  <!-- node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_camera" args="0 0 1 -1.5708 0 -1.5708 camera_link camera_rgb_frame 100">
+  </node -->
 
   <group if="$(arg open_rviz)">
     <node pkg="rviz" type="rviz" name="rviz" required="true"

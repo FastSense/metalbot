@@ -1,0 +1,30 @@
+<launch>
+  <arg name="config_file"/>
+  <arg name="open_rviz" default="false"/>
+  <arg name="publish_static_tf" default="false"/>
+  <arg name="publish_clock" default="false"/>
+  <arg name="odom_topic" default="odom"/>
+  <arg name="base_frame" default="base_link"/>
+  <arg name="camera_frame" default="camera_color_optical_frame"/>
+
+  <node pkg="elevation_mapping" type="elevation_mapping" name="elevation_mapping" output="screen">
+    <rosparam command="load" file="$(find fs_elevation_mapping)/config/$(arg config_file)" />
+    <rosparam command="load" file="$(find elevation_mapping_demos)/config/postprocessing/postprocessor_pipeline.yaml" />
+  </node>
+
+  <node pkg="pose_publisher" type="pose_publisher_from_odom.py" name="pwc_from_odom" output="screen">
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="publish_clock" value="$(arg publish_clock"/>
+  </node>
+
+  <group if="$(arg publish_static_tf)">
+    <node pkg="tf" type="static_transform_publisher" name="static_tf_base_to_camera"
+          args="0 0 0.2 -1.5708 0 -1.5708 $(arg base_frame) $(arg camera_frame) 100"/>
+  </group>
+
+  <group if="$(arg open_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(find fs_elevation_mapping)/rviz/elevation_mapping.rviz"/>
+  </group>
+
+</launch>
