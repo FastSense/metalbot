@@ -32,20 +32,20 @@ def get_jacobian_gyro(x):
     H[0, 4] = 1
     return H
 
-def imu(x):
+def h_imu(x):
     """Imu measurement function"""
     z = np.zeros(2)
     z[0] = x[2] * x[4]
     z[1] = x[4]
     return z
 
-def accel(x):
+def h_accel(x):
     """Imu measurement function"""
     z = np.zeros(1)
     z[0] = x[2] * x[4]
     return z
 
-def gyro(x):
+def h_gyro(x):
     """Imu measurement function"""
     z = np.zeros(1)
     z[0] = x[4]

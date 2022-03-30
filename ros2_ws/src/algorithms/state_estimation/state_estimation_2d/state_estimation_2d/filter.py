@@ -3,6 +3,7 @@ import numpy as np
 from numpy.linalg import inv
 import math
 import scipy
+from numba import njit
 
 from state_estimation_2d.model import *
 from state_estimation_2d.measurement import *
@@ -133,39 +134,49 @@ class Filter2D:
         """ Update state vector using odometry measurements"""
         H = get_jacobian_odom(self.x_opt)   
         y = z_odom - H @ self.x_opt
-        G = H @ self.P_opt @ H.T + R_odom
-        K = self.P_opt @ H.T @ inv(G)
-        I = np.eye(5)
-        self.P_opt = (I - K @ H) @ self.P_opt
-        self.x_opt = self.x_opt + K @ y
+        self.x_opt, self.P_opt = kalman_update(
+            self.x_opt,
+            self.P_opt,
+            y, 
+            R_odom,
+            H
+        )
 
     def update_imu(self, z_imu, R_imu):
         """ Update state vector using imu measurements"""
         H = get_jacobian_imu(self.x_opt) 
-        y = z_imu - imu(self.x_opt)
-        G = H @ self.P_opt @ H.T + R_imu
-        K = self.P_opt @ H.T @ inv(G)
-        I = np.eye(5)
-        self.P_opt = (I - K @ H) @ self.P_opt
-        self.x_opt = self.x_opt + K @ y
-
+        y = z_imu - h_imu(self.x_opt)
+        self.x_opt, self.P_opt = kalman_update(
+            self.x_opt,
+            self.P_opt,
+            y, 
+            R_imu,
+            H
+        )
+    
     def update_imu_accel(self, z_accel, R_accel):
+        """ Update state vector using imu measurements"""
         H = get_jacobian_accel(self.x_opt) 
-        y = z_accel - accel(self.x_opt)
-        G = H @ self.P_opt @ H.T + R_accel
-        K = self.P_opt @ H.T @ inv(G)
-        I = np.eye(5)
-        self.P_opt = (I - K @ H) @ self.P_opt
-        self.x_opt = self.x_opt + K @ y
+        y = z_accel - h_accel(self.x_opt)
+        self.x_opt, self.P_opt = kalman_update(
+            self.x_opt,
+            self.P_opt,
+            y, 
+            R_accel,
+            H
+        )
     
     def update_imu_gyro(self, z_gyro, R_gyro):
+        """ Update state vector using imu measurements"""
         H = get_jacobian_gyro(self.x_opt) 
-        y = z_gyro - accel(self.x_opt)
-        G = H @ self.P_opt @ H.T + R_gyro
-        K = self.P_opt @ H.T @ inv(G)
-        I = np.eye(5)
-        self.P_opt = (I - K @ H) @ self.P_opt
-        self.x_opt = self.x_opt + K @ y
+        y = z_gyro - h_gyro(self.x_opt)
+        self.x_opt, self.P_opt = kalman_update(
+            self.x_opt,
+            self.P_opt,
+            y, 
+            R_gyro,
+            H
+        )
     
     @property
     def v(self):
@@ -194,3 +205,11 @@ class Filter2D:
     @yaw.setter
     def yaw(self, value):
         self.x_opt[3] = value
+
+@njit
+def kalman_update(x, P, y, R, H):
+    G = H @ P @ H.T + R
+    K = P @ H.T @ inv(G)
+    new_x = x + K @ y
+    new_P = (np.eye(x.shape[0]) - K @ H) @ P
+    return new_x, new_P

@@ -19,18 +19,50 @@ from launch_ros.actions import Node
 enable_viz = 'true'
 
 def generate_launch_description():
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             'viz',
             default_value=enable_viz,
-            description='update rate'
+            description='enable_visualization'
+        ),
+        launch.actions.DeclareLaunchArgument(
+            name='use_sim_time',
+            default_value='true'
         ),
         Node(
             package="state_estimation_2d",
             executable="state_estimation_2d",
             output='screen',
             emulate_tty=True,
-            parameters=[{"use_sim_time": False}],
+            parameters=[
+                {"use_sim_time": use_sim_time},
+                {"use_nn_model": False},
+                {"odom_topic": "velocity"},
+                {"imu_topic": "imu"},
+                {"imu_accel_topic": "/camera/accel/sample"},
+                {"imu_gyro_topic": "/camera/gyro/sample"},
+                {"cmd_topic": "cmd_vel"},
+                {"odom_sim_topic": "odom_noised"},
+                {"publish_topic": "odom_filtered"},
+                {"imu_frame": "camera_gyro_optical_frame"},
+                {"robot_base_frame": "base_link"},
+                {"path_to_nn_model": "http://192.168.194.51:8345/ml-control/gz-rosbot/new_model_dynamic_batch.onnx"},
+                {"time_step": 0.1},
+                {"odom_sim_covariance": [0.5, 0,
+                                         0, 0.1]},
+                {"imu_sim_covariance": [0.5, 0,
+                                         0, 0.1]},
+                {"gyro_robot_covariance": 200.0},
+                {"accel_robot_covariance": 200.0},
+            ],
+        ),
+        Node(
+            package="odom_noiser",
+            executable="odom_noiser",
+            output='screen',
+            emulate_tty=True
         ),
         Node(
             package="path_visualizer",
