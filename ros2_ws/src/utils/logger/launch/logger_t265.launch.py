@@ -38,10 +38,11 @@ def generate_launch_description():
                 {"output_path": output_path},
                 {"control_topic": "/cmd_vel"},
                 {"tf_topic": "/tf"},
-                {"parent_frame": "odom"},
-                {"robot_frame": "base_link"},
+                {"parent_frame": "odom_frame"},
+                {"robot_frame": "camera_pose_frame"},
                 {"kinetic_model_frame": "model_link"},
-                {"nn_model_frame": "nn_model_link"}
+                {"nn_model_frame": "nn_model_link"},
+                {"use_odom_topic": False}
             ]
         ),
 
